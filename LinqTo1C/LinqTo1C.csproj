@@ -30,13 +30,66 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Remotion.Linq">
+      <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Impl\Abstract1CEntity.cs" />
+    <Compile Include="Impl\ComBasedEntityController.cs" />
+    <Compile Include="Impl\Com\ComHelpers.cs" />
+    <Compile Include="Impl\ComObjectMapper.cs" />
+    <Compile Include="Impl\ConfigurationName.cs" />
+    <Compile Include="Impl\ConfigurationScope.cs" />
+    <Compile Include="Impl\ConfigurationScopeAttribute.cs" />
+    <Compile Include="Impl\DictionaryBasedEntityController.cs" />
+    <Compile Include="Impl\Com\DispatchObject.cs" />
+    <Compile Include="Impl\EntityController.cs" />
+    <Compile Include="Impl\EnumMapper.cs" />
+    <Compile Include="Impl\Generation\ConfigurationItem.cs" />
+    <Compile Include="Impl\Generation\FormatParameters.cs" />
+    <Compile Include="Impl\Generation\GenerationContext.cs" />
+    <Compile Include="Impl\Generation\GenerationHelpers.cs" />
+    <Compile Include="Impl\Generation\Generator.cs" />
+    <Compile Include="Impl\Generation\GeneratorTemplates.cs" />
+    <Compile Include="Impl\Generation\SimpleFormat.cs" />
+    <Compile Include="Impl\GlobalContext.cs" />
+    <Compile Include="Impl\Helpers\ReflectionHelpers.cs" />
+    <Compile Include="Impl\Helpers\DictionaryExtensions.cs" />
+    <Compile Include="Impl\Helpers\EnumerableExtensions.cs" />
+    <Compile Include="Impl\Helpers\Evaluator.cs" />
+    <Compile Include="Impl\InMemoryStore1C.cs" />
+    <Compile Include="Impl\Queries\ValueTable.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumn.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumnCollection.cs" />
+    <Compile Include="Impl\Queries\ValueTableRow.cs" />
+    <Compile Include="IStore1C.cs" />
+    <Compile Include="Impl\Helpers\ListFactory.cs" />
+    <Compile Include="Impl\Queriables\BuiltQuery.cs" />
+    <Compile Include="Impl\Queriables\IRelinqQueryable.cs" />
+    <Compile Include="Impl\Queriables\MemberAccessBuilder.cs" />
+    <Compile Include="Impl\Queriables\QueryBuilder.cs" />
+    <Compile Include="Impl\Queriables\QueryModelVisitor.cs" />
+    <Compile Include="Impl\Helpers\RelinqHelpers.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryable.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
+    <Compile Include="Impl\Queriables\WhereClauseFormatter.cs" />
+    <Compile Include="Impl\Requisite.cs" />
+    <Compile Include="Impl\Store1CHelpers.cs" />
+    <Compile Include="Store1C.cs" />
+    <Compile Include="Impl\SyncList.cs" />
+    <Compile Include="Impl\TrackedValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Store1CFactory.cs" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
