@@ -1,0 +1,9 @@
+*.user
+*.suo
+*.mdb
+*.userprefs
+bin/
+obj/
+packages/
+*.designer.cs
+*.Designer.cs
