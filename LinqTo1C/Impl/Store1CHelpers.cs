@@ -2,6 +2,7 @@ using System;
 using System.Linq;
 using System.Linq.Expressions;
 using LinqTo1C.Impl.Helpers;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C.Impl
 {

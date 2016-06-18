@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Metadata1C">
+      <HintPath>..\Assemblies\Metadata1C.dll</HintPath>
+    </Reference>
     <Reference Include="Remotion.Linq">
       <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
     </Reference>
@@ -38,13 +41,16 @@
     <Reference Include="System.Data" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Impl\Abstract1CEntity.cs" />
+    <Compile Include="Connection1CType.cs" />
+    <Compile Include="ConnectionStringBuilder.cs" />
+    <Compile Include="GlobalContextFactory.cs" />
+    <Compile Include="Interface\Abstract1CEntity.cs" />
     <Compile Include="Impl\ComBasedEntityController.cs" />
     <Compile Include="Impl\Com\ComHelpers.cs" />
     <Compile Include="Impl\ComObjectMapper.cs" />
     <Compile Include="Impl\ConfigurationName.cs" />
-    <Compile Include="Impl\ConfigurationScope.cs" />
-    <Compile Include="Impl\ConfigurationScopeAttribute.cs" />
+    <Compile Include="Interface\ConfigurationScope.cs" />
+    <Compile Include="Interface\ConfigurationScopeAttribute.cs" />
     <Compile Include="Impl\DictionaryBasedEntityController.cs" />
     <Compile Include="Impl\Com\DispatchObject.cs" />
     <Compile Include="Impl\EntityController.cs" />
@@ -57,6 +63,7 @@
     <Compile Include="Impl\Generation\GeneratorTemplates.cs" />
     <Compile Include="Impl\Generation\SimpleFormat.cs" />
     <Compile Include="Impl\GlobalContext.cs" />
+    <Compile Include="Impl\Helpers\PathHelpers.cs" />
     <Compile Include="Impl\Helpers\ReflectionHelpers.cs" />
     <Compile Include="Impl\Helpers\DictionaryExtensions.cs" />
     <Compile Include="Impl\Helpers\EnumerableExtensions.cs" />
@@ -78,7 +85,7 @@
     <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
     <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
     <Compile Include="Impl\Queriables\WhereClauseFormatter.cs" />
-    <Compile Include="Impl\Requisite.cs" />
+    <Compile Include="Interface\Requisite.cs" />
     <Compile Include="Impl\Store1CHelpers.cs" />
     <Compile Include="Store1C.cs" />
     <Compile Include="Impl\SyncList.cs" />

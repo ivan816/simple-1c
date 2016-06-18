@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C.Impl.Generation
 {

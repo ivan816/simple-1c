@@ -11,6 +11,21 @@ namespace LinqTo1C.Impl
         {
         }
 
+        public void BeginTransaction()
+        {
+            Invoke("BeginTransaction");
+        }
+
+        public void RollbackTransaction()
+        {
+            Invoke("RollbackTransaction");
+        }
+
+        public object Metadata
+        {
+            get { return Get("Метаданные"); }
+        }
+
         public T NewObject<T>(string typeName) where T : DispatchObject
         {
             return (T) NewObject(typeof (T), typeName);

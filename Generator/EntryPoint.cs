@@ -1,0 +1,91 @@
+﻿using System;
+using System.CodeDom.Compiler;
+using System.Diagnostics;
+using System.IO;
+using LinqTo1C;
+using LinqTo1C.Impl;
+using LinqTo1C.Impl.Helpers;
+using Microsoft.CSharp;
+
+namespace Generator
+{
+    public static class EntryPoint
+    {
+        public static int Main(string[] args)
+        {
+            var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
+            var connectionString = parameters["connectionString"];
+            var resultAssemblyFullPath = parameters["resultAssemblyPath"];
+            var namespaceRoot = parameters["namespaceRoot"];
+            var scanItems = (parameters["scanItems"] ?? "").Split(',');
+            var parametersAreValid =
+                !string.IsNullOrEmpty(connectionString) &&
+                !string.IsNullOrEmpty(resultAssemblyFullPath) &&
+                !string.IsNullOrEmpty(namespaceRoot) &&
+                scanItems.Length > 0;
+            if (!parametersAreValid)
+            {
+                Console.Out.WriteLine("Invalid arguments");
+                Console.Out.WriteLine(
+                    "Usage: Generator.exe -source1CFilePath <file path> -resultAssemblyPath <file path> -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета");
+                return -1;
+            }
+
+            GlobalContext globalContext = null;
+            ExecuteAction(string.Format("connecting to [{0}]", connectionString),
+                () => globalContext = new GlobalContextFactory().Create(connectionString));
+
+            var tempPath = GetTemporaryDirectoryFullPath();
+            string[] fileNames = null;
+            ExecuteAction(string.Format("generating code into [{0}]", tempPath),
+                () =>
+                {
+                    var generator = new LinqTo1C.Impl.Generation.Generator(globalContext,
+                        scanItems, namespaceRoot, tempPath);
+                    fileNames = generator.Generate();
+                });
+
+            ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", tempPath, resultAssemblyFullPath),
+                () =>
+                {
+                    var cSharpCodeProvider = new CSharpCodeProvider();
+                    var compilerParameters = new CompilerParameters
+                    {
+                        OutputAssembly = resultAssemblyFullPath,
+                        GenerateExecutable = false,
+                        GenerateInMemory = false,
+                        IncludeDebugInformation = true
+                    };
+                    var linqTo1CFilePath = PathHelpers.AppendBasePath("LinqTo1C.dll");
+                    compilerParameters.ReferencedAssemblies.Add(linqTo1CFilePath);
+                    var compilerResult = cSharpCodeProvider.CompileAssemblyFromFile(compilerParameters, fileNames);
+                    if (compilerResult.Errors.Count > 0)
+                    {
+                        Console.Out.WriteLine("compile errors");
+                        foreach (CompilerError error in compilerResult.Errors)
+                        {
+                            Console.Out.WriteLine(error);
+                            Console.Out.WriteLine("===================");
+                        }
+                    }
+                });
+            return 0;
+        }
+
+        public static string GetTemporaryDirectoryFullPath()
+        {
+            var result = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
+            Directory.CreateDirectory(result);
+            return result;
+        }
+
+        private static void ExecuteAction(string description, Action action)
+        {
+            Console.Out.WriteLine(description);
+            var s = Stopwatch.StartNew();
+            action();
+            s.Stop();
+            Console.Out.WriteLine("done, took [{0}] millis", s.ElapsedMilliseconds);
+        }
+    }
+}

@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Management;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
+using System.Text;
 
-namespace Tests.Helpers
+namespace LinqTo1C.Tests.Helpers
 {
     public static class ProcessesHelpers
     {
@@ -18,6 +20,41 @@ namespace Tests.Helpers
                 .Where(x => x != null);
             foreach (var process in processes)
                 KillProcess(process);
+        }
+
+        public static void ExecuteProcess(string fileName, string arguments, TimeSpan? timeout = null,
+            Func<int, bool> checkExitCode = null)
+        {
+            using (var outputWriter = new StringWriter())
+            using (var process = new Process())
+            {
+                process.StartInfo = new ProcessStartInfo
+                {
+                    FileName = fileName,
+                    Arguments = arguments,
+                    WindowStyle = ProcessWindowStyle.Hidden,
+                    CreateNoWindow = true,
+                    UseShellExecute = false,
+                    RedirectStandardOutput = true,
+                    StandardOutputEncoding = Encoding.GetEncoding(866)
+                };
+                process.OutputDataReceived += (sender, args) => outputWriter.Write(args.Data);
+                process.Start();
+                process.BeginOutputReadLine();
+                var timeoutForExit = timeout ?? TimeSpan.FromMinutes(5);
+                if (!process.WaitForExit((int)timeoutForExit.TotalMilliseconds))
+                    throw new InvalidOperationException(string.Format("process [{0}] timed out, timeout value [{1}]",
+                        fileName, timeoutForExit));
+                var isSuccess = checkExitCode == null
+                    ? process.ExitCode == 0
+                    : checkExitCode(process.ExitCode);
+                if (!isSuccess)
+                {
+                    const string messageFormat = "process [{0}] exited with code [{1}], output [{2}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        fileName, process.ExitCode, outputWriter));
+                }
+            }
         }
 
         private static IEnumerable<int> GetOwnPidsByName(string name)

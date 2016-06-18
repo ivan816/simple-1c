@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.Serialization;
 using LinqTo1C.Impl.Com;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C.Impl
 {

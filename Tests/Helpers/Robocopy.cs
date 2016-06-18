@@ -1,4 +1,4 @@
-namespace Tests.Helpers
+namespace LinqTo1C.Tests.Helpers
 {
     public static class Robocopy
     {

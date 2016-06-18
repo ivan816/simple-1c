@@ -3,6 +3,10 @@ namespace LinqTo1C.Impl.Generation
     public static class GeneratorTemplates
     {
         public static readonly SimpleFormat namespaceFormat = SimpleFormat.Parse(@"
+using System;
+using System.Collections.Generic;
+using LinqTo1C.Interface;
+
 namespace %namespace-name%
 {
 %content%
@@ -26,12 +30,5 @@ namespace %namespace-name%
     {
 %content%
     }");
-
-        public static readonly SimpleFormat fileFormat = SimpleFormat.Parse(@"
-using System;
-using System.Collections.Generic;
-using Knopka.Application._1C.Mapper;
-
-%content%");
     }
 }

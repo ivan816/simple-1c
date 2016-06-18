@@ -7,6 +7,7 @@ using LinqTo1C.Impl;
 using LinqTo1C.Impl.Com;
 using LinqTo1C.Impl.Helpers;
 using LinqTo1C.Impl.Queriables;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C
 {

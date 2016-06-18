@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using LinqTo1C.Impl.Helpers;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C.Impl
 {

@@ -5,6 +5,7 @@ using System.IO;
 using System.Linq;
 using LinqTo1C.Impl.Com;
 using LinqTo1C.Impl.Helpers;
+using LinqTo1C.Interface;
 
 namespace LinqTo1C.Impl.Generation
 {
@@ -67,23 +68,23 @@ namespace LinqTo1C.Impl.Generation
                 }
             };
 
-        private readonly object globalContext;
+        private readonly GlobalContext globalContext;
         private readonly object metadata;
         private readonly IEnumerable<string> itemNames;
         private readonly string namespaceRoot;
-        private readonly string fileFullPath;
+        private readonly string targetDirectory;
 
-        public Generator(object globalContext, IEnumerable<string> itemNames,
-            string namespaceRoot, string fileFullPath)
+        public Generator(GlobalContext globalContext, IEnumerable<string> itemNames,
+            string namespaceRoot, string targetDirectory)
         {
             this.globalContext = globalContext;
-            metadata = ComHelpers.GetProperty(globalContext, "Метаданные");
+            metadata = globalContext.Metadata;
             this.itemNames = itemNames;
             this.namespaceRoot = namespaceRoot;
-            this.fileFullPath = fileFullPath;
+            this.targetDirectory = targetDirectory;
         }
 
-        public void Generate()
+        public string[] Generate()
         {
             var generationContext = new GenerationContext();
             foreach (var itemName in itemNames)
@@ -91,6 +92,7 @@ namespace LinqTo1C.Impl.Generation
                 var item = FindByFullName(itemName);
                 generationContext.EnqueueIfNeeded(item);
             }
+            var processedCount = 0;
             while (generationContext.ItemsToProcess.Count > 0)
             {
                 var item = generationContext.ItemsToProcess.Dequeue();
@@ -109,15 +111,23 @@ namespace LinqTo1C.Impl.Generation
                         const string messageFormat = "unexpected scope for [{0}]";
                         throw new InvalidOperationException(string.Format(messageFormat, item.Name));
                 }
+                processedCount++;
+                if (processedCount%10 == 0)
+                    Console.Out.WriteLine("[{0}] items processed, queue length [{1}]",
+                        processedCount, generationContext.ItemsToProcess.Count);
             }
-            var fileContent = generationContext.GetNamespaces()
-                .Select(p => GeneratorTemplates.namespaceFormat.Apply(new FormatParameters()
-                    .With("namespace-name", namespaceRoot + "." + GetNamespaceName(p.Key))
-                    .With("content", p.Value.JoinStrings("\r\n\r\n"))))
-                .JoinStrings("\r\n\r\n");
-            var result = GeneratorTemplates.fileFormat.Apply(new FormatParameters()
-                .With("content", fileContent));
-            File.WriteAllText(fileFullPath, result);
+            var fileNames = new List<string>();
+            foreach (var items in generationContext.GetNamespaces())
+            {
+                var namespaceName = GetNamespaceName(items.Key);
+                var content = GeneratorTemplates.namespaceFormat.Apply(new FormatParameters()
+                    .With("namespace-name", namespaceRoot + "." + namespaceName)
+                    .With("content", items.Value.JoinStrings("\r\n\r\n")));
+                var filePath = Path.Combine(targetDirectory, namespaceName + ".cs");
+                File.WriteAllText(filePath, content);
+                fileNames.Add(filePath);
+            }
+            return fileNames.ToArray();
         }
 
         private static string GetNamespaceName(ConfigurationScope scope)
@@ -133,9 +143,9 @@ namespace LinqTo1C.Impl.Generation
         private ConfigurationItem FindByType(object typeObject)
         {
             var comObject = ComHelpers.Invoke(metadata, "НайтиПоТипу", typeObject);
-            string fullName = Convert.ToString(ComHelpers.Invoke(comObject, "ПолноеИмя"));
-            return fullName.StartsWith("Документ") || fullName.StartsWith("Справочник") 
-                || fullName.StartsWith("Перечисление") || fullName.StartsWith("ПланСчетов")
+            var fullName = Convert.ToString(ComHelpers.Invoke(comObject, "ПолноеИмя"));
+            return fullName.StartsWith("Документ") || fullName.StartsWith("Справочник")
+                   || fullName.StartsWith("Перечисление") || fullName.StartsWith("ПланСчетов")
                 ? new ConfigurationItem(fullName, comObject)
                 : null;
         }
@@ -157,9 +167,9 @@ namespace LinqTo1C.Impl.Generation
         {
             var properties = new List<string>();
             var standardAttributes = ComHelpers.GetProperty(comObject, "СтандартныеРеквизиты");
-            foreach (var attr in (IEnumerable)standardAttributes)
+            foreach (var attr in (IEnumerable) standardAttributes)
             {
-                string name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
+                var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
                 if (classDescriptor.className == "Хозрасчетный" && name != "Код" && name != "Наименование")
                     continue;
                 if (standardPropertiesToExclude.Contains(name))
@@ -187,7 +197,7 @@ namespace LinqTo1C.Impl.Generation
                 for (var i = 0; i < tableSectionsCount; i++)
                 {
                     var tableSection = ComHelpers.Invoke(tableSections, "Получить", i);
-                    string tableSectionName = Convert.ToString(ComHelpers.GetProperty(tableSection, "Имя"));
+                    var tableSectionName = Convert.ToString(ComHelpers.GetProperty(tableSection, "Имя"));
                     var nestedClassName = "ТабличнаяЧасть" + tableSectionName;
                     var nestedClassContent = GenerateClassContent(new ClassDescriptor
                     {
@@ -210,7 +220,7 @@ namespace LinqTo1C.Impl.Generation
 
         private string FormatProperty(object attribute, GenerationContext context, string name)
         {
-            string propertyName = Convert.ToString(ComHelpers.GetProperty(attribute, "Имя"));
+            var propertyName = Convert.ToString(ComHelpers.GetProperty(attribute, "Имя"));
             var type = ComHelpers.GetProperty(attribute, "Тип");
             var typesObject = ComHelpers.Invoke(type, "Типы");
             var typesCount = Convert.ToInt32(ComHelpers.Invoke(typesObject, "Количество"));
@@ -219,14 +229,14 @@ namespace LinqTo1C.Impl.Generation
                 const string messageFormat = "no types for [{0}.{1}]";
                 throw new InvalidOperationException(string.Format(messageFormat, name, propertyName));
             }
-            bool isEnum = false;
+            var isEnum = false;
             string propertyType;
             if (typesCount > 1)
             {
                 for (var i = 0; i < typesCount; i++)
                 {
                     var typeObject = ComHelpers.Invoke(typesObject, "Получить", i);
-                    var stringPresentation = Convert.ToString(ComHelpers.Invoke(globalContext, "String", typeObject));
+                    var stringPresentation = globalContext.String(typeObject);
                     if (!simpleTypesMap.TryGetValue(stringPresentation, out propertyType) &&
                         stringPresentation != "Число")
                     {
@@ -240,15 +250,15 @@ namespace LinqTo1C.Impl.Generation
             else
             {
                 var typeObject = ComHelpers.Invoke(typesObject, "Получить", 0);
-                var stringPresentation = Convert.ToString(ComHelpers.Invoke(globalContext, "String", typeObject));
+                var stringPresentation = globalContext.String(typeObject);
                 if (!simpleTypesMap.TryGetValue(stringPresentation, out propertyType))
                 {
                     if (stringPresentation == "Число")
                     {
                         var квалификаторыЧисла = ComHelpers.GetProperty(type, "КвалификаторыЧисла");
-                        int floatLength =
+                        var floatLength =
                             Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "РазрядностьДробнойЧасти"));
-                        int digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
+                        var digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
                         if (floatLength == 0)
                             propertyType = digits < 10 ? "int" : "long";
                         else
@@ -258,7 +268,7 @@ namespace LinqTo1C.Impl.Generation
                     {
                         try
                         {
-                            ConfigurationItem propertyItem = FindByType(typeObject);
+                            var propertyItem = FindByType(typeObject);
                             if (propertyItem != null)
                             {
                                 propertyType = FormatClassName(propertyItem.Name);
@@ -268,7 +278,8 @@ namespace LinqTo1C.Impl.Generation
                         }
                         catch (Exception e)
                         {
-                            throw new InvalidOperationException("shit: " + name + "." + propertyName + ", " + stringPresentation, e);
+                            throw new InvalidOperationException(
+                                "shit: " + name + "." + propertyName + ", " + stringPresentation, e);
                         }
                     }
                 }

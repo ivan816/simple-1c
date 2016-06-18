@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Knopka.Application.Utilities.Common;
-using Knopka.Application._1C.Mapper;
-using Knopka.Application._1C.Mapper.Queriables;
+using LinqTo1C.Impl;
+using LinqTo1C.Impl.Helpers;
+using LinqTo1C.Impl.Queriables;
+using LinqTo1C.Interface;
 using NUnit.Framework;
-using Tests.Application;
 
-namespace Knopka.Tests.Application._1C.Store1CTests
+namespace LinqTo1C.Tests
 {
     public abstract class QueryBuilderTest : TestBase
     {
