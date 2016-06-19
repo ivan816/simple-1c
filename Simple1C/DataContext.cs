@@ -19,12 +19,13 @@ namespace Simple1C
         private readonly ComObjectMapper comObjectMapper;
         private readonly IQueryProvider queryProvider;
 
-        public DataContext(object globalContext)
+        public DataContext(object globalContext, Assembly mappingsAssembly)
         {
             this.globalContext = new GlobalContext(globalContext);
             enumMapper = new EnumMapper(this.globalContext);
-            comObjectMapper = new ComObjectMapper(enumMapper);
-            queryProvider = RelinqHelpers.CreateQueryProvider(Execute);
+            var typeMapper = new TypeMapper(mappingsAssembly);
+            comObjectMapper = new ComObjectMapper(enumMapper, typeMapper);
+            queryProvider = RelinqHelpers.CreateQueryProvider(typeMapper, Execute);
         }
 
         public IQueryable<T> Select<T>(string sourceName = null)

@@ -10,10 +10,12 @@ namespace Simple1C.Impl
     internal class ComObjectMapper
     {
         private readonly EnumMapper enumMapper;
+        private readonly TypeMapper typeMapper;
 
-        public ComObjectMapper(EnumMapper enumMapper)
+        public ComObjectMapper(EnumMapper enumMapper, TypeMapper typeMapper)
         {
             this.enumMapper = enumMapper;
+            this.typeMapper = typeMapper;
         }
 
         public object MapFrom1C(object source, Type declaredType)
@@ -52,7 +54,7 @@ namespace Simple1C.Impl
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
         }
 
-        private static Type ResolvePropertyType(object value)
+        private Type ResolvePropertyType(object value)
         {
             if (value is string)
                 return typeof (string);
@@ -61,7 +63,7 @@ namespace Simple1C.Impl
             if (value is DateTime)
                 return typeof (DateTime);
             var typeName = Convert.ToString(ComHelpers.Invoke(ComHelpers.Invoke(value, "Метаданные"), "ПолноеИмя"));
-            var type = ConfigurationName.Parse(typeName).GetTypeOrNull();
+            var type = typeMapper.GetTypeOrNull(typeName);
             if (type != null)
                 return type;
             const string messageFormat = "can't resolve .NET type by 1c type [{0}]";

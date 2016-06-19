@@ -8,10 +8,12 @@ namespace Simple1C.Impl.Queriables
 {
     internal class RelinqQueryExecutor : IQueryExecutor
     {
+        private readonly TypeMapper typeMapper;
         private readonly Func<BuiltQuery, IEnumerable> execute;
 
-        public RelinqQueryExecutor(Func<BuiltQuery, IEnumerable> execute)
+        public RelinqQueryExecutor(TypeMapper typeMapper, Func<BuiltQuery, IEnumerable> execute)
         {
+            this.typeMapper = typeMapper;
             this.execute = execute;
         }
 
@@ -29,7 +31,7 @@ namespace Simple1C.Impl.Queriables
 
         public IEnumerable<T> ExecuteCollection<T>(QueryModel queryModel)
         {
-            var builder = new QueryBuilder();
+            var builder = new QueryBuilder(typeMapper);
             queryModel.Accept(new QueryModelVisitor(builder));
             return execute(builder.Build()).Cast<T>();
         }

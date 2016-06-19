@@ -1,7 +1,5 @@
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
@@ -13,17 +11,6 @@ namespace Simple1C.Impl
     {
         private static readonly ConcurrentDictionary<Type, ConfigurationName?> cache =
             new ConcurrentDictionary<Type, ConfigurationName?>();
-
-        private static readonly Dictionary<string, Type> typeMapping = typeof (ConfigurationName)
-            .Assembly.GetTypes()
-            .Where(x => x.IsClass || x.IsEnum)
-            .Select(x => new
-            {
-                typeName1C = GetOrNull(x),
-                type = x
-            })
-            .Where(x => x.typeName1C.HasValue)
-            .ToDictionary(x => x.typeName1C.Value.Fullname, x => x.type);
 
         private static Func<Type, ConfigurationName?> createAttributes;
         private readonly ConfigurationScope scope;
@@ -50,11 +37,6 @@ namespace Simple1C.Impl
             if (createAttributes == null)
                 createAttributes = CreateName;
             return cache.GetOrAdd(type, createAttributes);
-        }
-
-        public Type GetTypeOrNull()
-        {
-            return typeMapping.GetOrDefault(Fullname);
         }
 
         public static ConfigurationName Get(Type type)

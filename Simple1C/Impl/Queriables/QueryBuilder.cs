@@ -8,8 +8,15 @@ namespace Simple1C.Impl.Queriables
 {
     internal class QueryBuilder
     {
+        private readonly TypeMapper typeMapper;
         private readonly Dictionary<string, object> parameters = new Dictionary<string, object>();
         private readonly List<string> whereParts = new List<string>();
+
+        public QueryBuilder(TypeMapper typeMapper)
+        {
+            this.typeMapper = typeMapper;
+        }
+
         public Ordering[] Orderings { get; set; }
         private Type sourceType;
         private string sourceName;
@@ -57,7 +64,7 @@ namespace Simple1C.Impl.Queriables
             {
                 resultBuilder.Append(" УПОРЯДОЧИТЬ ПО ");
                 var memberAccessBuilder = new MemberAccessBuilder();
-                for (int i = 0; i < Orderings.Length; i++)
+                for (var i = 0; i < Orderings.Length; i++)
                 {
                     if (i != 0)
                         resultBuilder.Append(',');
@@ -75,7 +82,7 @@ namespace Simple1C.Impl.Queriables
             if (!string.IsNullOrEmpty(name))
             {
                 sourceName = name;
-                sourceType = ConfigurationName.Parse(sourceName).GetTypeOrNull();
+                sourceType = typeMapper.GetTypeOrNull(sourceName);
             }
             else
             {

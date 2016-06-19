@@ -2,11 +2,13 @@
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Simple1C.Impl;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queriables;
 using Simple1C.Interface;
 using Simple1C.Interface.ObjectModel;
 using Simple1C.Tests.Helpers;
+using Simple1C.Tests.Metadata1C.Справочники;
 
 namespace Simple1C.Tests
 {
@@ -342,11 +344,12 @@ namespace Simple1C.Tests
 
         protected IQueryable<T> Source<T>(string sourceName = null)
         {
-            var queryProvider = RelinqHelpers.CreateQueryProvider(delegate(BuiltQuery query)
-            {
-                lastQuery = query;
-                return new T[0];
-            });
+            var queryProvider = RelinqHelpers.CreateQueryProvider(new TypeMapper(typeof (Контрагенты).Assembly),
+                delegate(BuiltQuery query)
+                {
+                    lastQuery = query;
+                    return new T[0];
+                });
             return new RelinqQueryable<T>(queryProvider, sourceName);
         }
 

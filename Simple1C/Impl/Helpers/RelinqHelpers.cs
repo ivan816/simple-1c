@@ -8,10 +8,10 @@ namespace Simple1C.Impl.Helpers
 {
     internal static class RelinqHelpers
     {
-        public static IQueryProvider CreateQueryProvider(Func<BuiltQuery, IEnumerable> execute)
+        public static IQueryProvider CreateQueryProvider(TypeMapper typeMapper, Func<BuiltQuery, IEnumerable> execute)
         {
             return new RelinqQueryProvider(QueryParser.CreateDefault(),
-                new RelinqQueryExecutor(execute));
+                new RelinqQueryExecutor(typeMapper, execute));
         }
     }
 }

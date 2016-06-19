@@ -1,5 +1,6 @@
 using System.Linq;
 using NUnit.Framework;
+using Simple1C.Tests.Metadata1C.Перечисления;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
 
@@ -16,19 +17,19 @@ namespace Simple1C.Tests
     public class Store1CIntegrationTest : IntegrationTestBase
     {
         private DataContext dataContext;
-        private SimpleCounterpartManager counterpartManager;
+        private TestObjectsManager testObjectsManager;
 
         protected override void SetUp()
         {
             base.SetUp();
-            dataContext = new DataContext(globalContext.ComObject);
-            counterpartManager = new SimpleCounterpartManager(globalContext);
+            dataContext = new DataContext(globalContext.ComObject, typeof (Контрагенты).Assembly);
+            testObjectsManager = new TestObjectsManager(globalContext, organizationInn);
         }
 
         [Test]
         public void Simple()
         {
-            counterpartManager.Create(new Counterpart
+            testObjectsManager.CreateCounterparty(new Counterpart
             {
                 Name = "test-name",
                 Inn = "1234567890",
@@ -42,55 +43,55 @@ namespace Simple1C.Tests
             Assert.That(instance.КПП, Is.EqualTo("123456789"));
         }
 
-        //[Test]
-        //public void SelectWithRef()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    var bankAccountAccessObject = bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
+        [Test]
+        public void SelectWithRef()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            var bankAccountAccessObject = testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
 
-        //    counterpartAccessObject.DefaultBankAccount = bankAccountAccessObject.Reference;
-        //    counterpartAccessObject.Write();
+            counterpartAccessObject.ОсновнойБанковскийСчет = bankAccountAccessObject.Ссылка;
+            counterpartAccessObject.Write();
 
-        //    var counterpartyContractCode = counterpartContractManager.Create(counterpart, new CounterpartyContract
-        //    {
-        //        CounterpartyCode = counterpartAccessObject.Code,
-        //        CurrencyCode = "643",
-        //        Name = "Валюта",
-        //        Type = CounterpartContractKind.OutgoingWithAgency
-        //    }).Code;
+            var counterpartyContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
+            {
+                CurrencyCode = "643",
+                Name = "Валюта",
+                Kind = CounterpartContractKind.OutgoingWithAgency
+            });
+            string counterpartContractCode = counterpartyContractAccessObject.Код;
 
-        //    var contractFromStore = store1C
-        //        .Select<ДоговорыКонтрагентов>()
-        //        .Single(x => x.Код == counterpartyContractCode);
 
-        //    Assert.That(contractFromStore.Владелец.ИНН, Is.EqualTo("0987654321"));
-        //    Assert.That(contractFromStore.Владелец.КПП, Is.EqualTo("987654321"));
-        //    Assert.That(contractFromStore.Владелец.Наименование, Is.EqualTo("test-counterpart-name"));
-        //    Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.НомерСчета,
-        //                Is.EqualTo("40702810001111122222"));
-        //    Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец,
-        //                Is.TypeOf<Контрагенты>());
-        //    Assert.That(((Контрагенты)contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец)
-        //            .ИНН,
-        //        Is.EqualTo("0987654321"));
-        //    Assert.That(contractFromStore.ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
-        //}
+            var contractFromStore = dataContext
+                .Select<ДоговорыКонтрагентов>()
+                .Single(x => x.Код == counterpartContractCode);
+
+            Assert.That(contractFromStore.Владелец.ИНН, Is.EqualTo("0987654321"));
+            Assert.That(contractFromStore.Владелец.КПП, Is.EqualTo("987654321"));
+            Assert.That(contractFromStore.Владелец.Наименование, Is.EqualTo("test-counterpart-name"));
+            Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.НомерСчета,
+                        Is.EqualTo("40702810001111122222"));
+            Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец,
+                        Is.TypeOf<Контрагенты>());
+            Assert.That(((Контрагенты)contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец)
+                    .ИНН,
+                Is.EqualTo("0987654321"));
+            Assert.That(contractFromStore.ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
+        }
 
         //[Test]
         //public void QueryWithRefAccess()
