@@ -6,6 +6,7 @@ using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queriables;
 using Simple1C.Interface;
 using Simple1C.Interface.ObjectModel;
+using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests
 {

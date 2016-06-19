@@ -1,6 +1,7 @@
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Tests.Metadata1C.Справочники;
+using Simple1C.Tests.TestEntities;
 
 namespace Simple1C.Tests
 {
@@ -15,23 +16,24 @@ namespace Simple1C.Tests
     public class Store1CIntegrationTest : IntegrationTestBase
     {
         private DataContext dataContext;
+        private SimpleCounterpartManager counterpartManager;
 
         protected override void SetUp()
         {
             base.SetUp();
-            dataContext = new DataContext(globalContext);
+            dataContext = new DataContext(globalContext.ComObject);
+            counterpartManager = new SimpleCounterpartManager(globalContext);
         }
 
         [Test]
         public void Simple()
         {
-            //counterpartManager.Create(new Counterpart
-            //{
-            //    Name = "test-name",
-            //    Inn = "1234567890",
-            //    Kpp = "123456789"
-            //});
-
+            counterpartManager.Create(new Counterpart
+            {
+                Name = "test-name",
+                Inn = "1234567890",
+                Kpp = "123456789"
+            });
             var instance = dataContext
                 .Select<Контрагенты>()
                 .Single(x => x.ИНН == "1234567890");

@@ -48,14 +48,17 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestEntities\LegalForm.cs" />
+    <Compile Include="TestEntities\SimpleCounterpartManager.cs" />
+    <Compile Include="TestEntities\Counterpart.cs" />
     <Compile Include="Helpers\ProcessesHelpers.cs" />
     <Compile Include="Helpers\Robocopy.cs" />
     <Compile Include="IntegrationTestBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryBuilderTest.cs" />
     <Compile Include="Store1CIntegrationTest.cs" />
-    <Compile Include="TestBase.cs" />
-    <Compile Include="Testing1CConnector.cs" />
+    <Compile Include="Helpers\TestBase.cs" />
+    <Compile Include="Helpers\Testing1CConnector.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

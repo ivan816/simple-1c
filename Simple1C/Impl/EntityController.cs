@@ -56,7 +56,7 @@ namespace Simple1C.Impl
                 MarkAsChanged(name, value);
         }
 
-        public void MarkPotentiallyChangedAsChanged()
+        internal void MarkPotentiallyChangedAsChanged()
         {
             if (trackedValues == null)
                 return;
@@ -96,6 +96,6 @@ namespace Simple1C.Impl
         }
 
         protected abstract object GetValue(string name, Type type);
-        public Dictionary<string, object> Changed { get; private set; }
+        internal Dictionary<string, object> Changed { get; private set; }
     }
 }

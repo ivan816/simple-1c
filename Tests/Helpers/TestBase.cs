@@ -1,7 +1,7 @@
 using System;
 using NUnit.Framework;
 
-namespace Simple1C.Tests
+namespace Simple1C.Tests.Helpers
 {
     [TestFixture]
     public abstract class TestBase

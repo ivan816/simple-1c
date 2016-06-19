@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Queries
 
         public int Count
         {
-            get { return (int) Get("Count"); }
+            get { return (int) Invoke("Count"); }
         }
 
         public ValueTableRow this[int index]

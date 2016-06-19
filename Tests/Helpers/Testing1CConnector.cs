@@ -1,9 +1,8 @@
 using System.IO;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
-using Simple1C.Tests.Helpers;
 
-namespace Simple1C.Tests
+namespace Simple1C.Tests.Helpers
 {
     public static class Testing1CConnector
     {
