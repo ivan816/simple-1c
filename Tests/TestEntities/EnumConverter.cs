@@ -33,6 +33,61 @@ namespace Simple1C.Tests.TestEntities
                     throw new InvalidEnumArgumentException(string.Format("unexpected value [{0}]", legalForm));
             }
         }
+        
+        public object Convert(NdsRate ndsRate)
+        {
+            switch (ndsRate)
+            {
+                case NdsRate.NoNds:
+                    return EnumValue("СтавкиНДС", "БезНДС");
+                case NdsRate.Nds10:
+                    return EnumValue("СтавкиНДС", "НДС10");
+                case NdsRate.Nds18:
+                    return EnumValue("СтавкиНДС", "НДС18");
+                case NdsRate.Nds20:
+                    return EnumValue("СтавкиНДС", "НДС20");
+                case NdsRate.Nds0:
+                    return EnumValue("СтавкиНДС", "НДС0");
+                case NdsRate.Nds10110:
+                    return EnumValue("СтавкиНДС", "НДС10_110");
+                case NdsRate.Nds18118:
+                    return EnumValue("СтавкиНДС", "НДС18_118");
+                case NdsRate.Nds20120:
+                    return EnumValue("СтавкиНДС", "НДС20_120");
+                default:
+                    throw new ArgumentOutOfRangeException("ndsRate", ndsRate, null);
+            }
+        }
+
+        public object Convert(IncomingOperationKind incomingOperationKind)
+        {
+            switch (incomingOperationKind)
+            {
+                case IncomingOperationKind.Goods:
+                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "Товары");
+                case IncomingOperationKind.Services:
+                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "Услуги");
+                case IncomingOperationKind.BuyingCommission:
+                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "ПокупкаКомиссия");
+                default:
+                    throw new ArgumentOutOfRangeException("incomingOperationKind", incomingOperationKind, null);
+            }
+        }
+
+        public object Convert(AdvanceWay advanceWay)
+        {
+            switch (advanceWay)
+            {
+                case AdvanceWay.Automatically:
+                    return EnumValue("СпособыЗачетаАвансов", "Автоматически");
+                case AdvanceWay.ByDocument:
+                    return EnumValue("СпособыЗачетаАвансов", "ПоДокументу");
+                case AdvanceWay.DontTakeIntoAccount:
+                    return EnumValue("СпособыЗачетаАвансов", "НеЗачитывать");
+                default:
+                    throw new ArgumentOutOfRangeException("advanceWay", advanceWay, null);
+            }
+        }
 
         public object Convert(CounterpartContractKind value)
         {

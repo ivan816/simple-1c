@@ -9,12 +9,11 @@ namespace Simple1C.Interface
     public static class Store1CHelpers
     {
         public static T Single<T>(this DataContext dataContext,
-            string sourceName = null,
             params Expression<Func<T, bool>>[] filters)
             where T : Abstract1CEntity
         {
             var result = filters
-                .Aggregate(dataContext.Select<T>(sourceName), (q, f) => q.Where(f))
+                .Aggregate(dataContext.Select<T>(), (q, f) => q.Where(f))
                 .Take(2)
                 .ToArray();
             if (result.Length == 0)
@@ -35,12 +34,11 @@ namespace Simple1C.Interface
         }
 
         public static T SingleOrDefault<T>(this DataContext dataContext,
-            string sourceName = null,
             params Expression<Func<T, bool>>[] filters)
             where T : Abstract1CEntity
         {
             var result = filters
-                .Aggregate(dataContext.Select<T>(sourceName), (q, f) => q.Where(f))
+                .Aggregate(dataContext.Select<T>(), (q, f) => q.Where(f))
                 .Take(2)
                 .ToArray();
             if (result.Length == 0)

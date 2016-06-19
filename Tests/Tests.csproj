@@ -48,13 +48,18 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="TestEntities\AccountingDocument.cs" />
+    <Compile Include="TestEntities\AdvanceWay.cs" />
     <Compile Include="TestEntities\Bank.cs" />
     <Compile Include="TestEntities\BankAccount.cs" />
     <Compile Include="TestEntities\Banks.cs" />
     <Compile Include="TestEntities\CounterpartContractKind.cs" />
     <Compile Include="TestEntities\CounterpartyContract.cs" />
     <Compile Include="TestEntities\EnumConverter.cs" />
+    <Compile Include="TestEntities\IncomingOperationKind.cs" />
     <Compile Include="TestEntities\LegalForm.cs" />
+    <Compile Include="TestEntities\NdsRate.cs" />
+    <Compile Include="TestEntities\NomenclatureItem.cs" />
     <Compile Include="TestEntities\TestObjectsManager.cs" />
     <Compile Include="TestEntities\Counterpart.cs" />
     <Compile Include="Helpers\ProcessesHelpers.cs" />
