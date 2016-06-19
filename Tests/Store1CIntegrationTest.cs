@@ -1,5 +1,7 @@
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Simple1C.Impl.Com;
 using Simple1C.Tests.Metadata1C.Перечисления;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
@@ -18,12 +20,14 @@ namespace Simple1C.Tests
     {
         private DataContext dataContext;
         private TestObjectsManager testObjectsManager;
+        private EnumConverter enumConverter;
 
         protected override void SetUp()
         {
             base.SetUp();
             dataContext = new DataContext(globalContext.ComObject, typeof (Контрагенты).Assembly);
-            testObjectsManager = new TestObjectsManager(globalContext, organizationInn);
+            enumConverter = new EnumConverter(globalContext);
+            testObjectsManager = new TestObjectsManager(globalContext, enumConverter, organizationInn);
         }
 
         [Test]
@@ -305,52 +309,56 @@ namespace Simple1C.Tests
         //    Assert.That(acts.Услуги[0].Сумма, Is.EqualTo(1000m));
         //}
 
-        //[Test]
-        //public void CanAddCounterparty()
-        //{
-        //    var counterparty = new Контрагенты
-        //    {
-        //        ИНН = "1234567890",
-        //        Наименование = "test-counterparty",
-        //        ЮридическоеФизическоеЛицо = ЮридическоеФизическоеЛицо.ЮридическоеЛицо
-        //    };
-        //    store1C.Save(counterparty);
-        //    Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
+        [Test]
+        public void CanAddCounterparty()
+        {
+            var counterparty = new Контрагенты
+            {
+                ИНН = "1234567890",
+                Наименование = "test-counterparty",
+                ЮридическоеФизическоеЛицо = ЮридическоеФизическоеЛицо.ЮридическоеЛицо
+            };
+            dataContext.Save(counterparty);
+            Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
 
-        //    var valueTable = queryExecuter.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
-        //    {
-        //        {"Code", counterparty.Код}
-        //    });
-        //    Assert.That(valueTable.Count, Is.EqualTo(1));
-        //    Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
-        //    Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
-        //    Assert.That(
-        //        enumerationManager.Is(
-        //            valueTable[0].GetDispatchObject<Enumeration<LegalForm>>("ЮридическоеФизическоеЛицо"),
-        //            LegalForm.Organization));
-        //}
+            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
+            {
+                {"Code", counterparty.Код}
+            });
+            Assert.That(valueTable.Count, Is.EqualTo(1));
+            Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
+            Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
 
-        //[Test]
-        //public void CanAddCounterpartyWithNullableEnum()
-        //{
-        //    var counterparty = new Контрагенты
-        //    {
-        //        ИНН = "1234567890",
-        //        Наименование = "test-counterparty",
-        //        ЮридическоеФизическоеЛицо = null
-        //    };
-        //    store1C.Save(counterparty);
-        //    Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
+            dynamic comObject = globalContext.ComObject;
+            var enumsDispatchObject = comObject.Перечисления.ЮридическоеФизическоеЛицо;
+            var expectedEnumValue = enumConverter.Convert(LegalForm.Organization);
+            var expectedEnumValueIndex = enumsDispatchObject.IndexOf(expectedEnumValue);
+            var actualEnumValueIndex = enumsDispatchObject.IndexOf(valueTable[0]["ЮридическоеФизическоеЛицо"]);
 
-        //    var valueTable = queryExecuter.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
-        //    {
-        //        {"Code", counterparty.Код}
-        //    });
-        //    Assert.That(valueTable.Count, Is.EqualTo(1));
-        //    Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
-        //    Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
-        //    Assert.That(ComHelpers.Invoke(valueTable[0]["ЮридическоеФизическоеЛицо"], "IsEmpty"), Is.True);
-        //}
+            Assert.That(actualEnumValueIndex, Is.EqualTo(expectedEnumValueIndex));
+        }
+
+        [Test]
+        public void CanAddCounterpartyWithNullableEnum()
+        {
+            var counterparty = new Контрагенты
+            {
+                ИНН = "1234567890",
+                Наименование = "test-counterparty",
+                ЮридическоеФизическоеЛицо = null
+            };
+            dataContext.Save(counterparty);
+            Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
+
+            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
+            {
+                {"Code", counterparty.Код}
+            });
+            Assert.That(valueTable.Count, Is.EqualTo(1));
+            Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
+            Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
+            Assert.That(ComHelpers.Invoke(valueTable[0]["ЮридическоеФизическоеЛицо"], "IsEmpty"), Is.True);
+        }
 
         //[Test]
         //public void CanAddCounterpartyContract()

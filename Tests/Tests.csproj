@@ -53,6 +53,7 @@
     <Compile Include="TestEntities\Banks.cs" />
     <Compile Include="TestEntities\CounterpartContractKind.cs" />
     <Compile Include="TestEntities\CounterpartyContract.cs" />
+    <Compile Include="TestEntities\EnumConverter.cs" />
     <Compile Include="TestEntities\LegalForm.cs" />
     <Compile Include="TestEntities\TestObjectsManager.cs" />
     <Compile Include="TestEntities\Counterpart.cs" />

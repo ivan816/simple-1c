@@ -2,18 +2,19 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl;
-using Simple1C.Impl.Com;
 
 namespace Simple1C.Tests.TestEntities
 {
     internal class TestObjectsManager
     {
         private readonly GlobalContext globalContext;
+        private readonly EnumConverter enumConverter;
         private readonly string organizationInn;
 
-        public TestObjectsManager(GlobalContext globalContext, string organizationInn)
+        public TestObjectsManager(GlobalContext globalContext, EnumConverter enumConverter, string organizationInn)
         {
             this.globalContext = globalContext;
+            this.enumConverter = enumConverter;
             this.organizationInn = organizationInn;
         }
 
@@ -25,10 +26,7 @@ namespace Simple1C.Tests.TestEntities
         public object CreateCounterparty(Counterpart counterpart)
         {
             var item = ComObject.Справочники.Контрагенты.CreateItem();
-            var legalFormEnum = ComObject.Перечисления.ЮридическоеФизическоеЛицо;
-            item.ЮридическоеФизическоеЛицо = counterpart.LegalForm == LegalForm.Ip
-                ? legalFormEnum.ФизическоеЛицо
-                : legalFormEnum.ЮридическоеЛицо;
+            item.ЮридическоеФизическоеЛицо = enumConverter.Convert(counterpart.LegalForm);
             item.ИНН = counterpart.Inn;
             if (counterpart.LegalForm == LegalForm.Organization)
                 item.КПП = counterpart.Kpp;
@@ -55,8 +53,7 @@ namespace Simple1C.Tests.TestEntities
         public object CreateCounterpartContract(object counterpartReference, CounterpartyContract contract)
         {
             var item = ComObject.Справочники.ДоговорыКонтрагентов.CreateItem();
-            var contractKindsEnum = ComObject.Перечисления.ВидыДоговоровКонтрагентов;
-            item.ВидДоговора = ComHelpers.GetProperty(contractKindsEnum, ConvertCounterpartyContract(contract.Kind));
+            item.ВидДоговора = enumConverter.Convert(contract.Kind);
             item.Организация = GetOrganization();
             item.Владелец = counterpartReference;
             item.Наименование = contract.Name;
@@ -65,29 +62,6 @@ namespace Simple1C.Tests.TestEntities
                 item.ВалютаВзаиморасчетов = GetCurrencyByCode(contract.CurrencyCode);
             item.Write();
             return item;
-        }
-
-        private static string ConvertCounterpartyContract(CounterpartContractKind value)
-        {
-            switch (value)
-            {
-                case CounterpartContractKind.Outgoing:
-                    return "СПоставщиком";
-                case CounterpartContractKind.Incoming:
-                    return "СПокупателем";
-                case CounterpartContractKind.Others:
-                    return "Прочее";
-                case CounterpartContractKind.OutgoingWithComitent:
-                    return "СКомитентомНаЗакупку";
-                case CounterpartContractKind.OutgoingWithAgency:
-                    return "СКомиссионеромНаЗакупку";
-                case CounterpartContractKind.IncomingWithComitent:
-                    return "СКомитентом";
-                case CounterpartContractKind.IncomingWithAgency:
-                    return "СКомиссионером";
-                default:
-                    throw new ArgumentOutOfRangeException("value", value, null);
-            }
         }
 
         private static string GenerateBankAccountName(dynamic bank, string number)

@@ -11,7 +11,7 @@ namespace Simple1C.Impl.Com
             ComObject = comObject;
         }
 
-        protected string GetString(string property)
+        public string GetString(string property)
         {
             var value = Get(property);
             return Convert.IsDBNull(value) ? null : Convert.ToString(value);
