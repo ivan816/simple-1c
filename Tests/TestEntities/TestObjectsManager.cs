@@ -61,7 +61,8 @@ namespace Simple1C.Tests.TestEntities
             item.Владелец = counterpartReference;
             item.Наименование = contract.Name;
             item.Комментарий = string.Format("test {0}", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"));
-            item.ВалютаВзаиморасчетов = GetCurrencyByCode(contract.CurrencyCode);
+            if (!string.IsNullOrEmpty(contract.CurrencyCode))
+                item.ВалютаВзаиморасчетов = GetCurrencyByCode(contract.CurrencyCode);
             item.Write();
             return item;
         }

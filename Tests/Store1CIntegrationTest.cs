@@ -93,181 +93,175 @@ namespace Simple1C.Tests
             Assert.That(contractFromStore.ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
         }
 
-        //[Test]
-        //public void QueryWithRefAccess()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    var bankAccountAccessObject = bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
+        [Test]
+        public void QueryWithRefAccess()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            dynamic bankAccountAccessObject = testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
 
-        //    counterpartAccessObject.DefaultBankAccount = bankAccountAccessObject.Reference;
-        //    counterpartAccessObject.Write();
+            counterpartAccessObject.ОсновнойБанковскийСчет = bankAccountAccessObject.Ссылка;
+            counterpartAccessObject.Write();
 
-        //    counterpartContractManager.Create(counterpart, new CounterpartyContract
-        //    {
-        //        CounterpartyCode = counterpartAccessObject.Code,
-        //        CurrencyCode = "643",
-        //        Name = "Валюта",
-        //        Type = CounterpartContractKind.OutgoingWithAgency
-        //    });
+            testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
+            {
+                CurrencyCode = "643",
+                Name = "Валюта",
+                Kind = CounterpartContractKind.OutgoingWithAgency
+            });
 
-        //    var contractFromStore = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Single(x => x.Владелец.ОсновнойБанковскийСчет.НомерСчета == "40702810001111122222");
-        //    Assert.That(contractFromStore.Наименование, Is.EqualTo("Валюта"));
-        //}
+            var contractFromStore = dataContext.Select<ДоговорыКонтрагентов>()
+                .Single(x => x.Владелец.ОсновнойБанковскийСчет.НомерСчета == "40702810001111122222");
+            Assert.That(contractFromStore.Наименование, Is.EqualTo("Валюта"));
+        }
 
-        //[Test]
-        //public void QueryWithObject()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
+        [Test]
+        public void QueryWithObject()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка, 
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
 
-        //    var account = store1C.Select<БанковскиеСчета>()
-        //        .Single(x => x.Владелец is Контрагенты);
-        //    Assert.That(account.ВалютаДенежныхСредств.Код, Is.EqualTo("643"));
-        //    Assert.That(account.Владелец, Is.TypeOf<Контрагенты>());
-        //    Assert.That(((Контрагенты)account.Владелец).ИНН, Is.EqualTo("0987654321"));
-        //    Assert.That(((Контрагенты)account.Владелец).КПП, Is.EqualTo("987654321"));
-        //}
+            var account = dataContext.Select<БанковскиеСчета>()
+                .Single(x => x.Владелец is Контрагенты);
+            Assert.That(account.ВалютаДенежныхСредств.Код, Is.EqualTo("643"));
+            Assert.That(account.Владелец, Is.TypeOf<Контрагенты>());
+            Assert.That(((Контрагенты)account.Владелец).ИНН, Is.EqualTo("0987654321"));
+            Assert.That(((Контрагенты)account.Владелец).КПП, Is.EqualTo("987654321"));
+        }
 
-        //[Test]
-        //public void NullableEnumCanSet()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
+        [Test]
+        public void NullableEnumCanSet()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
+            testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
+            {
+                CurrencyCode = "643",
+                Name = "Валюта",
+                Kind = CounterpartContractKind.OutgoingWithAgency
+            });
+            string counterpartyCode = counterpartAccessObject.Код;
 
-        //    counterpartContractManager.Create(counterpart, new CounterpartyContract
-        //    {
-        //        CounterpartyCode = counterpartAccessObject.Code,
-        //        CurrencyCode = "643",
-        //        Name = "Валюта",
-        //        Type = CounterpartContractKind.OutgoingWithAgency
-        //    });
+            var contracts = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.Владелец.Код == counterpartyCode)
+                .ToArray();
+            Assert.That(contracts.Length, Is.EqualTo(1));
+            Assert.That(contracts[0].ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
+        }
 
-        //    var contracts = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Where(x => x.Владелец.Код == counterpart.Code)
-        //        .ToArray();
+        [Test]
+        public void EnumParameterMapping()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
+            testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
+            {
+                CurrencyCode = "643",
+                Name = "Валюта",
+                Kind = CounterpartContractKind.OutgoingWithAgency
+            });
 
-        //    Assert.That(contracts.Length, Is.EqualTo(1));
-        //    Assert.That(contracts[0].ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
-        //}
+            var contracts = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.ВидДоговора == ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку)
+                .ToArray();
 
-        //[Test]
-        //public void EnumParameterMapping()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
+            Assert.That(contracts.Length, Is.EqualTo(1));
+            Assert.That(contracts[0].ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
+        }
 
-        //    counterpartContractManager.Create(counterpart, new CounterpartyContract
-        //    {
-        //        CounterpartyCode = counterpartAccessObject.Code,
-        //        CurrencyCode = "643",
-        //        Name = "Валюта",
-        //        Type = CounterpartContractKind.OutgoingWithAgency
-        //    });
+        [Test]
+        public void CanFilterForEmptyReference()
+        {
+            dynamic counterpartAccessObject = CreateTestCounterpart();
+            var counterpartyContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка,
+                new CounterpartyContract
+                {
+                    Name = "test-description",
+                    Kind = CounterpartContractKind.Others
+                });
+            string counterpartyContractCode = counterpartyContractAccessObject.Код;
 
-        //    var contracts = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Where(x => x.ВидДоговора == ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку)
-        //        .ToArray();
+            var contracts = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.Код == counterpartyContractCode)
+                .Where(x => x.ТипЦен == null)
+                .ToArray();
+            Assert.That(contracts.Length, Is.EqualTo(1));
+            Assert.That(contracts[0].Код, Is.EqualTo(counterpartyContractCode));
+            Assert.That(contracts[0].ТипЦен, Is.Null);
 
-        //    Assert.That(contracts.Length, Is.EqualTo(1));
-        //    Assert.That(contracts[0].ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
-        //}
+            contracts = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.Код == counterpartyContractCode)
+                .Where(x => x.ТипЦен != null)
+                .ToArray();
+            Assert.That(contracts.Length, Is.EqualTo(0));
 
-        //[Test]
-        //public void CanFilterForEmptyReference()
-        //{
-        //    var counterpartAccessObject = CreateTestCounterpart();
-        //    var counterpartContractAccessObject = catalogRegistry.GetManager<CounterpertContractCatalog>().CreateItem();
-        //    counterpartContractAccessObject.Owner = counterpartAccessObject.Reference;
-        //    counterpartContractAccessObject.Description = "test-description";
-        //    counterpartContractAccessObject.Write();
-
-        //    var contracts = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Where(x => x.Код == counterpartContractAccessObject.Code)
-        //        .Where(x => x.ТипЦен == null)
-        //        .ToArray();
-        //    Assert.That(contracts.Length, Is.EqualTo(1));
-        //    Assert.That(contracts[0].Код, Is.EqualTo(counterpartContractAccessObject.Code));
-        //    Assert.That(contracts[0].ТипЦен, Is.Null);
-
-        //    contracts = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Where(x => x.Код == counterpartContractAccessObject.Code)
-        //        .Where(x => x.ТипЦен != null)
-        //        .ToArray();
-        //    Assert.That(contracts.Length, Is.EqualTo(0));
-
-        //    contracts = store1C.Select<ДоговорыКонтрагентов>()
-        //        .Where(x => counterpartContractAccessObject.Code == x.Код)
-        //        .Where(x => null == x.ТипЦен)
-        //        .ToArray();
-        //    Assert.That(contracts.Length, Is.EqualTo(1));
-        //    Assert.That(contracts[0].Код, Is.EqualTo(counterpartContractAccessObject.Code));
-        //    Assert.That(contracts[0].ТипЦен, Is.Null);
-        //}
+            contracts = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => counterpartyContractCode == x.Код)
+                .Where(x => null == x.ТипЦен)
+                .ToArray();
+            Assert.That(contracts.Length, Is.EqualTo(1));
+            Assert.That(contracts[0].Код, Is.EqualTo(counterpartyContractCode));
+            Assert.That(contracts[0].ТипЦен, Is.Null);
+        }
 
         //[Test]
         //public void TableSections()
@@ -935,27 +929,26 @@ namespace Simple1C.Tests
         //    Assert.That(catalogItem, Is.TypeOf<Контрагенты>());
         //}
 
-        //private CounterpartAccessObject CreateTestCounterpart()
-        //{
-        //    var counterpart = new Counterpart
-        //    {
-        //        Name = "test-counterpart-name",
-        //        Inn = "0987654321",
-        //        Kpp = "987654321"
-        //    };
-        //    var counterpartAccessObject = counterpartManager.Create(counterpart);
-        //    counterpart.Code = counterpartAccessObject.Code;
-        //    bankAccountManager.CreateAccount(counterpartAccessObject.Code, BankAccountOwnerType.JuridicalCounterparty,
-        //        new BankAccount
-        //        {
-        //            Bank = new Bank
-        //            {
-        //                Bik = Banks.AlfaBankBik
-        //            },
-        //            Number = "40702810001111122222",
-        //            CurrencyCode = "643"
-        //        });
-        //    return counterpartAccessObject;
-        //}
+        private object CreateTestCounterpart()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
+            return counterpartAccessObject;
+        }
     }
 }
