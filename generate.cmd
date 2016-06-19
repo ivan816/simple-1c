@@ -1,4 +1,4 @@
-bin\Generator.exe -connectionString File=C:\testBases\houseStark;Usr=Администратор;Pwd= -resultAssemblyPath C:\sources\LinqTo1C\Assemblies\Metadata1C.dll -namespaceRoot LinqTo1C.Tests.Metadata1C -scanItems Справочник.Банки,Справочник.Валюты,Справочник.БанковскиеСчета,Справочник.ДоговорыКонтрагентов,Справочник.КлассификаторБанковРФ,Справочник.Контрагенты,Справочник.Организации,Справочник.ПодразделенияОрганизаций,Справочник.ФизическиеЛица,РегистрСведений.ОтветственныеЛицаОрганизаций,Документ.ПоступлениеТоваровУслуг
+bin\Generator.exe -connectionString File=C:\testBases\houseStark;Usr=Администратор;Pwd= -resultAssemblyFullPath %~dp0Assemblies\Metadata1C.dll -namespaceRoot Simple1C.Tests.Metadata1C -scanItems Справочник.Банки,Справочник.Валюты,Справочник.БанковскиеСчета,Справочник.ДоговорыКонтрагентов,Справочник.КлассификаторБанковРФ,Справочник.Контрагенты,Справочник.Организации,Справочник.ПодразделенияОрганизаций,Справочник.ФизическиеЛица,РегистрСведений.ОтветственныеЛицаОрганизаций,Документ.ПоступлениеТоваровУслуг
 
 
 

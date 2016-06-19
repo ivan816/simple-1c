@@ -2,10 +2,11 @@
 using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.IO;
-using LinqTo1C;
-using LinqTo1C.Impl;
-using LinqTo1C.Impl.Helpers;
+using System.Linq;
 using Microsoft.CSharp;
+using Simple1C.Impl.Generation;
+using Simple1C.Impl.Helpers;
+using Simple1C.Interface;
 
 namespace Generator
 {
@@ -15,7 +16,7 @@ namespace Generator
         {
             var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
             var connectionString = parameters["connectionString"];
-            var resultAssemblyFullPath = parameters["resultAssemblyPath"];
+            var resultAssemblyFullPath = parameters["resultAssemblyFullPath"];
             var namespaceRoot = parameters["namespaceRoot"];
             var scanItems = (parameters["scanItems"] ?? "").Split(',');
             var parametersAreValid =
@@ -27,11 +28,11 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -source1CFilePath <file path> -resultAssemblyPath <file path> -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета");
+                    "Usage: Generator.exe -connectionString <string> -resultAssemblyFullPath <path> -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета");
                 return -1;
             }
 
-            GlobalContext globalContext = null;
+            object globalContext = null;
             ExecuteAction(string.Format("connecting to [{0}]", connectionString),
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
 
@@ -40,9 +41,9 @@ namespace Generator
             ExecuteAction(string.Format("generating code into [{0}]", tempPath),
                 () =>
                 {
-                    var generator = new LinqTo1C.Impl.Generation.Generator(globalContext,
+                    var generator = new ObjectModelGenerator(globalContext,
                         scanItems, namespaceRoot, tempPath);
-                    fileNames = generator.Generate();
+                    fileNames = generator.Generate().ToArray();
                 });
 
             ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", tempPath, resultAssemblyFullPath),
@@ -56,7 +57,7 @@ namespace Generator
                         GenerateInMemory = false,
                         IncludeDebugInformation = true
                     };
-                    var linqTo1CFilePath = PathHelpers.AppendBasePath("LinqTo1C.dll");
+                    var linqTo1CFilePath = PathHelpers.AppendBasePath("Simple1C.dll");
                     compilerParameters.ReferencedAssemblies.Add(linqTo1CFilePath);
                     var compilerResult = cSharpCodeProvider.CompileAssemblyFromFile(compilerParameters, fileNames);
                     if (compilerResult.Errors.Count > 0)

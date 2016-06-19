@@ -1,0 +1,105 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
+  <PropertyGroup>
+    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
+    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
+    <ProjectGuid>{BB1A4406-AD17-4089-9D6B-33D4452FDE4C}</ProjectGuid>
+    <OutputType>Library</OutputType>
+    <AppDesignerFolder>Properties</AppDesignerFolder>
+    <RootNamespace>Simple1C</RootNamespace>
+    <AssemblyName>Simple1C</AssemblyName>
+    <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
+    <FileAlignment>512</FileAlignment>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
+    <DebugSymbols>true</DebugSymbols>
+    <DebugType>full</DebugType>
+    <Optimize>false</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
+    <DebugType>pdbonly</DebugType>
+    <Optimize>true</Optimize>
+    <OutputPath>..\bin\</OutputPath>
+    <DefineConstants>TRACE</DefineConstants>
+    <ErrorReport>prompt</ErrorReport>
+    <WarningLevel>4</WarningLevel>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Metadata1C">
+      <HintPath>..\Assemblies\Metadata1C.dll</HintPath>
+    </Reference>
+    <Reference Include="Remotion.Linq">
+      <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
+    </Reference>
+    <Reference Include="System" />
+    <Reference Include="System.Core" />
+    <Reference Include="System.Data" />
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="Interface\Connection1CType.cs" />
+    <Compile Include="Interface\ConnectionStringBuilder.cs" />
+    <Compile Include="Interface\GlobalContextFactory.cs" />
+    <Compile Include="Interface\ObjectModel\Abstract1CEntity.cs" />
+    <Compile Include="Impl\ComBasedEntityController.cs" />
+    <Compile Include="Impl\Com\ComHelpers.cs" />
+    <Compile Include="Impl\ComObjectMapper.cs" />
+    <Compile Include="Impl\ConfigurationName.cs" />
+    <Compile Include="Interface\ConfigurationScope.cs" />
+    <Compile Include="Interface\ObjectModel\ConfigurationScopeAttribute.cs" />
+    <Compile Include="Impl\DictionaryBasedEntityController.cs" />
+    <Compile Include="Impl\Com\DispatchObject.cs" />
+    <Compile Include="Impl\EntityController.cs" />
+    <Compile Include="Impl\EnumMapper.cs" />
+    <Compile Include="Impl\Generation\ConfigurationItem.cs" />
+    <Compile Include="Impl\Generation\FormatParameters.cs" />
+    <Compile Include="Impl\Generation\GenerationContext.cs" />
+    <Compile Include="Impl\Generation\GenerationHelpers.cs" />
+    <Compile Include="Impl\Generation\ObjectModelGenerator.cs" />
+    <Compile Include="Impl\Generation\GeneratorTemplates.cs" />
+    <Compile Include="Impl\Generation\SimpleFormat.cs" />
+    <Compile Include="Impl\GlobalContext.cs" />
+    <Compile Include="Impl\Helpers\PathHelpers.cs" />
+    <Compile Include="Impl\Helpers\ReflectionHelpers.cs" />
+    <Compile Include="Impl\Helpers\DictionaryExtensions.cs" />
+    <Compile Include="Impl\Helpers\EnumerableExtensions.cs" />
+    <Compile Include="Impl\Helpers\Evaluator.cs" />
+    <Compile Include="Impl\Queries\ValueTable.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumn.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumnCollection.cs" />
+    <Compile Include="Impl\Queries\ValueTableRow.cs" />
+    <Compile Include="Impl\Helpers\ListFactory.cs" />
+    <Compile Include="Impl\Queriables\BuiltQuery.cs" />
+    <Compile Include="Impl\Queriables\IRelinqQueryable.cs" />
+    <Compile Include="Impl\Queriables\MemberAccessBuilder.cs" />
+    <Compile Include="Impl\Queriables\QueryBuilder.cs" />
+    <Compile Include="Impl\Queriables\QueryModelVisitor.cs" />
+    <Compile Include="Impl\Helpers\RelinqHelpers.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryable.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
+    <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
+    <Compile Include="Impl\Queriables\WhereClauseFormatter.cs" />
+    <Compile Include="Interface\ObjectModel\Requisite.cs" />
+    <Compile Include="Interface\Store1CHelpers.cs" />
+    <Compile Include="DataContext.cs" />
+    <Compile Include="Impl\SyncList.cs" />
+    <Compile Include="Impl\TrackedValue.cs" />
+    <Compile Include="Properties\AssemblyInfo.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="packages.config" />
+  </ItemGroup>
+  <ItemGroup />
+  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
+  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
+       Other similar extension points exist, see Microsoft.Common.targets.
+  <Target Name="BeforeBuild">
+  </Target>
+  <Target Name="AfterBuild">
+  </Target>
+  -->
+</Project>

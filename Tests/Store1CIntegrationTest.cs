@@ -1,8 +1,8 @@
 using System.Linq;
-using LinqTo1C.Tests.Metadata1C.Справочники;
 using NUnit.Framework;
+using Simple1C.Tests.Metadata1C.Справочники;
 
-namespace LinqTo1C.Tests
+namespace Simple1C.Tests
 {
     //[Inject] public CounterpartManager counterpartManager;
     //[Inject] public CounterpartContractManager counterpartContractManager;
@@ -14,13 +14,12 @@ namespace LinqTo1C.Tests
     //[Inject] public ХранилищеПодразделений хранилищеПодразделений;
     public class Store1CIntegrationTest : IntegrationTestBase
     {
-        private IStore1C store1C;
+        private DataContext dataContext;
 
         protected override void SetUp()
         {
             base.SetUp();
-            var factory = new Store1CFactory();
-            store1C = factory.Create(globalContext);
+            dataContext = new DataContext(globalContext);
         }
 
         [Test]
@@ -33,7 +32,7 @@ namespace LinqTo1C.Tests
             //    Kpp = "123456789"
             //});
 
-            var instance = store1C
+            var instance = dataContext
                 .Select<Контрагенты>()
                 .Single(x => x.ИНН == "1234567890");
             Assert.That(instance.Наименование, Is.EqualTo("test-name"));
@@ -674,7 +673,7 @@ namespace LinqTo1C.Tests
 
         //    var servicesTablePart = valueTable[0]["Услуги"] as dynamic;
         //    Assert.That(servicesTablePart.Count, Is.EqualTo(2));
-            
+
         //    var row1 = servicesTablePart.Получить(0);
         //    Assert.That(row1.Номенклатура.Наименование, Is.EqualTo("стрижка"));
         //    Assert.That(row1.Количество, Is.EqualTo(10));
@@ -686,7 +685,7 @@ namespace LinqTo1C.Tests
         //    Assert.That(row2.Номенклатура.Наименование, Is.EqualTo("мытье головы"));
         //    Assert.That(row2.Содержание, Is.EqualTo("мытье головы хозяйственным мылом"));
         //}
-        
+
         //[Test]
         //public void CanModifyTableSection()
         //{
@@ -735,11 +734,11 @@ namespace LinqTo1C.Tests
 
         //    var servicesTablePart = valueTable[0]["Услуги"] as dynamic;
         //    Assert.That(servicesTablePart.Count, Is.EqualTo(1));
-            
+
         //    var row1 = servicesTablePart.Получить(0);
         //    Assert.That(row1.Содержание, Is.EqualTo("стрижка налысо"));
         //}
-        
+
         //[Test]
         //public void CanDeleteItemFromTableSection()
         //{
@@ -801,11 +800,11 @@ namespace LinqTo1C.Tests
 
         //    var servicesTablePart = valueTable[0]["Услуги"] as dynamic;
         //    Assert.That(servicesTablePart.Count, Is.EqualTo(1));
-            
+
         //    var row1 = servicesTablePart.Получить(0);
         //    Assert.That(row1.Содержание, Is.EqualTo("стрижка бороды"));
         //}
-        
+
         //[Test]
         //public void CanChangeTableSectionItemsOrdering()
         //{
@@ -869,7 +868,7 @@ namespace LinqTo1C.Tests
 
         //    var servicesTablePart = valueTable[0]["Услуги"] as dynamic;
         //    Assert.That(servicesTablePart.Count, Is.EqualTo(2));
-            
+
         //    var row0 = servicesTablePart.Получить(0);
         //    Assert.That(row0.Содержание, Is.EqualTo("стрижка бороды"));
 

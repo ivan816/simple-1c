@@ -1,13 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using LinqTo1C.Impl;
-using LinqTo1C.Impl.Helpers;
-using LinqTo1C.Impl.Queriables;
-using LinqTo1C.Interface;
 using NUnit.Framework;
+using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Queriables;
+using Simple1C.Interface;
+using Simple1C.Interface.ObjectModel;
 
-namespace LinqTo1C.Tests
+namespace Simple1C.Tests
 {
     public abstract class QueryBuilderTest : TestBase
     {

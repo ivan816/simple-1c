@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 
-namespace LinqTo1C.Tests.Helpers
+namespace Simple1C.Tests.Helpers
 {
     public static class ProcessesHelpers
     {

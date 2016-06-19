@@ -1,13 +1,13 @@
 using System.IO;
-using LinqTo1C.Impl;
-using LinqTo1C.Impl.Helpers;
-using LinqTo1C.Tests.Helpers;
+using Simple1C.Impl.Helpers;
+using Simple1C.Interface;
+using Simple1C.Tests.Helpers;
 
-namespace LinqTo1C.Tests
+namespace Simple1C.Tests
 {
     public static class Testing1CConnector
     {
-        public static GlobalContext Create(string etalonDatabasePath, string targetFolderName)
+        public static object Create(string etalonDatabasePath, string targetFolderName)
         {
             ProcessesHelpers.KillOwnProcessesByName("1cv8.exe");
             ProcessesHelpers.KillOwnProcessesByName("dllhost.exe");

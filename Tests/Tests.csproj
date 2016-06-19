@@ -7,8 +7,8 @@
     <ProjectGuid>{49A6C3B8-E307-4C44-B4B9-F33FD4FB9216}</ProjectGuid>
     <OutputType>Library</OutputType>
     <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>LinqTo1C.Tests</RootNamespace>
-    <AssemblyName>LinqTo1C.Tests</AssemblyName>
+    <RootNamespace>Simple1C.Tests</RootNamespace>
+    <AssemblyName>Simple1C.Tests</AssemblyName>
     <TargetFrameworkVersion>v4.5</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
   </PropertyGroup>
@@ -61,9 +61,9 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LinqTo1C\LinqTo1C.csproj">
-      <Project>{BB1A4406-AD17-4089-9D6B-33D4452FDE4C}</Project>
-      <Name>LinqTo1C</Name>
+    <ProjectReference Include="..\Simple1C\Simple1C.csproj">
+      <Project>{bb1a4406-ad17-4089-9d6b-33d4452fde4c}</Project>
+      <Name>Simple1C</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

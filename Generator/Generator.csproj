@@ -44,7 +44,7 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\LinqTo1C\LinqTo1C.csproj">
+    <ProjectReference Include="..\Simple1C\Simple1C.csproj">
       <Project>{bb1a4406-ad17-4089-9d6b-33d4452fde4c}</Project>
       <Name>LinqTo1C</Name>
     </ProjectReference>
