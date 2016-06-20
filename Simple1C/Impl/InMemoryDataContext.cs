@@ -51,14 +51,15 @@ namespace Simple1C.Impl
             if (entity == null)
                 return null;
             var changed = entity.Controller.Changed;
-            if (changed == null)
-                return ((InMemoryEntityController) entity.Controller).CommittedData;
-            var keys = changed.Keys.ToArray();
-            foreach (var k in keys)
+            if (changed != null)
             {
-                var abstract1CEntity = changed[k] as Abstract1CEntity;
-                if (abstract1CEntity != null)
-                    changed[k] = Save(abstract1CEntity);
+                var keys = changed.Keys.ToArray();
+                foreach (var k in keys)
+                {
+                    var abstract1CEntity = changed[k] as Abstract1CEntity;
+                    if (abstract1CEntity != null)
+                        changed[k] = Save(abstract1CEntity);
+                }
             }
             var inMemoryController = entity.Controller as InMemoryEntityController;
             if (inMemoryController != null)
@@ -66,9 +67,8 @@ namespace Simple1C.Impl
                 inMemoryController.Commit();
                 return inMemoryController.CommittedData;
             }
-            var dictionaryController = (DictionaryBasedEntityController) entity.Controller;
             var configurationName = ConfigurationName.Get(entity.GetType());
-            var result = dictionaryController.Changed;
+            var result = changed ?? new Dictionary<string, object>();
             if (configurationName.Scope == ConfigurationScope.Справочники)
                 AssignNewGuid(entity, result, "Код");
             else if (configurationName.Scope == ConfigurationScope.Документы)

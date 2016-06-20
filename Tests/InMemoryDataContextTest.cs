@@ -25,6 +25,24 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanSaveEmptyEntity()
+        {
+            var entity = new Контрагенты();
+            dataContext.Save(entity);
+            var values1 = dataContext.Select<Контрагенты>().ToArray();
+            Assert.That(values1.Length, Is.EqualTo(1));
+            Assert.That(values1[0].Код, Is.Not.Null);
+            Assert.That(values1[0].Наименование, Is.Null);
+            values1[0].Наименование = "changed";
+            dataContext.Save(values1[0]);
+
+            var values2 = dataContext.Select<Контрагенты>().ToArray();
+            Assert.That(values2.Length, Is.EqualTo(1));
+            Assert.That(values2[0].Код, Is.EqualTo(values1[0].Код));
+            Assert.That(values2[0].Наименование, Is.EqualTo("changed"));
+        }
+
+        [Test]
         public void SimpleCatalogSave()
         {
             var entity = new Контрагенты
