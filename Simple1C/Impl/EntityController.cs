@@ -27,6 +27,12 @@ namespace Simple1C.Impl
                 if (requisite.revision == 0)
                 {
                     result = (T) GetValue(name, typeof (T));
+                    if (result == null && typeof (IList).IsAssignableFrom(typeof (T)))
+                    {
+                        var listItemType = typeof (T).GetGenericArguments()[0];
+                        result = (T) ListFactory.Create(listItemType, null, 1);
+                        MarkAsChanged(name, result);
+                    }
                     requisite.value = result;
                 }
                 else
@@ -99,6 +105,6 @@ namespace Simple1C.Impl
         }
 
         protected abstract object GetValue(string name, Type type);
-        internal Dictionary<string, object> Changed { get; private set; }
+        protected internal Dictionary<string, object> Changed { get; protected set; }
     }
 }
