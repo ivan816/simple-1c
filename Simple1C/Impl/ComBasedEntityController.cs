@@ -13,8 +13,6 @@ namespace Simple1C.Impl
             ComObject = comObject;
         }
 
-        public object ComObject { get; private set; }
-
         protected override object GetValue(string name, Type type)
         {
             var propertyValue = ComHelpers.GetProperty(ComObject, name);

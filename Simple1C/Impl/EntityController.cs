@@ -11,6 +11,9 @@ namespace Simple1C.Impl
         private Dictionary<string, TrackedValue> trackedValues;
         public uint Revision { get; set; }
 
+        //грязный хак, подумать, как избавитсья
+        public object ComObject { get; protected set; }
+
         protected EntityController()
         {
             Revision = 1;

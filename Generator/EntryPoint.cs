@@ -22,7 +22,7 @@ namespace Generator
             var sourcePath = parameters["sourcePath"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
-                !string.IsNullOrEmpty(resultAssemblyFullPath) &&
+                (!string.IsNullOrEmpty(resultAssemblyFullPath) || !string.IsNullOrEmpty(sourcePath)) &&
                 !string.IsNullOrEmpty(namespaceRoot) &&
                 scanItems.Length > 0;
             if (!parametersAreValid)
@@ -38,6 +38,8 @@ namespace Generator
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
 
             sourcePath = sourcePath ?? GetTemporaryDirectoryFullPath();
+            if(Directory.Exists(sourcePath))
+                Directory.Delete(sourcePath);
             string[] fileNames = null;
             ExecuteAction(string.Format("generating code into [{0}]", sourcePath),
                 () =>
