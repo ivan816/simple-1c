@@ -8,12 +8,12 @@ namespace Simple1C.Interface
 {
     public static class Store1CHelpers
     {
-        public static T Single<T>(this DataContext dataContext,
+        public static T Single<T>(this IDataContext dataContextFactory,
             params Expression<Func<T, bool>>[] filters)
             where T : Abstract1CEntity
         {
             var result = filters
-                .Aggregate(dataContext.Select<T>(), (q, f) => q.Where(f))
+                .Aggregate(dataContextFactory.Select<T>(), (q, f) => q.Where(f))
                 .Take(2)
                 .ToArray();
             if (result.Length == 0)
@@ -33,12 +33,12 @@ namespace Simple1C.Interface
             return result[0];
         }
 
-        public static T SingleOrDefault<T>(this DataContext dataContext,
+        public static T SingleOrDefault<T>(this IDataContext dataContextFactory,
             params Expression<Func<T, bool>>[] filters)
             where T : Abstract1CEntity
         {
             var result = filters
-                .Aggregate(dataContext.Select<T>(), (q, f) => q.Where(f))
+                .Aggregate(dataContextFactory.Select<T>(), (q, f) => q.Where(f))
                 .Take(2)
                 .ToArray();
             if (result.Length == 0)

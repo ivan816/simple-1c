@@ -48,6 +48,7 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="InMemoryDataContextTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />
     <Compile Include="TestEntities\AdvanceWay.cs" />
     <Compile Include="TestEntities\Bank.cs" />
@@ -67,7 +68,7 @@
     <Compile Include="IntegrationTestBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryBuilderTest.cs" />
-    <Compile Include="Store1CIntegrationTest.cs" />
+    <Compile Include="COMDataContextTest.cs" />
     <Compile Include="Helpers\TestBase.cs" />
     <Compile Include="Helpers\Testing1CConnector.cs" />
   </ItemGroup>

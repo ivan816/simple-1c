@@ -30,7 +30,7 @@ namespace Simple1C.Tests
             }
         }
 
-        public class CauUseTake : QueryBuilderTest
+        public class CanUseTake : QueryBuilderTest
         {
             [Test]
             public void Test()
@@ -42,6 +42,48 @@ namespace Simple1C.Tests
             private static int GetTakeValue()
             {
                 return 17;
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class ПрочиеДоходыИРасходы
+            {
+                public string Наименование { get; set; }
+            }
+        }
+
+        public class CanUseFirst : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                lastQuery = null;
+                var result = Source<ПрочиеДоходыИРасходы>().FirstOrDefault();
+                Assert.That(result, Is.Null);
+                Assert.IsNotNull(lastQuery);
+                Assert.That(lastQuery.QueryText,
+                    Is.EqualTo("ВЫБРАТЬ ПЕРВЫЕ 1 src.Ссылка ИЗ Справочник.ПрочиеДоходыИРасходы КАК src"));
+                Assert.That(lastQuery.Parameters, Is.Empty);
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class ПрочиеДоходыИРасходы
+            {
+                public string Наименование { get; set; }
+            }
+        }
+
+        public class CanUseSingle : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                lastQuery = null;
+                var result = Source<ПрочиеДоходыИРасходы>().SingleOrDefault();
+                Assert.That(result, Is.Null);
+                Assert.IsNotNull(lastQuery);
+                Assert.That(lastQuery.QueryText,
+                    Is.EqualTo("ВЫБРАТЬ ПЕРВЫЕ 2 src.Ссылка ИЗ Справочник.ПрочиеДоходыИРасходы КАК src"));
+                Assert.That(lastQuery.Parameters, Is.Empty);
             }
 
             [ConfigurationScope(ConfigurationScope.Справочники)]

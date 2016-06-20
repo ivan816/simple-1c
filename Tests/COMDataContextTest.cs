@@ -12,16 +12,16 @@ using Simple1C.Tests.TestEntities;
 
 namespace Simple1C.Tests
 {
-    public class Store1CIntegrationTest : IntegrationTestBase
+    public class COMDataContextTest : IntegrationTestBase
     {
-        private DataContext dataContext;
+        private IDataContext dataContext;
         private TestObjectsManager testObjectsManager;
         private EnumConverter enumConverter;
 
         protected override void SetUp()
         {
             base.SetUp();
-            dataContext = new DataContext(globalContext.ComObject, typeof (Контрагенты).Assembly);
+            dataContext = DataContextFactory.CreateCOM(globalContext.ComObject, typeof (Контрагенты).Assembly);
             enumConverter = new EnumConverter(globalContext);
             testObjectsManager = new TestObjectsManager(globalContext, enumConverter, organizationInn);
         }
@@ -849,6 +849,29 @@ namespace Simple1C.Tests
                 .Cast<object>()
                 .Single();
             Assert.That(catalogItem, Is.TypeOf<Контрагенты>());
+        }
+
+        [Test]
+        public void RecursiveSave()
+        {
+            var контрагентВася = new Контрагенты
+            {
+                Наименование = "Василий"
+            };
+            контрагентВася.ГоловнойКонтрагент = контрагентВася;
+            var exception = Assert.Throws<InvalidOperationException>(()=> dataContext.Save(контрагентВася));
+            Assert.That(exception.Message, Does.Contain("cycle detected for entity type [Контрагенты]: [Контрагенты->ГоловнойКонтрагент]"));
+
+//TODO - раскоментировать
+//            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new[]
+//            {
+//                new KeyValuePair<string, object>("Code", контрагентВася.Код)
+//            });
+//
+//            Assert.That(valueTable.Count, Is.EqualTo(1));
+//            Assert.That(valueTable[0]["Наименование"], Is.EqualTo("Василий"));
+//            Assert.That(ComHelpers.GetProperty(valueTable[0]["ГоловнойКонтрагент"],
+//                "Наименование"), Is.EqualTo("Василий"));
         }
 
         private ПоступлениеТоваровУслуг CreateFullFilledDocument()

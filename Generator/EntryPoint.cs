@@ -39,7 +39,7 @@ namespace Generator
 
             sourcePath = sourcePath ?? GetTemporaryDirectoryFullPath();
             if(Directory.Exists(sourcePath))
-                Directory.Delete(sourcePath);
+                Directory.Delete(sourcePath, true);
             string[] fileNames = null;
             ExecuteAction(string.Format("generating code into [{0}]", sourcePath),
                 () =>

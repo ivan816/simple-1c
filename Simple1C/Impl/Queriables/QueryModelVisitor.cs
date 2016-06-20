@@ -38,6 +38,12 @@ namespace Simple1C.Impl.Queriables
                 var takeOperator = o as TakeResultOperator;
                 if (takeOperator != null)
                     queryBuilder.Take = takeOperator.GetConstantCount();
+                var firstOperator = o as FirstResultOperator;
+                if (firstOperator != null)
+                    queryBuilder.Take = 1;
+                var singleOperator = o as SingleResultOperator;
+                if (singleOperator != null)
+                    queryBuilder.Take = 2;
             }
             base.VisitResultOperators(resultOperators, queryModel);
         }
