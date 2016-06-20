@@ -19,6 +19,7 @@ namespace Generator
             var resultAssemblyFullPath = parameters["resultAssemblyFullPath"];
             var namespaceRoot = parameters["namespaceRoot"];
             var scanItems = (parameters["scanItems"] ?? "").Split(',');
+            var sourcePath = parameters["sourcePath"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
                 !string.IsNullOrEmpty(resultAssemblyFullPath) &&
@@ -28,7 +29,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -connectionString <string> -resultAssemblyFullPath <path> -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета");
+                    "Usage: Generator.exe -connectionString <string> [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>]");
                 return -1;
             }
 
@@ -36,40 +37,41 @@ namespace Generator
             ExecuteAction(string.Format("connecting to [{0}]", connectionString),
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
 
-            var tempPath = GetTemporaryDirectoryFullPath();
+            sourcePath = sourcePath ?? GetTemporaryDirectoryFullPath();
             string[] fileNames = null;
-            ExecuteAction(string.Format("generating code into [{0}]", tempPath),
+            ExecuteAction(string.Format("generating code into [{0}]", sourcePath),
                 () =>
                 {
                     var generator = new ObjectModelGenerator(globalContext,
-                        scanItems, namespaceRoot, tempPath);
+                        scanItems, namespaceRoot, sourcePath);
                     fileNames = generator.Generate().ToArray();
                 });
 
-            ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", tempPath, resultAssemblyFullPath),
-                () =>
-                {
-                    var cSharpCodeProvider = new CSharpCodeProvider();
-                    var compilerParameters = new CompilerParameters
+            if (!string.IsNullOrEmpty(resultAssemblyFullPath))
+                ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", sourcePath, resultAssemblyFullPath),
+                    () =>
                     {
-                        OutputAssembly = resultAssemblyFullPath,
-                        GenerateExecutable = false,
-                        GenerateInMemory = false,
-                        IncludeDebugInformation = true
-                    };
-                    var linqTo1CFilePath = PathHelpers.AppendBasePath("Simple1C.dll");
-                    compilerParameters.ReferencedAssemblies.Add(linqTo1CFilePath);
-                    var compilerResult = cSharpCodeProvider.CompileAssemblyFromFile(compilerParameters, fileNames);
-                    if (compilerResult.Errors.Count > 0)
-                    {
-                        Console.Out.WriteLine("compile errors");
-                        foreach (CompilerError error in compilerResult.Errors)
+                        var cSharpCodeProvider = new CSharpCodeProvider();
+                        var compilerParameters = new CompilerParameters
                         {
-                            Console.Out.WriteLine(error);
-                            Console.Out.WriteLine("===================");
+                            OutputAssembly = resultAssemblyFullPath,
+                            GenerateExecutable = false,
+                            GenerateInMemory = false,
+                            IncludeDebugInformation = true
+                        };
+                        var linqTo1CFilePath = PathHelpers.AppendBasePath("Simple1C.dll");
+                        compilerParameters.ReferencedAssemblies.Add(linqTo1CFilePath);
+                        var compilerResult = cSharpCodeProvider.CompileAssemblyFromFile(compilerParameters, fileNames);
+                        if (compilerResult.Errors.Count > 0)
+                        {
+                            Console.Out.WriteLine("compile errors");
+                            foreach (CompilerError error in compilerResult.Errors)
+                            {
+                                Console.Out.WriteLine(error);
+                                Console.Out.WriteLine("===================");
+                            }
                         }
-                    }
-                });
+                    });
             return 0;
         }
 
