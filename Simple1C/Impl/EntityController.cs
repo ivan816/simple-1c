@@ -33,7 +33,6 @@ namespace Simple1C.Impl
                     {
                         var listItemType = typeof (T).GetGenericArguments()[0];
                         result = (T) ListFactory.Create(listItemType, null, 1);
-                        MarkAsChanged(name, result);
                     }
                     requisite.value = result;
                 }

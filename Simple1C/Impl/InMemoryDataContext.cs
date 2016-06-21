@@ -51,7 +51,6 @@ namespace Simple1C.Impl
         {
             if (entity == null)
                 return null;
-            var entityType = entity.GetType();
             var changed = entity.Controller.Changed;
             var inMemoryController = entity.Controller as InMemoryEntityController;
             if (changed != null)
@@ -79,7 +78,7 @@ namespace Simple1C.Impl
                 return inMemoryController.CommittedData;
             }
             var result = changed ?? new Dictionary<string, object>();
-            var objectDescriptor = new InMemoryEntity(entityType, result);
+            var inMemoryEntity = new InMemoryEntity(entity.GetType(), result);
             if (!isTableSection)
             {
                 var configurationName = ConfigurationName.Get(entity.GetType());
@@ -87,11 +86,11 @@ namespace Simple1C.Impl
                     AssignNewGuid(entity, result, "Код");
                 else if (configurationName.Scope == ConfigurationScope.Документы)
                     AssignNewGuid(entity, result, "Номер");
-                Collection(entity.GetType()).Add(objectDescriptor);
+                Collection(entity.GetType()).Add(inMemoryEntity);
             }
-            entity.Controller = new InMemoryEntityController(objectDescriptor);
+            entity.Controller = new InMemoryEntityController(inMemoryEntity);
             entity.Controller.Revision++;
-            return objectDescriptor;
+            return inMemoryEntity;
         }
 
         private IList ConvertList(InMemoryEntityController inMemoryController, string key, IList newList)
@@ -114,6 +113,7 @@ namespace Simple1C.Impl
             var codeProperty = target.GetType().GetProperty(property);
             if (codeProperty != null)
             {
+                //todo а нужен ли тут TrackChanges?
                 var value = Guid.NewGuid().ToString();
                 codeProperty.SetMethod.Invoke(target, new object[] {value});
                 committed[property] = value;
