@@ -28,7 +28,10 @@ namespace Simple1C.Impl
                 T result;
                 if (requisite.revision == 0)
                 {
-                    result = (T) GetValue(name, typeof (T));
+                    object resultObject;
+                    if (!TryGetValue(name, typeof (T), out resultObject))
+                        resultObject = typeof (T).GetDefaultValue();
+                    result = (T) resultObject;
                     if (result == null && typeof (IList).IsAssignableFrom(typeof (T)))
                     {
                         var listItemType = typeof (T).GetGenericArguments()[0];
@@ -105,7 +108,7 @@ namespace Simple1C.Impl
             Changed[name] = value;
         }
 
-        protected abstract object GetValue(string name, Type type);
+        protected abstract bool TryGetValue(string name, Type type, out object result);
         protected internal Dictionary<string, object> Changed { get; protected set; }
     }
 }

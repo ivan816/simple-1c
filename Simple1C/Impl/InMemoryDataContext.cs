@@ -134,25 +134,29 @@ namespace Simple1C.Impl
                 CommittedData = committedData;
             }
 
-            protected override object GetValue(string name, Type type)
+            protected override bool TryGetValue(string name, Type type, out object result)
             {
-                var result = base.GetValue(name, type);
-                if (result != null)
-                    return result;
-                result = CommittedData.Properties.GetOrDefault(name);
-                if (result == null)
-                    return null;
+                if (base.TryGetValue(name, type, out result))
+                    return true;
+                if (!CommittedData.Properties.TryGetValue(name, out result))
+                    return false;
+                result = Convert(type, result);
+                return true;
+            }
+
+            private object Convert(Type type, object value)
+            {
                 if (type == typeof(object))
                 {
-                    var entity = result as InMemoryEntity;
+                    var entity = value as InMemoryEntity;
                     return entity != null
                            && typeof (Abstract1CEntity).IsAssignableFrom(entity.Type)
                         ? CreateEntity(entity.Type, entity)
-                        : result;
+                        : value;
                 }
                 if (typeof (IList).IsAssignableFrom(type))
                 {
-                    var oldList = (IList) result;
+                    var oldList = (IList) value;
                     var itemType = type.GetGenericArguments()[0];
                     var newList = ListFactory.Create(itemType, null, oldList.Count);
                     foreach (InMemoryEntity l in oldList)
@@ -160,8 +164,8 @@ namespace Simple1C.Impl
                     return newList;
                 }
                 return typeof (Abstract1CEntity).IsAssignableFrom(type)
-                    ? CreateEntity(type, (InMemoryEntity) result)
-                    : result;
+                    ? CreateEntity(type, (InMemoryEntity) value)
+                    : value;
             }
 
             public void Commit()

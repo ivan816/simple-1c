@@ -5,9 +5,14 @@ namespace Simple1C.Impl
 {
     internal class DictionaryBasedEntityController : EntityController
     {
-        protected override object GetValue(string name, Type type)
+        protected override bool TryGetValue(string name, Type type, out object result)
         {
-            return Changed == null ? type.GetDefaultValue() : Changed.GetOrDefault(name);
+            if (Changed == null)
+            {
+                result = null;
+                return false;
+            }
+            return Changed.TryGetValue(name, out result);
         }
     }
 }

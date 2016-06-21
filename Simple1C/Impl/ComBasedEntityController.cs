@@ -13,10 +13,11 @@ namespace Simple1C.Impl
             ComObject = comObject;
         }
 
-        protected override object GetValue(string name, Type type)
+        protected override bool TryGetValue(string name, Type type, out object result)
         {
             var propertyValue = ComHelpers.GetProperty(ComObject, name);
-            return comObjectMapper.MapFrom1C(propertyValue, type);
+            result = comObjectMapper.MapFrom1C(propertyValue, type);
+            return true;
         }
     }
 }

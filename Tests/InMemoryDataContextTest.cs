@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
@@ -308,6 +309,19 @@ namespace Simple1C.Tests
             var array = dataContext.Select<БанковскиеСчета>().ToArray();
             Assert.That(array.Length, Is.EqualTo(1));
             Assert.That(array[0].Владелец, Is.EqualTo(Metadata1C.Перечисления.ВидыЛицензийАлкогольнойПродукции.Пиво));
+        }
+
+        [Test]
+        public void CanReadValueTypes()
+        {
+            var acocunt = new БанковскиеСчета
+            {
+                ДатаЗакрытия = new DateTime(2016,6,21)
+            };
+            dataContext.Save(acocunt);
+
+            var account = dataContext.Single<БанковскиеСчета>();
+            Assert.That(account.ДатаЗакрытия, Is.EqualTo(new DateTime(2016, 6, 21)));
         }
     }
 }
