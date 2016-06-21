@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
 using Simple1C.Tests.Helpers;
@@ -95,6 +96,130 @@ namespace Simple1C.Tests
             Assert.That(entity.Комментарий, Is.EqualTo("Тестовое наименование"));
             Assert.That(dataContext.Single<ПоступлениеТоваровУслуг>().Комментарий,
                 Is.EqualTo("changed"));
+        }
+
+        [Test]
+        public void CanUpdateExistingTableSectionItem()
+        {
+            var entity = new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "Тестовое наименование",
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>()
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Содержание = "test-content"
+                    }
+                }
+            };
+            dataContext.Save(entity);
+            var existing = dataContext.Select<ПоступлениеТоваровУслуг>().Single();
+            existing.Услуги[0].Содержание = "changed-content1";
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("test-content"));
+            dataContext.Save(existing);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("changed-content1"));
+
+            existing.Услуги[0].Содержание = "changed-content2";
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("changed-content1"));
+            dataContext.Save(existing);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("changed-content2"));
+        }
+
+        [Test]
+        public void CanUpdateTableSectionItem()
+        {
+            var entity = new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "Тестовое наименование",
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>()
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Содержание = "test-content"
+                    }
+                }
+            };
+            dataContext.Save(entity);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("test-content"));
+            entity.Услуги[0].Содержание = "changed-content";
+            dataContext.Save(entity);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
+                Is.EqualTo("changed-content"));
+        }
+        
+        [Test]
+        public void CanDeleteTableSectionItem()
+        {
+            var entity = new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "Тестовое наименование",
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>()
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Содержание = "test-content"
+                    }
+                }
+            };
+            dataContext.Save(entity);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги.Count,
+                Is.EqualTo(1));
+            entity.Услуги.RemoveAt(0);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги.Count,
+                Is.EqualTo(1));
+            dataContext.Save(entity);
+            Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги.Count,
+                Is.EqualTo(0));
+        }
+
+        [Test]
+        public void CanSaveDocumentWithTableSection()
+        {
+            var entity = new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "Тестовое наименование",
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>()
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Содержание = "chair"
+                    },
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Содержание = "table"
+                    }
+                }
+            };
+            Assert.That(entity.Услуги[0].Содержание, Is.EqualTo("chair"));
+            Assert.That(entity.Услуги[1].Содержание, Is.EqualTo("table"));
+            dataContext.Save(entity);
+            var readEntity = dataContext.Select<ПоступлениеТоваровУслуг>().Single();
+            Assert.That(readEntity.Услуги[0].Содержание, Is.EqualTo("chair"));
+            Assert.That(readEntity.Услуги[1].Содержание, Is.EqualTo("table"));
+
+            var t = readEntity.Услуги[0];
+            readEntity.Услуги[0] = readEntity.Услуги[1];
+            readEntity.Услуги[1] = t;
+
+            Assert.That(entity.Услуги[0].Содержание, Is.EqualTo("chair"));
+            Assert.That(entity.Услуги[1].Содержание, Is.EqualTo("table"));
+
+            Assert.That(readEntity.Услуги[0].Содержание, Is.EqualTo("table"));
+            Assert.That(readEntity.Услуги[1].Содержание, Is.EqualTo("chair"));
+
+            var readEntity2 = dataContext.Select<ПоступлениеТоваровУслуг>().Single();
+            Assert.That(readEntity2.Услуги[0].Содержание, Is.EqualTo("chair"));
+            Assert.That(readEntity2.Услуги[1].Содержание, Is.EqualTo("table"));
+
+            dataContext.Save(readEntity);
+            var readEntity3 = dataContext.Select<ПоступлениеТоваровУслуг>().Single();
+            Assert.That(readEntity3.Услуги[0].Содержание, Is.EqualTo("table"));
+            Assert.That(readEntity3.Услуги[1].Содержание, Is.EqualTo("chair"));
         }
 
         [Test]
