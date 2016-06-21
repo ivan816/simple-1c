@@ -44,6 +44,26 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanSetListForExistingDocument()
+        {
+            var entity = new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "Тестовое наименование"
+            };
+            dataContext.Save(entity);
+
+            var item = dataContext.Single<ПоступлениеТоваровУслуг>();
+            item.Услуги.Add(new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+            {
+                Содержание = "test-content"
+            });
+            dataContext.Save(item);
+
+            Assert.That(dataContext.Single<ПоступлениеТоваровУслуг>().Услуги[0].Содержание,
+                Is.EqualTo("test-content"));
+        }
+
+        [Test]
         public void SimpleCatalogSave()
         {
             var entity = new Контрагенты

@@ -95,7 +95,7 @@ namespace Simple1C.Impl
         private IList ConvertList(InMemoryEntityController inMemoryController, string key, IList newList)
         {
             var oldList = inMemoryController != null
-                ? (List<Dictionary<string, object>>) inMemoryController.CommittedData[key]
+                ? (List<Dictionary<string, object>>) inMemoryController.CommittedData.GetOrDefault(key)
                 : null;
             oldList = oldList ?? new List<Dictionary<string, object>>();
             oldList.Clear();
