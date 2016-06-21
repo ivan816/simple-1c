@@ -2,5 +2,5 @@
 
 This project is licensed under the terms of the MIT license.
 
-Linq-провайдер к системе 1С-Предприятие.
+Linq-РїСЂРѕРІР°Р№РґРµСЂ Рє СЃРёСЃС‚РµРјРµ 1РЎ-РџСЂРµРґРїСЂРёСЏС‚РёРµ.
 
