@@ -12,8 +12,8 @@ namespace Simple1C.Impl
 {
     internal class InMemoryDataContext : IDataContext
     {
-        private readonly Dictionary<Type, List<Dictionary<string, object>>> committed =
-            new Dictionary<Type, List<Dictionary<string, object>>>();
+        private readonly Dictionary<Type, List<InMemoryEntity>> committed =
+            new Dictionary<Type, List<InMemoryEntity>>();
 
         private readonly TypeMapper typeMapper;
 
@@ -34,10 +34,10 @@ namespace Simple1C.Impl
                 .AsQueryable();
         }
 
-        private static object CreateEntity(Type type, Dictionary<string, object> controller)
+        private static object CreateEntity(Type type, InMemoryEntity entity)
         {
             var result = (Abstract1CEntity) FormatterServices.GetUninitializedObject(type);
-            result.Controller = new InMemoryEntityController(controller);
+            result.Controller = new InMemoryEntityController(entity);
             return result;
         }
 
@@ -47,10 +47,11 @@ namespace Simple1C.Impl
             Save(entity, false);
         }
 
-        private Dictionary<string, object> Save(Abstract1CEntity entity, bool isTableSection)
+        private InMemoryEntity Save(Abstract1CEntity entity, bool isTableSection)
         {
             if (entity == null)
                 return null;
+            var entityType = entity.GetType();
             var changed = entity.Controller.Changed;
             var inMemoryController = entity.Controller as InMemoryEntityController;
             if (changed != null)
@@ -78,6 +79,7 @@ namespace Simple1C.Impl
                 return inMemoryController.CommittedData;
             }
             var result = changed ?? new Dictionary<string, object>();
+            var objectDescriptor = new InMemoryEntity(entityType, result);
             if (!isTableSection)
             {
                 var configurationName = ConfigurationName.Get(entity.GetType());
@@ -85,19 +87,19 @@ namespace Simple1C.Impl
                     AssignNewGuid(entity, result, "Код");
                 else if (configurationName.Scope == ConfigurationScope.Документы)
                     AssignNewGuid(entity, result, "Номер");
-                Collection(entity.GetType()).Add(result);
+                Collection(entity.GetType()).Add(objectDescriptor);
             }
-            entity.Controller = new InMemoryEntityController(result);
+            entity.Controller = new InMemoryEntityController(objectDescriptor);
             entity.Controller.Revision++;
-            return result;
+            return objectDescriptor;
         }
 
         private IList ConvertList(InMemoryEntityController inMemoryController, string key, IList newList)
         {
             var oldList = inMemoryController != null
-                ? (List<Dictionary<string, object>>) inMemoryController.CommittedData.GetOrDefault(key)
+                ? (List<InMemoryEntity>) inMemoryController.CommittedData.Properties.GetOrDefault(key)
                 : null;
-            oldList = oldList ?? new List<Dictionary<string, object>>();
+            oldList = oldList ?? new List<InMemoryEntity>();
             oldList.Clear();
             oldList.Capacity = newList.Count;
             foreach (var l in newList)
@@ -118,16 +120,16 @@ namespace Simple1C.Impl
             }
         }
 
-        private List<Dictionary<string, object>> Collection(Type type)
+        private List<InMemoryEntity> Collection(Type type)
         {
-            return committed.GetOrAdd(type, t => new List<Dictionary<string, object>>());
+            return committed.GetOrAdd(type, t => new List<InMemoryEntity>());
         }
 
         private class InMemoryEntityController : DictionaryBasedEntityController
         {
-            public Dictionary<string, object> CommittedData { get; private set; }
+            public InMemoryEntity CommittedData { get; private set; }
 
-            public InMemoryEntityController(Dictionary<string, object> committedData)
+            public InMemoryEntityController(InMemoryEntity committedData)
             {
                 CommittedData = committedData;
             }
@@ -137,20 +139,28 @@ namespace Simple1C.Impl
                 var result = base.GetValue(name, type);
                 if (result != null)
                     return result;
-                result = CommittedData.GetOrDefault(name);
+                result = CommittedData.Properties.GetOrDefault(name);
                 if (result == null)
                     return null;
+                if (type == typeof(object))
+                {
+                    var entity = result as InMemoryEntity;
+                    return entity != null
+                           && typeof (Abstract1CEntity).IsAssignableFrom(entity.Type)
+                        ? CreateEntity(entity.Type, entity)
+                        : result;
+                }
                 if (typeof (IList).IsAssignableFrom(type))
                 {
                     var oldList = (IList) result;
                     var itemType = type.GetGenericArguments()[0];
                     var newList = ListFactory.Create(itemType, null, oldList.Count);
-                    foreach (Dictionary<string, object> l in oldList)
+                    foreach (InMemoryEntity l in oldList)
                         newList.Add(CreateEntity(itemType, l));
                     return newList;
                 }
                 return typeof (Abstract1CEntity).IsAssignableFrom(type)
-                    ? CreateEntity(type, (Dictionary<string, object>) result)
+                    ? CreateEntity(type, (InMemoryEntity) result)
                     : result;
             }
 
@@ -159,11 +169,23 @@ namespace Simple1C.Impl
                 if (Changed != null)
                 {
                     foreach (var p in Changed)
-                        CommittedData[p.Key] = p.Value;
+                        CommittedData.Properties[p.Key] = p.Value;
                     Revision++;
                     Changed = null;
                 }
             }
+        }
+
+        private class InMemoryEntity
+        {
+            public InMemoryEntity(Type type, Dictionary<string, object> properties)
+            {
+                Type = type;
+                Properties = properties;
+            }
+
+            public Type Type { get; private set; }
+            public Dictionary<string, object> Properties { get; private set; }
         }
     }
 }

@@ -274,5 +274,40 @@ namespace Simple1C.Tests
             Assert.That(array.Length, Is.EqualTo(1));
             Assert.That(array[0].Наименование, Is.EqualTo("Тестовый контрагент"));
         }
+
+        [Test]
+        public void UnionTypeWithAbstractEntityValue()
+        {
+            var counterparty = new Контрагенты
+            {
+                Наименование = "Тестовый контрагент"
+            };
+            var contract = new БанковскиеСчета
+            {
+                Наименование = "Тестовый счет",
+                Владелец = counterparty
+            };
+
+            dataContext.Save(contract);
+            var array = dataContext.Select<БанковскиеСчета>().ToArray();
+            Assert.That(array.Length, Is.EqualTo(1));
+            Assert.That(array[0].Владелец, Is.TypeOf<Контрагенты>());
+            Assert.That(((Контрагенты) array[0].Владелец).Наименование,
+                Is.EqualTo("Тестовый контрагент"));
+        }
+        
+        [Test]
+        public void UnionTypeWithEnumValue()
+        {
+            var contract = new БанковскиеСчета
+            {
+                Наименование = "Тестовый счет",
+                Владелец = Metadata1C.Перечисления.ВидыЛицензийАлкогольнойПродукции.Пиво
+            };
+            dataContext.Save(contract);
+            var array = dataContext.Select<БанковскиеСчета>().ToArray();
+            Assert.That(array.Length, Is.EqualTo(1));
+            Assert.That(array[0].Владелец, Is.EqualTo(Metadata1C.Перечисления.ВидыЛицензийАлкогольнойПродукции.Пиво));
+        }
     }
 }
