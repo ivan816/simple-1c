@@ -95,18 +95,20 @@ namespace Simple1C.Impl
         private IList ConvertList(InMemoryEntityController inMemoryController, string key, IList newList)
         {
             var oldList = inMemoryController != null
-                            ? (List<Dictionary<string, object>>)inMemoryController.CommittedData[key]
-                            : null;
+                ? (List<Dictionary<string, object>>) inMemoryController.CommittedData[key]
+                : null;
             oldList = oldList ?? new List<Dictionary<string, object>>();
             oldList.Clear();
             oldList.Capacity = newList.Count;
             foreach (var l in newList)
-                oldList.Add(Save((Abstract1CEntity)l, true));
+                oldList.Add(Save((Abstract1CEntity) l, true));
             return oldList;
         }
 
         private static void AssignNewGuid(Abstract1CEntity target, Dictionary<string, object> committed, string property)
         {
+            if (committed.ContainsKey(property))
+                return;
             var codeProperty = target.GetType().GetProperty(property);
             if (codeProperty != null)
             {

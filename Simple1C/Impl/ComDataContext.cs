@@ -11,7 +11,7 @@ using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl
 {
-    internal class ComDataContext: IDataContext
+    internal class ComDataContext : IDataContext
     {
         private readonly GlobalContext globalContext;
         private readonly EnumMapper enumMapper;
@@ -122,14 +122,15 @@ namespace Simple1C.Impl
             pending.Pop();
         }
 
-        private object ProcessProperty(string name, object value, object comObject, Stack<object> pending, out bool needSet)
+        private object ProcessProperty(string name, object value, object comObject, Stack<object> pending,
+            out bool needSet)
         {
             var list = value as IList;
             if (list != null)
             {
                 var tableSection = ComHelpers.GetProperty(comObject, name);
                 ComHelpers.Invoke(tableSection, "Очистить");
-                foreach (Abstract1CEntity item in (IList)value)
+                foreach (Abstract1CEntity item in (IList) value)
                     Update(item, ComHelpers.Invoke(tableSection, "Добавить"), pending);
                 needSet = false;
                 return null;
@@ -146,7 +147,7 @@ namespace Simple1C.Impl
             if (abstractEntity != null)
             {
                 Update(abstractEntity, null, pending);
-                return ((ComBasedEntityController)abstractEntity.Controller).ComObject;
+                return ((ComBasedEntityController) abstractEntity.Controller).ComObject;
             }
             if (value != null && value.GetType().IsEnum)
                 return enumMapper.MapTo1C(value);
@@ -221,7 +222,17 @@ namespace Simple1C.Impl
         {
             var property = target.GetType().GetProperty(propertyName);
             if (property != null)
-                property.SetValue(target, ComHelpers.GetProperty(source, propertyName));
+            {
+                target.Controller.TrackChanges = false;
+                try
+                {
+                    property.SetValue(target, ComHelpers.GetProperty(source, propertyName));
+                }
+                finally
+                {
+                    target.Controller.TrackChanges = true;
+                }
+            }
         }
 
         private object CreateNewObject(ConfigurationName configurationName)

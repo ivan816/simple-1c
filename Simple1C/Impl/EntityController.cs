@@ -13,10 +13,12 @@ namespace Simple1C.Impl
 
         //грязный хак, подумать, как избавитсья
         public object ComObject { get; protected set; }
+        public bool TrackChanges { get; set; }
 
         protected EntityController()
         {
             Revision = 1;
+            TrackChanges = true;
         }
 
         public T GetValue<T>(ref Requisite<T> requisite, string name)
@@ -61,7 +63,7 @@ namespace Simple1C.Impl
         {
             requisite.value = (T) value;
             requisite.revision = Revision;
-            if (name != "Код" && name != "Номер" && name != "НомерСтроки")
+            if (TrackChanges)
                 MarkAsChanged(name, value);
         }
 

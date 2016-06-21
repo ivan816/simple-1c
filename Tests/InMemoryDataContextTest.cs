@@ -73,6 +73,20 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanSaveItemWithCode()
+        {
+            var contractor = new Контрагенты
+            {
+                Код = "test-code",
+                Наименование = "Вася"
+            };
+            dataContext.Save(contractor);
+
+            Assert.That(dataContext.Select<Контрагенты>().Single().Код,
+                Is.EqualTo("test-code"));
+        }
+
+        [Test]
         public void SimpleDocumentSave()
         {
             var entity = new ПоступлениеТоваровУслуг
