@@ -1,4 +1,4 @@
-namespace Simple1C.Interface
+﻿namespace Simple1C.Interface
 {
     public enum Connection1CType
     {

@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections;
 using System.Collections.Generic;
 using Simple1C.Impl.Helpers;
@@ -11,7 +11,7 @@ namespace Simple1C.Impl
         private Dictionary<string, TrackedValue> trackedValues;
         public uint Revision { get; set; }
 
-        //грязный хак, подумать, как избавитсья
+        //РіСЂСЏР·РЅС‹Р№ С…Р°Рє, РїРѕРґСѓРјР°С‚СЊ, РєР°Рє РёР·Р±Р°РІРёС‚СЃСЊСЏ
         public object ComObject { get; protected set; }
         public bool TrackChanges { get; set; }
 

@@ -1,4 +1,4 @@
-using Simple1C.Impl.Com;
+﻿using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queries
 {

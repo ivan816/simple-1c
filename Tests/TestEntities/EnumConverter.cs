@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.ComponentModel;
 using Simple1C.Impl;
 using Simple1C.Impl.Com;
@@ -26,9 +26,9 @@ namespace Simple1C.Tests.TestEntities
             switch (legalForm)
             {
                 case LegalForm.Ip:
-                    return EnumValue("ЮридическоеФизическоеЛицо", "ФизическоеЛицо");
+                    return EnumValue("Р®СЂРёРґРёС‡РµСЃРєРѕРµР¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ", "Р¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ");
                 case LegalForm.Organization:
-                    return EnumValue("ЮридическоеФизическоеЛицо", "ЮридическоеЛицо");
+                    return EnumValue("Р®СЂРёРґРёС‡РµСЃРєРѕРµР¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ", "Р®СЂРёРґРёС‡РµСЃРєРѕРµР›РёС†Рѕ");
                 default:
                     throw new InvalidEnumArgumentException(string.Format("unexpected value [{0}]", legalForm));
             }
@@ -39,21 +39,21 @@ namespace Simple1C.Tests.TestEntities
             switch (ndsRate)
             {
                 case NdsRate.NoNds:
-                    return EnumValue("СтавкиНДС", "БезНДС");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "Р‘РµР·РќР”РЎ");
                 case NdsRate.Nds10:
-                    return EnumValue("СтавкиНДС", "НДС10");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ10");
                 case NdsRate.Nds18:
-                    return EnumValue("СтавкиНДС", "НДС18");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ18");
                 case NdsRate.Nds20:
-                    return EnumValue("СтавкиНДС", "НДС20");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ20");
                 case NdsRate.Nds0:
-                    return EnumValue("СтавкиНДС", "НДС0");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ0");
                 case NdsRate.Nds10110:
-                    return EnumValue("СтавкиНДС", "НДС10_110");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ10_110");
                 case NdsRate.Nds18118:
-                    return EnumValue("СтавкиНДС", "НДС18_118");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ18_118");
                 case NdsRate.Nds20120:
-                    return EnumValue("СтавкиНДС", "НДС20_120");
+                    return EnumValue("РЎС‚Р°РІРєРёРќР”РЎ", "РќР”РЎ20_120");
                 default:
                     throw new ArgumentOutOfRangeException("ndsRate", ndsRate, null);
             }
@@ -64,11 +64,11 @@ namespace Simple1C.Tests.TestEntities
             switch (incomingOperationKind)
             {
                 case IncomingOperationKind.Goods:
-                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "Товары");
+                    return EnumValue("Р’РёРґС‹РћРїРµСЂР°С†РёР№РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі", "РўРѕРІР°СЂС‹");
                 case IncomingOperationKind.Services:
-                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "Услуги");
+                    return EnumValue("Р’РёРґС‹РћРїРµСЂР°С†РёР№РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі", "РЈСЃР»СѓРіРё");
                 case IncomingOperationKind.BuyingCommission:
-                    return EnumValue("ВидыОперацийПоступлениеТоваровУслуг", "ПокупкаКомиссия");
+                    return EnumValue("Р’РёРґС‹РћРїРµСЂР°С†РёР№РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі", "РџРѕРєСѓРїРєР°РљРѕРјРёСЃСЃРёСЏ");
                 default:
                     throw new ArgumentOutOfRangeException("incomingOperationKind", incomingOperationKind, null);
             }
@@ -79,11 +79,11 @@ namespace Simple1C.Tests.TestEntities
             switch (advanceWay)
             {
                 case AdvanceWay.Automatically:
-                    return EnumValue("СпособыЗачетаАвансов", "Автоматически");
+                    return EnumValue("РЎРїРѕСЃРѕР±С‹Р—Р°С‡РµС‚Р°РђРІР°РЅСЃРѕРІ", "РђРІС‚РѕРјР°С‚РёС‡РµСЃРєРё");
                 case AdvanceWay.ByDocument:
-                    return EnumValue("СпособыЗачетаАвансов", "ПоДокументу");
+                    return EnumValue("РЎРїРѕСЃРѕР±С‹Р—Р°С‡РµС‚Р°РђРІР°РЅСЃРѕРІ", "РџРѕР”РѕРєСѓРјРµРЅС‚Сѓ");
                 case AdvanceWay.DontTakeIntoAccount:
-                    return EnumValue("СпособыЗачетаАвансов", "НеЗачитывать");
+                    return EnumValue("РЎРїРѕСЃРѕР±С‹Р—Р°С‡РµС‚Р°РђРІР°РЅСЃРѕРІ", "РќРµР—Р°С‡РёС‚С‹РІР°С‚СЊ");
                 default:
                     throw new ArgumentOutOfRangeException("advanceWay", advanceWay, null);
             }
@@ -94,19 +94,19 @@ namespace Simple1C.Tests.TestEntities
             switch (value)
             {
                 case CounterpartContractKind.Outgoing:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СПоставщиком");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРџРѕСЃС‚Р°РІС‰РёРєРѕРј");
                 case CounterpartContractKind.Incoming:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СПокупателем");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРџРѕРєСѓРїР°С‚РµР»РµРј");
                 case CounterpartContractKind.Others:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "Прочее");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РџСЂРѕС‡РµРµ");
                 case CounterpartContractKind.OutgoingWithComitent:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СКомитентомНаЗакупку");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРљРѕРјРёС‚РµРЅС‚РѕРјРќР°Р—Р°РєСѓРїРєСѓ");
                 case CounterpartContractKind.OutgoingWithAgency:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СКомиссионеромНаЗакупку");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРљРѕРјРёСЃСЃРёРѕРЅРµСЂРѕРјРќР°Р—Р°РєСѓРїРєСѓ");
                 case CounterpartContractKind.IncomingWithComitent:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СКомитентом");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРљРѕРјРёС‚РµРЅС‚РѕРј");
                 case CounterpartContractKind.IncomingWithAgency:
-                    return EnumValue("ВидыДоговоровКонтрагентов", "СКомиссионером");
+                    return EnumValue("Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ", "РЎРљРѕРјРёСЃСЃРёРѕРЅРµСЂРѕРј");
                 default:
                     throw new ArgumentOutOfRangeException("value", value, null);
             }
@@ -119,7 +119,7 @@ namespace Simple1C.Tests.TestEntities
 
         private dynamic EnumValue(string enumName, string enumValue)
         {
-            var enumsObject = ComObject().Перечисления;
+            var enumsObject = ComObject().РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ;
             var enumObject = ComHelpers.GetProperty(enumsObject, enumName);
             return ComHelpers.GetProperty(enumObject, enumValue);
         }

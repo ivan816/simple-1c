@@ -1,4 +1,4 @@
-using Simple1C.Impl;
+﻿using Simple1C.Impl;
 using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests

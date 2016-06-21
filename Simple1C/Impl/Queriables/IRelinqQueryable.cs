@@ -1,4 +1,4 @@
-namespace Simple1C.Impl.Queriables
+﻿namespace Simple1C.Impl.Queriables
 {
     public interface IRelinqQueryable
     {

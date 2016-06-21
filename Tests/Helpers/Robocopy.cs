@@ -1,4 +1,4 @@
-namespace Simple1C.Tests.Helpers
+﻿namespace Simple1C.Tests.Helpers
 {
     public static class Robocopy
     {

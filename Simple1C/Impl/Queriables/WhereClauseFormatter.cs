@@ -1,4 +1,4 @@
-using System;
+Ôªøusing System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
@@ -30,7 +30,7 @@ namespace Simple1C.Impl.Queriables
         {
             if (node.NodeType == ExpressionType.Not)
             {
-                filterBuilder.Append("(Õ≈ ");
+                filterBuilder.Append("(–ù–ï ");
                 base.VisitUnary(node);
                 filterBuilder.Append(")");
                 return node;
@@ -64,12 +64,12 @@ namespace Simple1C.Impl.Queriables
                 if (name == null)
                     filterBuilder.Append("NULL");
                 else
-                    filterBuilder.AppendFormat("«Õ¿◊≈Õ»≈({0}.œÛÒÚ‡ˇ—Ò˚ÎÍ‡)", name.Value.Fullname);
+                    filterBuilder.AppendFormat("–ó–ù–ê–ß–ï–ù–ò–ï({0}.–ü—É—Å—Ç–∞—è–°—Å—ã–ª–∫–∞)", name.Value.Fullname);
             }
             else if (expression.Value.GetType().FullName == "System.RuntimeType")
             {
                 var valueType = (Type) expression.Value;
-                filterBuilder.Append("“»œ(");
+                filterBuilder.Append("–¢–ò–ü(");
                 filterBuilder.Append(Get1CTypeName(valueType));
                 filterBuilder.Append(")");
             }
@@ -90,9 +90,9 @@ namespace Simple1C.Impl.Queriables
             if (node.NodeType == ExpressionType.TypeIs)
             {
                 filterBuilder.Append("(");
-                filterBuilder.Append("“»œ«Õ¿◊≈Õ»ﬂ(");
+                filterBuilder.Append("–¢–ò–ü–ó–ù–ê–ß–ï–ù–ò–Ø(");
                 Visit(node.Expression);
-                filterBuilder.Append(") = “»œ(");
+                filterBuilder.Append(") = –¢–ò–ü(");
                 filterBuilder.Append(Get1CTypeName(node.TypeOperand));
                 filterBuilder.Append(")");
                 filterBuilder.Append(")");
@@ -105,7 +105,7 @@ namespace Simple1C.Impl.Queriables
         {
             if (node.Method.DeclaringType == typeof (object) && node.Method.Name == "GetType")
             {
-                filterBuilder.Append("“»œ«Õ¿◊≈Õ»ﬂ(");
+                filterBuilder.Append("–¢–ò–ü–ó–ù–ê–ß–ï–ù–ò–Ø(");
                 Visit(node.Object);
                 filterBuilder.Append(")");
                 return node;
@@ -145,12 +145,12 @@ namespace Simple1C.Impl.Queriables
 
                 case ExpressionType.AndAlso:
                 case ExpressionType.And:
-                    filterBuilder.Append(" » ");
+                    filterBuilder.Append(" –ò ");
                     break;
 
                 case ExpressionType.OrElse:
                 case ExpressionType.Or:
-                    filterBuilder.Append(" »À» ");
+                    filterBuilder.Append(" –ò–õ–ò ");
                     break;
 
                 case ExpressionType.Add:
@@ -206,14 +206,14 @@ namespace Simple1C.Impl.Queriables
         private static string Get1CTypeName(Type type)
         {
             if (type == typeof (string))
-                return "—“–Œ ¿";
+                return "–°–¢–†–û–ö–ê";
             if (type == typeof (bool))
-                return "¡”À≈¬Œ";
+                return "–ë–£–õ–ï–í–û";
             if (type == typeof (int) || type == typeof (uint) || type == typeof (byte) || type == typeof (long) ||
                 type == typeof (ulong) || type == typeof (double) || type == typeof (float) || type == typeof (decimal))
-                return "◊»—ÀŒ";
+                return "–ß–ò–°–õ–û";
             if (type == typeof (DateTime) || type == typeof (DateTime?))
-                return "ƒ¿“¿";
+                return "–î–ê–¢–ê";
             var name = ConfigurationName.GetOrNull(type);
             if (name.HasValue)
                 return name.Value.Fullname;

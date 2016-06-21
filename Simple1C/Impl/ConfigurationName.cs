@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Concurrent;
 using System.Reflection;
 using Simple1C.Impl.Helpers;
@@ -70,16 +70,16 @@ namespace Simple1C.Impl
         {
             switch (scope)
             {
-                case ConfigurationScope.Справочники:
-                    return "Справочник";
-                case ConfigurationScope.Документы:
-                    return "Документ";
-                case ConfigurationScope.РегистрыСведений:
-                    return "РегистрСведений";
-                case ConfigurationScope.Перечисления:
-                    return "Перечисление";
-                case ConfigurationScope.ПланыСчетов:
-                    return "ПланСчетов";
+                case ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё:
+                    return "РЎРїСЂР°РІРѕС‡РЅРёРє";
+                case ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹:
+                    return "Р”РѕРєСѓРјРµРЅС‚";
+                case ConfigurationScope.Р РµРіРёСЃС‚СЂС‹РЎРІРµРґРµРЅРёР№:
+                    return "Р РµРіРёСЃС‚СЂРЎРІРµРґРµРЅРёР№";
+                case ConfigurationScope.РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ:
+                    return "РџРµСЂРµС‡РёСЃР»РµРЅРёРµ";
+                case ConfigurationScope.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ:
+                    return "РџР»Р°РЅРЎС‡РµС‚РѕРІ";
                 default:
                     const string messageFormat = "unexpected scope [{0}]";
                     throw new InvalidOperationException(string.Format(messageFormat, scope));
@@ -88,16 +88,16 @@ namespace Simple1C.Impl
 
         private static ConfigurationScope ParseScopeName(string s)
         {
-            if (s == "Справочник")
-                return ConfigurationScope.Справочники;
-            if (s == "Документ")
-                return ConfigurationScope.Документы;
-            if (s == "РегистрСведений")
-                return ConfigurationScope.РегистрыСведений;
-            if (s == "Перечисление")
-                return ConfigurationScope.Перечисления;
-            if (s == "ПланСчетов")
-                return ConfigurationScope.ПланыСчетов;
+            if (s == "РЎРїСЂР°РІРѕС‡РЅРёРє")
+                return ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё;
+            if (s == "Р”РѕРєСѓРјРµРЅС‚")
+                return ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹;
+            if (s == "Р РµРіРёСЃС‚СЂРЎРІРµРґРµРЅРёР№")
+                return ConfigurationScope.Р РµРіРёСЃС‚СЂС‹РЎРІРµРґРµРЅРёР№;
+            if (s == "РџРµСЂРµС‡РёСЃР»РµРЅРёРµ")
+                return ConfigurationScope.РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ;
+            if (s == "РџР»Р°РЅРЎС‡РµС‚РѕРІ")
+                return ConfigurationScope.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ;
             const string messageFormat = "unexpected configuration scope name [{0}]";
             throw new InvalidOperationException(string.Format(messageFormat, s));
         }
@@ -139,7 +139,7 @@ namespace Simple1C.Impl
         private static ConfigurationName? CreateName(Type type)
         {
             if (type.IsEnum)
-                return new ConfigurationName(ConfigurationScope.Перечисления, type.Name);
+                return new ConfigurationName(ConfigurationScope.РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ, type.Name);
             var attributes = (ConfigurationScopeAttribute[])
                 type.GetCustomAttributes<ConfigurationScopeAttribute>(true);
             if (attributes.Length == 0)

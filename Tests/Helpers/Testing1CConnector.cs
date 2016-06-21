@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.IO;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
@@ -21,7 +21,7 @@ namespace Simple1C.Tests.Helpers
             {
                 Type = Connection1CType.File,
                 FileLocation = testDatabasePath,
-                User = "Администратор",
+                User = "РђРґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂ",
                 Password = ""
             };
             var globalContextFactory = new GlobalContextFactory();

@@ -1,4 +1,4 @@
-namespace Simple1C.Impl.Generation
+﻿namespace Simple1C.Impl.Generation
 {
     internal class ConfigurationItem
     {

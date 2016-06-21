@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl;
@@ -25,36 +25,36 @@ namespace Simple1C.Tests.TestEntities
 
         public object CreateAccountingDocument(AccountingDocument document) 
         {
-            var item = ComObject.Документы.ПоступлениеТоваровУслуг.CreateDocument();
-            item.Организация = GetOrganization();
-            item.Ответственный =
-                GetUserByDescription(document.IsCreatedByEmployee ? "Документ.Сотрудник" : "Документ.Клиент");
-            item.Контрагент = ((dynamic) CreateCounterparty(document.Counterpart)).Ссылка;
-            item.ДоговорКонтрагента = CreateCounterpartContract(item.Контрагент, document.CounterpartContract).Ссылка;
-            item.ВалютаДокумента = GetCurrencyByCode("643");
-            item.СуммаВключаетНДС = document.SumIncludesNds;
+            var item = ComObject.Р”РѕРєСѓРјРµРЅС‚С‹.РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.CreateDocument();
+            item.РћСЂРіР°РЅРёР·Р°С†РёСЏ = GetOrganization();
+            item.РћС‚РІРµС‚СЃС‚РІРµРЅРЅС‹Р№ =
+                GetUserByDescription(document.IsCreatedByEmployee ? "Р”РѕРєСѓРјРµРЅС‚.РЎРѕС‚СЂСѓРґРЅРёРє" : "Р”РѕРєСѓРјРµРЅС‚.РљР»РёРµРЅС‚");
+            item.РљРѕРЅС‚СЂР°РіРµРЅС‚ = ((dynamic) CreateCounterparty(document.Counterpart)).РЎСЃС‹Р»РєР°;
+            item.Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р° = CreateCounterpartContract(item.РљРѕРЅС‚СЂР°РіРµРЅС‚, document.CounterpartContract).РЎСЃС‹Р»РєР°;
+            item.Р’Р°Р»СЋС‚Р°Р”РѕРєСѓРјРµРЅС‚Р° = GetCurrencyByCode("643");
+            item.РЎСѓРјРјР°Р’РєР»СЋС‡Р°РµС‚РќР”РЎ = document.SumIncludesNds;
             dynamic account;
             if (TryFindChartOfAccounts("60.01", out account))
-                item.СчетУчетаРасчетовСКонтрагентом = account.Ссылка;
+                item.РЎС‡РµС‚РЈС‡РµС‚Р°Р Р°СЃС‡РµС‚РѕРІРЎРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРј = account.РЎСЃС‹Р»РєР°;
             if (TryFindChartOfAccounts("60.02", out account))
-                item.СчетУчетаРасчетовПоАвансам = account.ССылка;
-            item.ДатаВходящегоДокумента = document.Date;
-            item.НомерВходящегоДокумента = document.Number;
-            item.Дата = document.Date;
-            item.Комментарий = document.Comment;
-            item.ВидОперации = enumConverter.Convert(document.OperationKind);
-            item.СпособЗачетаАвансов = enumConverter.Convert(AdvanceWay.Automatically);
+                item.РЎС‡РµС‚РЈС‡РµС‚Р°Р Р°СЃС‡РµС‚РѕРІРџРѕРђРІР°РЅСЃР°Рј = account.РЎРЎС‹Р»РєР°;
+            item.Р”Р°С‚Р°Р’С…РѕРґСЏС‰РµРіРѕР”РѕРєСѓРјРµРЅС‚Р° = document.Date;
+            item.РќРѕРјРµСЂР’С…РѕРґСЏС‰РµРіРѕР”РѕРєСѓРјРµРЅС‚Р° = document.Number;
+            item.Р”Р°С‚Р° = document.Date;
+            item.РљРѕРјРјРµРЅС‚Р°СЂРёР№ = document.Comment;
+            item.Р’РёРґРћРїРµСЂР°С†РёРё = enumConverter.Convert(document.OperationKind);
+            item.РЎРїРѕСЃРѕР±Р—Р°С‡РµС‚Р°РђРІР°РЅСЃРѕРІ = enumConverter.Convert(AdvanceWay.Automatically);
             foreach (var nomenclatureItem in document.Items)
             {
-                var nomenclatureItemAccessObject = item.Услуги.Добавить();
-                nomenclatureItemAccessObject.Количество = nomenclatureItem.Count;
-                nomenclatureItemAccessObject.Цена = nomenclatureItem.Price;
-                nomenclatureItemAccessObject.СтавкаНДС = enumConverter.Convert(nomenclatureItem.NdsRate);
-                nomenclatureItemAccessObject.СуммаНДС = nomenclatureItem.NdsSum;
-                nomenclatureItemAccessObject.Сумма = document.SumIncludesNds
+                var nomenclatureItemAccessObject = item.РЈСЃР»СѓРіРё.Р”РѕР±Р°РІРёС‚СЊ();
+                nomenclatureItemAccessObject.РљРѕР»РёС‡РµСЃС‚РІРѕ = nomenclatureItem.Count;
+                nomenclatureItemAccessObject.Р¦РµРЅР° = nomenclatureItem.Price;
+                nomenclatureItemAccessObject.РЎС‚Р°РІРєР°РќР”РЎ = enumConverter.Convert(nomenclatureItem.NdsRate);
+                nomenclatureItemAccessObject.РЎСѓРјРјР°РќР”РЎ = nomenclatureItem.NdsSum;
+                nomenclatureItemAccessObject.РЎСѓРјРјР° = document.SumIncludesNds
                     ? nomenclatureItem.Sum
                     : nomenclatureItem.Sum - nomenclatureItem.NdsSum;
-                nomenclatureItemAccessObject.Номенклатура = CreateNomenclature(nomenclatureItem).Ссылка;
+                nomenclatureItemAccessObject.РќРѕРјРµРЅРєР»Р°С‚СѓСЂР° = CreateNomenclature(nomenclatureItem).РЎСЃС‹Р»РєР°;
             }
             item.Write();
             return item;
@@ -62,21 +62,21 @@ namespace Simple1C.Tests.TestEntities
 
         public object CreateCounterparty(Counterpart counterpart)
         {
-            var item = ComObject.Справочники.Контрагенты.CreateItem();
-            item.ЮридическоеФизическоеЛицо = enumConverter.Convert(counterpart.LegalForm);
-            item.ИНН = counterpart.Inn;
+            var item = ComObject.РЎРїСЂР°РІРѕС‡РЅРёРєРё.РљРѕРЅС‚СЂР°РіРµРЅС‚С‹.CreateItem();
+            item.Р®СЂРёРґРёС‡РµСЃРєРѕРµР¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ = enumConverter.Convert(counterpart.LegalForm);
+            item.РРќРќ = counterpart.Inn;
             if (counterpart.LegalForm == LegalForm.Organization)
-                item.КПП = counterpart.Kpp;
-            item.Наименование = counterpart.Name;
-            item.НаименованиеПолное = counterpart.FullName ?? counterpart.Name;
-            item.ГосударственныйОрган = false;
+                item.РљРџРџ = counterpart.Kpp;
+            item.РќР°РёРјРµРЅРѕРІР°РЅРёРµ = counterpart.Name;
+            item.РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ = counterpart.FullName ?? counterpart.Name;
+            item.Р“РѕСЃСѓРґР°СЂСЃС‚РІРµРЅРЅС‹Р№РћСЂРіР°РЅ = false;
             item.Write();
             return item;
         }
 
         private bool TryFindChartOfAccounts(string code, out dynamic result)
         {
-            var findResult = ComObject.ПланыСчетов.Хозрасчетный.FindByCode(code);
+            var findResult = ComObject.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ.РҐРѕР·СЂР°СЃС‡РµС‚РЅС‹Р№.FindByCode(code);
             if (findResult.IsEmpty())
             {
                 result = null;
@@ -88,82 +88,82 @@ namespace Simple1C.Tests.TestEntities
 
         private dynamic CreateNomenclature(NomenclatureItem nomenclatureItem)
         {
-            var nomenclatureAccessObject = ComObject.Справочники.Номенклатура.CreateItem();
-            nomenclatureAccessObject.Наименование = nomenclatureItem.Name;
-            nomenclatureAccessObject.НаименованиеПолное = nomenclatureItem.Name;
-            nomenclatureAccessObject.Услуга = true;
-            nomenclatureAccessObject.СтавкаНДС = enumConverter.Convert(nomenclatureItem.NdsRate);
+            var nomenclatureAccessObject = ComObject.РЎРїСЂР°РІРѕС‡РЅРёРєРё.РќРѕРјРµРЅРєР»Р°С‚СѓСЂР°.CreateItem();
+            nomenclatureAccessObject.РќР°РёРјРµРЅРѕРІР°РЅРёРµ = nomenclatureItem.Name;
+            nomenclatureAccessObject.РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ = nomenclatureItem.Name;
+            nomenclatureAccessObject.РЈСЃР»СѓРіР° = true;
+            nomenclatureAccessObject.РЎС‚Р°РІРєР°РќР”РЎ = enumConverter.Convert(nomenclatureItem.NdsRate);
             nomenclatureAccessObject.Write();
             return nomenclatureAccessObject;
         }
 
         public object CreateBankAccount(object owner, BankAccount bankAccount)
         {
-            var item = ComObject.Справочники.БанковскиеСчета.CreateItem();
-            item.НомерСчета = bankAccount.Number;
-            item.Банк = GetBankByBic(bankAccount.Bank.Bik);
-            item.Наименование = bankAccount.Name ?? GenerateBankAccountName(item.Банк, bankAccount.Number);
+            var item = ComObject.РЎРїСЂР°РІРѕС‡РЅРёРєРё.Р‘Р°РЅРєРѕРІСЃРєРёРµРЎС‡РµС‚Р°.CreateItem();
+            item.РќРѕРјРµСЂРЎС‡РµС‚Р° = bankAccount.Number;
+            item.Р‘Р°РЅРє = GetBankByBic(bankAccount.Bank.Bik);
+            item.РќР°РёРјРµРЅРѕРІР°РЅРёРµ = bankAccount.Name ?? GenerateBankAccountName(item.Р‘Р°РЅРє, bankAccount.Number);
             if (bankAccount.CurrencyCode != null)
-                item.ВалютаДенежныхСредств = GetCurrencyByCode(bankAccount.CurrencyCode);
-            item.Владелец = owner;
+                item.Р’Р°Р»СЋС‚Р°Р”РµРЅРµР¶РЅС‹С…РЎСЂРµРґСЃС‚РІ = GetCurrencyByCode(bankAccount.CurrencyCode);
+            item.Р’Р»Р°РґРµР»РµС† = owner;
             item.Write();
             return item;
         }
 
         public object CreateCounterpartContract(object counterpartReference, CounterpartyContract contract)
         {
-            var item = ComObject.Справочники.ДоговорыКонтрагентов.CreateItem();
-            item.ВидДоговора = enumConverter.Convert(contract.Kind);
-            item.Организация = GetOrganization();
-            item.Владелец = counterpartReference;
-            item.Наименование = contract.Name;
-            item.Комментарий = string.Format("test {0}", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"));
+            var item = ComObject.РЎРїСЂР°РІРѕС‡РЅРёРєРё.Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ.CreateItem();
+            item.Р’РёРґР”РѕРіРѕРІРѕСЂР° = enumConverter.Convert(contract.Kind);
+            item.РћСЂРіР°РЅРёР·Р°С†РёСЏ = GetOrganization();
+            item.Р’Р»Р°РґРµР»РµС† = counterpartReference;
+            item.РќР°РёРјРµРЅРѕРІР°РЅРёРµ = contract.Name;
+            item.РљРѕРјРјРµРЅС‚Р°СЂРёР№ = string.Format("test {0}", DateTime.Now.ToString("dd.MM.yyyy HH:mm:ss"));
             if (!string.IsNullOrEmpty(contract.CurrencyCode))
-                item.ВалютаВзаиморасчетов = GetCurrencyByCode(contract.CurrencyCode);
+                item.Р’Р°Р»СЋС‚Р°Р’Р·Р°РёРјРѕСЂР°СЃС‡РµС‚РѕРІ = GetCurrencyByCode(contract.CurrencyCode);
             item.Write();
             return item;
         }
 
         private static string GenerateBankAccountName(dynamic bank, string number)
         {
-            return string.Format("{0}, {1}", number, bank.Наименование);
+            return string.Format("{0}, {1}", number, bank.РќР°РёРјРµРЅРѕРІР°РЅРёРµ);
         }
 
         private object GetCurrencyByCode(string currencyCode)
         {
-            return GetCatalogItemByCode("Валюты", currencyCode);
+            return GetCatalogItemByCode("Р’Р°Р»СЋС‚С‹", currencyCode);
         }
 
         private object GetBankByBic(string bik)
         {
-            return GetCatalogItemByCode("Банки", bik);
+            return GetCatalogItemByCode("Р‘Р°РЅРєРё", bik);
         }
 
         private object GetCatalogItemByKeyOrNull(string catalogName, string keyName, string keyValue)
         {
             const string queryFormat = @"
-                ВЫБРАТЬ
-	                catalog.Ссылка КАК Ссылка
-                ИЗ
-	                Справочник.{0} КАК catalog
-                ГДЕ
+                Р’Р«Р‘Р РђРўР¬
+	                catalog.РЎСЃС‹Р»РєР° РљРђРљ РЎСЃС‹Р»РєР°
+                РР—
+	                РЎРїСЂР°РІРѕС‡РЅРёРє.{0} РљРђРљ catalog
+                Р“Р”Р•
 	                catalog.{1} = &key";
-            return globalContext.Execute(string.Format(queryFormat, catalogName, keyName), new Dictionary<string, object> {{"key", keyValue}}).Select(x => x["Ссылка"]).FirstOrDefault();
+            return globalContext.Execute(string.Format(queryFormat, catalogName, keyName), new Dictionary<string, object> {{"key", keyValue}}).Select(x => x["РЎСЃС‹Р»РєР°"]).FirstOrDefault();
         }
 
         private object GetUserByDescription(string name)
         {
-            return GetCatalogItemByKey("Пользователи", "Наименование", name);
+            return GetCatalogItemByKey("РџРѕР»СЊР·РѕРІР°С‚РµР»Рё", "РќР°РёРјРµРЅРѕРІР°РЅРёРµ", name);
         }
 
         private object GetOrganization()
         {
-            return GetCatalogItemByKey("Организации", "ИНН", organizationInn);
+            return GetCatalogItemByKey("РћСЂРіР°РЅРёР·Р°С†РёРё", "РРќРќ", organizationInn);
         }
 
         private object GetCatalogItemByCode(string catalogName, string code)
         {
-            return GetCatalogItemByKey(catalogName, "Код", code);
+            return GetCatalogItemByKey(catalogName, "РљРѕРґ", code);
         }
 
         private object GetCatalogItemByKey(string catalogName, string keyName, string keyValue)

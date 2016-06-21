@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -82,10 +82,10 @@ namespace Simple1C.Impl
             if (!isTableSection)
             {
                 var configurationName = ConfigurationName.Get(entity.GetType());
-                if (configurationName.Scope == ConfigurationScope.Справочники)
-                    AssignNewGuid(entity, result, "Код");
-                else if (configurationName.Scope == ConfigurationScope.Документы)
-                    AssignNewGuid(entity, result, "Номер");
+                if (configurationName.Scope == ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё)
+                    AssignNewGuid(entity, result, "РљРѕРґ");
+                else if (configurationName.Scope == ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹)
+                    AssignNewGuid(entity, result, "РќРѕРјРµСЂ");
                 Collection(entity.GetType()).Add(inMemoryEntity);
             }
             entity.Controller = new InMemoryEntityController(inMemoryEntity);
@@ -113,7 +113,7 @@ namespace Simple1C.Impl
             var codeProperty = target.GetType().GetProperty(property);
             if (codeProperty != null)
             {
-                //todo а нужен ли тут TrackChanges?
+                //todo Р° РЅСѓР¶РµРЅ Р»Рё С‚СѓС‚ TrackChanges?
                 var value = Guid.NewGuid().ToString();
                 codeProperty.SetMethod.Invoke(target, new object[] {value});
                 committed[property] = value;

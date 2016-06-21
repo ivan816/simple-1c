@@ -1,4 +1,4 @@
-using Simple1C.Impl;
+﻿using Simple1C.Impl;
 
 namespace Simple1C.Interface.ObjectModel
 {

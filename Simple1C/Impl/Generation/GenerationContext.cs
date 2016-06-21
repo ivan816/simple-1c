@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface;

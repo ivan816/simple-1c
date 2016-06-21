@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace Simple1C.Impl.Com
 {

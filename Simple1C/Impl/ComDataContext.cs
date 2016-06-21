@@ -1,4 +1,4 @@
-using System;
+п»їusing System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -67,7 +67,7 @@ namespace Simple1C.Impl
                 configurationName = ConfigurationName.Get(source.GetType());
                 comObject = comBasedEntityController == null
                     ? CreateNewObject(configurationName.Value)
-                    : ComHelpers.Invoke(comBasedEntityController.ComObject, "ПолучитьОбъект");
+                    : ComHelpers.Invoke(comBasedEntityController.ComObject, "РџРѕР»СѓС‡РёС‚СЊРћР±СЉРµРєС‚");
             }
             else
                 configurationName = null;
@@ -75,8 +75,8 @@ namespace Simple1C.Impl
             foreach (var p in changeLog)
             {
                 var value = p.Value;
-                if (p.Key == "Проведен" && configurationName.HasValue &&
-                    configurationName.Value.Scope == ConfigurationScope.Документы)
+                if (p.Key == "РџСЂРѕРІРµРґРµРЅ" && configurationName.HasValue &&
+                    configurationName.Value.Scope == ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹)
                 {
                     newPostingValue = (bool?) value;
                     continue;
@@ -91,9 +91,9 @@ namespace Simple1C.Impl
             var oldRevision = source.Controller.Revision;
             if (configurationName.HasValue)
             {
-                if (!newPostingValue.HasValue && configurationName.Value.Scope == ConfigurationScope.Документы)
+                if (!newPostingValue.HasValue && configurationName.Value.Scope == ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹)
                 {
-                    var oldPostingValue = Convert.ToBoolean(ComHelpers.GetProperty(comObject, "Проведен"));
+                    var oldPostingValue = Convert.ToBoolean(ComHelpers.GetProperty(comObject, "РџСЂРѕРІРµРґРµРЅ"));
                     if (oldPostingValue)
                     {
                         Write(comObject, configurationName.Value, false);
@@ -101,22 +101,22 @@ namespace Simple1C.Impl
                     }
                 }
                 Write(comObject, configurationName.Value, newPostingValue);
-                var comObjectReference = ComHelpers.GetProperty(comObject, "Ссылка");
+                var comObjectReference = ComHelpers.GetProperty(comObject, "РЎСЃС‹Р»РєР°");
                 source.Controller = new ComBasedEntityController(comObjectReference, comObjectMapper);
                 switch (configurationName.Value.Scope)
                 {
-                    case ConfigurationScope.Справочники:
-                        UpdateIfExists(source, comObject, "Код");
+                    case ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё:
+                        UpdateIfExists(source, comObject, "РљРѕРґ");
                         break;
-                    case ConfigurationScope.Документы:
-                        UpdateIfExists(source, comObject, "Номер");
+                    case ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹:
+                        UpdateIfExists(source, comObject, "РќРѕРјРµСЂ");
                         break;
                 }
             }
             else
             {
                 source.Controller = new ComBasedEntityController(comObject, comObjectMapper);
-                UpdateIfExists(source, comObject, "НомерСтроки");
+                UpdateIfExists(source, comObject, "РќРѕРјРµСЂРЎС‚СЂРѕРєРё");
             }
             source.Controller.Revision = oldRevision + 1;
             pending.Pop();
@@ -129,9 +129,9 @@ namespace Simple1C.Impl
             if (list != null)
             {
                 var tableSection = ComHelpers.GetProperty(comObject, name);
-                ComHelpers.Invoke(tableSection, "Очистить");
+                ComHelpers.Invoke(tableSection, "РћС‡РёСЃС‚РёС‚СЊ");
                 foreach (Abstract1CEntity item in (IList) value)
-                    Update(item, ComHelpers.Invoke(tableSection, "Добавить"), pending);
+                    Update(item, ComHelpers.Invoke(tableSection, "Р”РѕР±Р°РІРёС‚СЊ"), pending);
                 needSet = false;
                 return null;
             }
@@ -159,7 +159,7 @@ namespace Simple1C.Impl
             var writeModeName = posting.HasValue
                 ? (posting.Value ? "Posting" : "UndoPosting")
                 : "Write";
-            var writeMode = ComHelpers.GetProperty(globalContext.ComObject, "РежимЗаписиДокумента");
+            var writeMode = ComHelpers.GetProperty(globalContext.ComObject, "Р РµР¶РёРјР—Р°РїРёСЃРёР”РѕРєСѓРјРµРЅС‚Р°");
             var writeModeValue = ComHelpers.GetProperty(writeMode, writeModeName);
             try
             {
@@ -182,7 +182,7 @@ namespace Simple1C.Impl
                     var item = original[i];
                     if (syncList.current.IndexOf(item) < 0)
                     {
-                        ComHelpers.Invoke(tableSection, "Удалить", i);
+                        ComHelpers.Invoke(tableSection, "РЈРґР°Р»РёС‚СЊ", i);
                         original.RemoveAt(i);
                     }
                 }
@@ -194,7 +194,7 @@ namespace Simple1C.Impl
                 var originalIndex = original.IndexOf(item);
                 if (originalIndex < 0)
                 {
-                    var newItemComObject = ComHelpers.Invoke(tableSection, "Вставить", i);
+                    var newItemComObject = ComHelpers.Invoke(tableSection, "Р’СЃС‚Р°РІРёС‚СЊ", i);
                     pending.Push(i);
                     Update(item, newItemComObject, pending);
                     pending.Pop();
@@ -204,14 +204,14 @@ namespace Simple1C.Impl
                 {
                     if (originalIndex != i)
                     {
-                        ComHelpers.Invoke(tableSection, "Сдвинуть", originalIndex, i - originalIndex);
+                        ComHelpers.Invoke(tableSection, "РЎРґРІРёРЅСѓС‚СЊ", originalIndex, i - originalIndex);
                         original.RemoveAt(originalIndex);
                         original.Insert(i, null);
                     }
                     if (item.Controller.Changed != null)
                     {
                         pending.Push(i);
-                        Update(item, ComHelpers.Invoke(tableSection, "Получить", i), pending);
+                        Update(item, ComHelpers.Invoke(tableSection, "РџРѕР»СѓС‡РёС‚СЊ", i), pending);
                         pending.Pop();
                     }
                 }
@@ -237,15 +237,15 @@ namespace Simple1C.Impl
 
         private object CreateNewObject(ConfigurationName configurationName)
         {
-            if (configurationName.Scope == ConfigurationScope.Справочники)
+            if (configurationName.Scope == ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё)
             {
-                var catalogs = ComHelpers.GetProperty(globalContext.ComObject, "Справочники");
+                var catalogs = ComHelpers.GetProperty(globalContext.ComObject, "РЎРїСЂР°РІРѕС‡РЅРёРєРё");
                 var catalogManager = ComHelpers.GetProperty(catalogs, configurationName.Name);
                 return ComHelpers.Invoke(catalogManager, "CreateItem");
             }
-            if (configurationName.Scope == ConfigurationScope.Документы)
+            if (configurationName.Scope == ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹)
             {
-                var documents = ComHelpers.GetProperty(globalContext.ComObject, "Документы");
+                var documents = ComHelpers.GetProperty(globalContext.ComObject, "Р”РѕРєСѓРјРµРЅС‚С‹");
                 var documentManager = ComHelpers.GetProperty(documents, configurationName.Name);
                 return ComHelpers.Invoke(documentManager, "CreateDocument");
             }
@@ -259,7 +259,7 @@ namespace Simple1C.Impl
             var parameters = builtQuery.Parameters
                 .Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
             var resultTable = globalContext.Execute(queryText, parameters);
-            return resultTable.Select(x => comObjectMapper.MapFrom1C(x["Ссылка"],
+            return resultTable.Select(x => comObjectMapper.MapFrom1C(x["РЎСЃС‹Р»РєР°"],
                 builtQuery.EntityType));
         }
 

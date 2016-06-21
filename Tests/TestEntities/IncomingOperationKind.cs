@@ -1,4 +1,4 @@
-namespace Simple1C.Tests.TestEntities
+﻿namespace Simple1C.Tests.TestEntities
 {
     public enum IncomingOperationKind
     {
