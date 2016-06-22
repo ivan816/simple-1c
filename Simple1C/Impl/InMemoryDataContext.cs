@@ -144,7 +144,7 @@ namespace Simple1C.Impl
                 return true;
             }
 
-            private object Convert(Type type, object value)
+            private static object Convert(Type type, object value)
             {
                 if (type == typeof(object))
                 {

@@ -7,35 +7,6 @@ namespace Simple1C.Impl.Helpers
 {
     internal static class ReflectionHelpers
     {
-        private static readonly IDictionary<Type, object> defaultValues =
-            new Dictionary<Type, object>
-            {
-                {typeof (byte), default(byte)},
-                {typeof (short), default(short)},
-                {typeof (ushort), default(ushort)},
-                {typeof (int), default(int)},
-                {typeof (uint), default(uint)},
-                {typeof (long), default(long)},
-                {typeof (ulong), default(ulong)},
-                {typeof (double), default(double)},
-                {typeof (float), default(float)},
-                {typeof (Guid), default(Guid)},
-                {typeof (bool), default(bool)},
-                {typeof (DateTime), default(DateTime)},
-                {typeof (char), default(char)},
-                {typeof (decimal), default(decimal)}
-            };
-
-        public static object GetDefaultValue(this Type type)
-        {
-            if (!type.IsValueType)
-                return null;
-            if (Nullable.GetUnderlyingType(type) != null)
-                return null;
-            object result;
-            return defaultValues.TryGetValue(type, out result) ? result : Activator.CreateInstance(type);
-        }
-
         public static string FormatName(this Type type)
         {
             string result;

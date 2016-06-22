@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
 
@@ -9,7 +8,6 @@ namespace Simple1C.Tests.Helpers
     {
         public static object Create(string etalonDatabasePath, string targetFolderName)
         {
-            throw new InvalidOperationException("huj");
             ProcessesHelpers.KillOwnProcessesByName("1cv8.exe");
             ProcessesHelpers.KillOwnProcessesByName("dllhost.exe");
             var directoryName = PathHelpers.GetFileName(etalonDatabasePath);

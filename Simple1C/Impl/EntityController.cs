@@ -30,7 +30,7 @@ namespace Simple1C.Impl
                 {
                     object resultObject;
                     if (!TryGetValue(name, typeof (T), out resultObject))
-                        resultObject = typeof (T).GetDefaultValue();
+                        resultObject = default(T);
                     result = (T) resultObject;
                     if (result == null && typeof (IList).IsAssignableFrom(typeof (T)))
                     {

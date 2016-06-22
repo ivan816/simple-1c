@@ -1,5 +1,4 @@
 ﻿using System;
-using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl
 {
