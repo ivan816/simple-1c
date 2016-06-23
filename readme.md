@@ -2,9 +2,14 @@
 
 *This project is licensed under the terms of the MIT license.*
 
-Упрощаем код интеграции с 1C через COM интерфейс. 
-Используем C# как основной язык для автогенерации и
-[Linq](https://msdn.microsoft.com/en-us/library/bb308959.aspx) как язык запросов.
+Несмотря на то, что еще в 2013-м году 1С опубликовал REST апи
+поверх протокола OData ([раз](https://wonderland.v8.1c.ru/blog/avtomaticheskiy-rest-interfeys-prikladnykh-resheniy),
+[два](https://wonderland.v8.1c.ru/blog/rasshirenie-podderzhki-protokola-odata)),
+многим и сегодня по разным причинам приходится использовать для интеграции
+старые COM-интерфейсы. Мы упрощаем использование этих интерфейсов
+за счет автоматической генерации классов по метаданным 1С
+и реализации [LINQ-провайдера](https://msdn.microsoft.com/en-us/library/bb308959.aspx).
+Используем C# как основной язык для автогенерации.
 Механику провайдера упрощаем за счет [вот этой](https://relinq.codeplex.com) классной штуки.
 Аналогичные проекты: http://www.linq-demo.1csoftware.com, http://www.vanessa-sharp.ru/reference-linq.html.
 
