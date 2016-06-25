@@ -140,6 +140,51 @@ namespace Simple1C.Tests
             }
         }
 
+        public class LessAndGreaterFilterTest : QueryBuilderTest
+        {
+            [Test]
+            public void GreaterThan()
+            {
+                AssertQuery(Source<КурсыВалют>()
+                    .Where(x => x.Период > new DateTime(2016,6,24)),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период > &p0)",
+                    P("p0", "24.06.16 0:00:00"));
+            }
+
+            [Test]
+            public void GreaterThanOrEqual()
+            {
+                AssertQuery(Source<КурсыВалют>()
+                    .Where(x => x.Период >= new DateTime(2016,6,24)),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период >= &p0)",
+                    P("p0", "24.06.16 0:00:00"));
+            }
+
+            [Test]
+            public void LessThan()
+            {
+                AssertQuery(Source<КурсыВалют>()
+                    .Where(x => x.Период < new DateTime(2016,6,24)),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период < &p0)",
+                    P("p0", "24.06.16 0:00:00"));
+            }
+
+            [Test]
+            public void LessThanOrEqual()
+            {
+                AssertQuery(Source<КурсыВалют>()
+                    .Where(x => x.Период <= new DateTime(2016,6,24)),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период <= &p0)",
+                    P("p0", "24.06.16 0:00:00"));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class КурсыВалют
+            {
+                public DateTime Период { get; set; }
+            }
+        }
+
         public class BooleanFilterTest : QueryBuilderTest
         {
             [Test]

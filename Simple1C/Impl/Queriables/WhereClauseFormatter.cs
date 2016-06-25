@@ -139,6 +139,22 @@ namespace Simple1C.Impl.Queriables
                     filterBuilder.Append(" = ");
                     break;
 
+                case ExpressionType.GreaterThan:
+                    filterBuilder.Append(" > ");
+                    break;
+
+                case ExpressionType.GreaterThanOrEqual:
+                    filterBuilder.Append(" >= ");
+                    break;
+
+                case ExpressionType.LessThan:
+                    filterBuilder.Append(" < ");
+                    break;
+
+                case ExpressionType.LessThanOrEqual:
+                    filterBuilder.Append(" <= ");
+                    break;
+
                 case ExpressionType.NotEqual:
                     filterBuilder.Append(" <> ");
                     break;
