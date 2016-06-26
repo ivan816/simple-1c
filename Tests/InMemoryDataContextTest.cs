@@ -5,6 +5,7 @@ using NUnit.Framework;
 using Simple1C.Interface;
 using Simple1C.Tests.Helpers;
 using Simple1C.Tests.Metadata1C.Документы;
+using Simple1C.Tests.Metadata1C.Перечисления;
 using Simple1C.Tests.Metadata1C.Справочники;
 
 namespace Simple1C.Tests
@@ -40,6 +41,47 @@ namespace Simple1C.Tests
             dataContext.Save(контрагент2);
 
             Assert.That(string.IsNullOrEmpty(контрагент.Наименование));
+        }
+
+        [Test]
+        public void LoadNewestRevisionWhenAccessPropertyForTheFirstTime()
+        {
+            dataContext.Save(new ДоговорыКонтрагентов
+            {
+                Наименование = "test contract",
+                Владелец = new Контрагенты
+                {
+                    Наименование = "test contractor name"
+                }
+            });
+
+            var договор = dataContext.Single<ДоговорыКонтрагентов>();
+            Assert.That(договор.Наименование, Is.EqualTo("test contract"));
+
+            var контрагент = dataContext.Single<ДоговорыКонтрагентов>();
+            контрагент.Наименование = "test contractor changed name";
+            dataContext.Save(контрагент);
+
+            Assert.That(договор.Владелец.Наименование, Is.EqualTo("test contractor name"));
+        }
+
+        [Test]
+        public void TakeLastRevisionOnQuery()
+        {
+            dataContext.Save(new ДоговорыКонтрагентов
+                {
+                    Владелец = new Контрагенты
+                    {
+                        Наименование = "test contractor name"
+                    }
+                });
+
+            var контрагент = dataContext.Single<Контрагенты>();
+            контрагент.Наименование = "test changed contractor name";
+            dataContext.Save(контрагент);
+
+            var договор = dataContext.Single<ДоговорыКонтрагентов>();
+            Assert.That(договор.Владелец.Наименование, Is.EqualTo("test changed contractor name"));
         }
 
         [Test]
@@ -319,12 +361,12 @@ namespace Simple1C.Tests
             var contract = new БанковскиеСчета
             {
                 Наименование = "Тестовый счет",
-                Владелец = Metadata1C.Перечисления.ВидыЛицензийАлкогольнойПродукции.Пиво
+                Владелец = ВидыЛицензийАлкогольнойПродукции.Пиво
             };
             dataContext.Save(contract);
             var array = dataContext.Select<БанковскиеСчета>().ToArray();
             Assert.That(array.Length, Is.EqualTo(1));
-            Assert.That(array[0].Владелец, Is.EqualTo(Metadata1C.Перечисления.ВидыЛицензийАлкогольнойПродукции.Пиво));
+            Assert.That(array[0].Владелец, Is.EqualTo(ВидыЛицензийАлкогольнойПродукции.Пиво));
         }
 
         [Test]

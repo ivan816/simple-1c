@@ -9,3 +9,4 @@ todo
 		Save(КонтрагентВася);
 	* Научиться мапиться на sql для чтения, как здесь http://www.linq-demo.1csoftware.com делают
 	* создавать DispatchObject-ы через Reflection.Emit
+	* inmemoryDataContext, LoadNewestRevisionWhenAccessPropertyForTheFirstTime: выяснить, какое поведение дожно быть

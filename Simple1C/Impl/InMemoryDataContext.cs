@@ -37,7 +37,7 @@ namespace Simple1C.Impl
         private static object CreateEntity(Type type, InMemoryEntity entity)
         {
             var result = (Abstract1CEntity) FormatterServices.GetUninitializedObject(type);
-            result.Controller = new EntityController(entity);
+            result.Controller = new EntityController(entity.revision);
             return result;
         }
 
@@ -68,97 +68,50 @@ namespace Simple1C.Impl
                     var list = changed[k] as IList;
                     if (list != null)
                     {
-                        var newList = GetList(entity.Controller.ValueSource, k);
-                        ApplyList(newList, list);
-                        changed[k] = newList;
+                        changed[k] = ConvertList(list);
+                        continue;
                     }
                     var syncList = changed[k] as SyncList;
                     if (syncList != null)
-                    {
-                        var newList = GetList(entity.Controller.ValueSource, k);
-                        ApplySyncList(newList, syncList);
-                        changed[k] = newList;
-                    }
+                        changed[k] = ConvertList(syncList.Current);
                 }
             }
-            var collection = Collection(entity.GetType());
+            InMemoryEntity inMemoryEntity;
             if (!entity.Controller.IsNew)
             {
-                InMemoryEntity newInMemoryEntity;
-                var oldInMemoryEntity = (InMemoryEntity) entity.Controller.ValueSource;
-                if (changed == null)
-                    newInMemoryEntity = oldInMemoryEntity;
-                else
-                {
-                    newInMemoryEntity = new InMemoryEntity(entity.GetType(), changed, entity.Controller.ValueSource);
-                    collection.Remove(oldInMemoryEntity);
-                    collection.Add(newInMemoryEntity);
-                }
-                entity.Controller.ResetValueSource(newInMemoryEntity);
-                return newInMemoryEntity;
+                var inmemoryEntityRevision = (InMemoryEntityRevision)entity.Controller.ValueSource;
+                inMemoryEntity = inmemoryEntityRevision.inMemoryEntity;
+                if (changed != null)
+                    inMemoryEntity.revision = new InMemoryEntityRevision(inMemoryEntity, inmemoryEntityRevision, changed);
             }
-            var result = changed ?? new Dictionary<string, object>();
-            var inMemoryEntity = new InMemoryEntity(entity.GetType(), result, null);
-            if (!isTableSection)
+            else
             {
-                var configurationName = ConfigurationName.Get(entity.GetType());
-                if (configurationName.Scope == ConfigurationScope.Справочники)
-                    AssignNewGuid(entity, result, "Код");
-                else if (configurationName.Scope == ConfigurationScope.Документы)
-                    AssignNewGuid(entity, result, "Номер");
-                collection.Add(inMemoryEntity);
+                if (changed == null)
+                    changed = new Dictionary<string, object>();
+                inMemoryEntity = new InMemoryEntity();
+                var revision = new InMemoryEntityRevision(inMemoryEntity, null, changed);
+                inMemoryEntity.entityType = entity.GetType();
+                inMemoryEntity.revision = revision;
+                if (!isTableSection)
+                {
+                    var configurationName = ConfigurationName.Get(entity.GetType());
+                    if (configurationName.Scope == ConfigurationScope.Справочники)
+                        AssignNewGuid(entity, changed, "Код");
+                    else if (configurationName.Scope == ConfigurationScope.Документы)
+                        AssignNewGuid(entity, changed, "Номер");
+                    Collection(entity.GetType()).Add(inMemoryEntity);
+                }
             }
-            entity.Controller.ResetValueSource(inMemoryEntity);
+            entity.Controller.ResetValueSource(inMemoryEntity.revision);
             return inMemoryEntity;
         }
 
-        private static List<InMemoryEntity> GetList(IValueSource valueSource, string key)
+        private IList ConvertList(IList newList)
         {
-            List<InMemoryEntity> result = null;
-            if (valueSource != null)
-            {
-                var inmemoryEntity = (InMemoryEntity) valueSource.GetBackingStorage();
-                result = (List<InMemoryEntity>) inmemoryEntity.Properties.GetOrDefault(key);
-            }
-            return result ?? new List<InMemoryEntity>();
-        }
-
-        private void ApplySyncList(List<InMemoryEntity> target, SyncList syncList)
-        {
-            foreach (var cmd in syncList.commands)
-            {
-                switch (cmd.CommandType)
-                {
-                    case SyncList.CommandType.Delete:
-                        var deleteCommand = (SyncList.DeleteCommand)cmd;
-                        target.RemoveAt(deleteCommand.index);
-                        break;
-                    case SyncList.CommandType.Insert:
-                        var insertCommand = (SyncList.InsertCommand) cmd;
-                        target.Insert(insertCommand.index, Save(insertCommand.item, true));
-                        break;
-                    case SyncList.CommandType.Move:
-                        var moveCommand = (SyncList.MoveCommand) cmd;
-                        var item = target[moveCommand.from];
-                        target.RemoveAt(moveCommand.from);
-                        target.Insert(moveCommand.from + moveCommand.delta, item);
-                        break;
-                    case SyncList.CommandType.Update:
-                        var updateCommand = (SyncList.UpdateCommand)cmd;
-                        target[updateCommand.index] = Save(updateCommand.item, true);
-                        break;
-                    default:
-                        throw new ArgumentOutOfRangeException();
-                }
-            }
-        }
-
-        private void ApplyList(List<InMemoryEntity> target, IList newList)
-        {
-            target.Clear();
-            target.Capacity = newList.Count;
+            var result = new List<InMemoryEntity>(newList.Count);
             foreach (var l in newList)
-                target.Add(Save((Abstract1CEntity)l, true));
+                result.Add(Save((Abstract1CEntity)l, true));
+            return result;
         }
 
         private static void AssignNewGuid(Abstract1CEntity target, Dictionary<string, object> committed, string property)
@@ -187,32 +140,38 @@ namespace Simple1C.Impl
             return committed.GetOrAdd(type, t => new List<InMemoryEntity>());
         }
 
-        private class InMemoryEntity : IValueSource
+        private class InMemoryEntityRevision: IValueSource
         {
-            private readonly Type entityType;
-            private readonly IValueSource previous;
-            public Dictionary<string, object> Properties { get; private set; }
+            public readonly InMemoryEntity inMemoryEntity;
+            private readonly InMemoryEntityRevision previous;
+            private readonly Dictionary<string, object> properties;
 
-            public InMemoryEntity(Type entityType, Dictionary<string, object> properties, IValueSource previous)
+            public InMemoryEntityRevision(InMemoryEntity inMemoryEntity, InMemoryEntityRevision previous, Dictionary<string, object> properties)
             {
-                this.entityType = entityType;
-                Properties = properties;
+                this.inMemoryEntity = inMemoryEntity;
                 this.previous = previous;
+                this.properties = properties;
             }
 
             public object GetBackingStorage()
             {
-                return this;
+                return inMemoryEntity;
             }
 
-            bool IValueSource.TryLoadValue(string name, Type type, out object result)
+            public bool TryLoadValue(string name, Type type, out object result)
             {
-                if (Properties.TryGetValue(name, out result))
+                result = null;
+                var rev = this;
+                while (rev != null)
                 {
-                    result = Convert(type, result);
-                    return true;    
+                    if (rev.properties.TryGetValue(name, out result))
+                    {
+                        result = Convert(type, result);
+                        return true;
+                    }
+                    rev = rev.previous;
                 }
-                return previous != null && previous.TryLoadValue(name, type, out result);
+                return false;
             }
 
             private static object Convert(Type type, object value)
@@ -221,23 +180,29 @@ namespace Simple1C.Impl
                 {
                     var entity = value as InMemoryEntity;
                     return entity != null
-                           && typeof (Abstract1CEntity).IsAssignableFrom(entity.entityType)
+                           && typeof(Abstract1CEntity).IsAssignableFrom(entity.entityType)
                         ? CreateEntity(entity.entityType, entity)
                         : value;
                 }
-                if (typeof (IList).IsAssignableFrom(type))
+                if (typeof(IList).IsAssignableFrom(type))
                 {
-                    var oldList = (IList) value;
+                    var oldList = (IList)value;
                     var itemType = type.GetGenericArguments()[0];
                     var newList = ListFactory.Create(itemType, null, oldList.Count);
                     foreach (InMemoryEntity l in oldList)
                         newList.Add(CreateEntity(itemType, l));
                     return newList;
                 }
-                return typeof (Abstract1CEntity).IsAssignableFrom(type)
-                    ? CreateEntity(type, (InMemoryEntity) value)
+                return typeof(Abstract1CEntity).IsAssignableFrom(type)
+                    ? CreateEntity(type, (InMemoryEntity)value)
                     : value;
             }
+        }
+
+        private class InMemoryEntity
+        {
+            public Type entityType;
+            public InMemoryEntityRevision revision;
         }
     }
 }

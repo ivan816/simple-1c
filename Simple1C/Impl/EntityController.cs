@@ -89,9 +89,8 @@ namespace Simple1C.Impl
                     {
                         foreach (Abstract1CEntity e in list)
                             e.Controller.PrepareToSave(e, entitiesToSave);
-                        var syncList = new SyncList();
-                        syncList.Compare(value.originalList, list);
-                        if (syncList.commands.Count > 0)
+                        var syncList = SyncList.Compare(value.originalList, list);
+                        if (syncList.Commands.Count > 0)
                             MarkAsChanged(item.Key, syncList);
                     }
                 }

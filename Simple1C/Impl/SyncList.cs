@@ -6,17 +6,25 @@ namespace Simple1C.Impl
 {
     internal class SyncList
     {
-        public readonly List<Command> commands = new List<Command>();
+        public List<Command> Commands { get; private set; }
+        public IList Original { get; private set; }
+        public IList Current { get; private set; }
 
-        public void Compare(IList original, IList current)
+        public static SyncList Compare(IList original, IList current)
         {
+            var result = new SyncList
+            {
+                Commands = new List<Command>(),
+                Original = original,
+                Current = current
+            };
             if (original != null)
                 for (var i = original.Count - 1; i >= 0; i--)
                 {
                     var item = original[i];
                     if (current.IndexOf(item) < 0)
                     {
-                        commands.Add(new DeleteCommand {index = i});
+                        result.Commands.Add(new DeleteCommand { index = i });
                         original.RemoveAt(i);
                     }
                 }
@@ -28,21 +36,22 @@ namespace Simple1C.Impl
                 var originalIndex = original.IndexOf(item);
                 if (originalIndex < 0)
                 {
-                    commands.Add(new InsertCommand {item = item, index = i});
+                    result.Commands.Add(new InsertCommand { item = item, index = i });
                     original.Insert(i, null);
                 }
                 else
                 {
                     if (originalIndex != i)
                     {
-                        commands.Add(new MoveCommand {from = originalIndex, delta = i - originalIndex});
+                        result.Commands.Add(new MoveCommand { from = originalIndex, delta = i - originalIndex });
                         original.RemoveAt(originalIndex);
                         original.Insert(i, null);
                     }
                     if (item.Controller.Changed != null)
-                        commands.Add(new UpdateCommand {index = i, item = item});
+                        result.Commands.Add(new UpdateCommand { index = i, item = item });
                 }
             }
+            return result;
         }
 
         public enum CommandType

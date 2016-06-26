@@ -135,7 +135,7 @@ namespace Simple1C.Impl
             if (syncList != null)
             {
                 var tableSection = ComHelpers.GetProperty(comObject, name);
-                foreach (var cmd in syncList.commands)
+                foreach (var cmd in syncList.Commands)
                     switch (cmd.CommandType)
                     {
                         case SyncList.CommandType.Delete:
