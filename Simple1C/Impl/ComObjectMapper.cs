@@ -47,7 +47,7 @@ namespace Simple1C.Impl
                 if (isEmpty)
                     return null;
                 var result = (Abstract1CEntity) FormatterServices.GetUninitializedObject(type);
-                result.Controller = new ComBasedEntityController(source, this);
+                result.Controller = new EntityController(new ComValueSource(source, this));
                 return result;
             }
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof (List<>))

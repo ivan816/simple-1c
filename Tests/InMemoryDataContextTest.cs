@@ -27,6 +27,22 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void NoBackSideEffects()
+        {
+            var контрагент = new Контрагенты
+            {
+                ИНН = "123"
+            };
+            dataContext.Save(контрагент);
+
+            var контрагент2 = dataContext.Single<Контрагенты>(x => x.ИНН == "123");
+            контрагент2.Наименование = "test-name";
+            dataContext.Save(контрагент2);
+
+            Assert.That(string.IsNullOrEmpty(контрагент.Наименование));
+        }
+
+        [Test]
         public void CanSaveEmptyEntity()
         {
             var entity = new Контрагенты();

@@ -50,7 +50,7 @@ namespace Simple1C.Impl
         private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
         {
             var changeLog = source.Controller.Changed;
-            if (changeLog == null && source.Controller is ComBasedEntityController)
+            if (changeLog == null && !source.Controller.IsNew)
                 return;
             if (pending.Contains(source))
             {
@@ -65,11 +65,10 @@ namespace Simple1C.Impl
             ConfigurationName? configurationName;
             if (comObject == null)
             {
-                var comBasedEntityController = source.Controller as ComBasedEntityController;
                 configurationName = ConfigurationName.Get(source.GetType());
-                comObject = comBasedEntityController == null
+                comObject = source.Controller.IsNew
                     ? CreateNewObject(configurationName.Value)
-                    : ComHelpers.Invoke(comBasedEntityController.ComObject, "ПолучитьОбъект");
+                    : ComHelpers.Invoke(source.Controller.ValueSource.GetBackingStorage(), "ПолучитьОбъект");
             }
             else
                 configurationName = null;
@@ -88,7 +87,7 @@ namespace Simple1C.Impl
                     SaveProperty(p.Key, p.Value, comObject, pending);
                     pending.Pop();
                 }
-            var oldRevision = source.Controller.Revision;
+            object valueSourceComObject;
             if (configurationName.HasValue)
             {
                 if (!newPostingValue.HasValue && configurationName.Value.Scope == ConfigurationScope.Документы)
@@ -101,8 +100,6 @@ namespace Simple1C.Impl
                     }
                 }
                 Write(comObject, configurationName.Value, newPostingValue);
-                var comObjectReference = ComHelpers.GetProperty(comObject, "Ссылка");
-                source.Controller = new ComBasedEntityController(comObjectReference, comObjectMapper);
                 switch (configurationName.Value.Scope)
                 {
                     case ConfigurationScope.Справочники:
@@ -112,13 +109,14 @@ namespace Simple1C.Impl
                         UpdateIfExists(source, comObject, "Номер");
                         break;
                 }
+                valueSourceComObject = ComHelpers.GetProperty(comObject, "Ссылка");
             }
             else
             {
-                source.Controller = new ComBasedEntityController(comObject, comObjectMapper);
                 UpdateIfExists(source, comObject, "НомерСтроки");
+                valueSourceComObject = comObject;
             }
-            source.Controller.Revision = oldRevision + 1;
+            source.Controller.ResetValueSource(new ComValueSource(valueSourceComObject, comObjectMapper));
             pending.Pop();
         }
 
@@ -172,7 +170,7 @@ namespace Simple1C.Impl
             if (abstractEntity != null)
             {
                 Save(abstractEntity, null, pending);
-                valueToSet = ((ComBasedEntityController) abstractEntity.Controller).ComObject;
+                valueToSet = abstractEntity.Controller.ValueSource.GetBackingStorage();
             }
             else if (value != null && value.GetType().IsEnum)
                 valueToSet = enumMapper.MapTo1C(value);

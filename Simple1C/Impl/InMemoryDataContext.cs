@@ -37,7 +37,7 @@ namespace Simple1C.Impl
         private static object CreateEntity(Type type, InMemoryEntity entity)
         {
             var result = (Abstract1CEntity) FormatterServices.GetUninitializedObject(type);
-            result.Controller = new InMemoryEntityController(entity);
+            result.Controller = new EntityController(entity);
             return result;
         }
 
@@ -54,7 +54,6 @@ namespace Simple1C.Impl
             if (entity == null)
                 return null;
             var changed = entity.Controller.Changed;
-            var inMemoryController = entity.Controller as InMemoryEntityController;
             if (changed != null)
             {
                 var keys = changed.Keys.ToArray();
@@ -69,26 +68,37 @@ namespace Simple1C.Impl
                     var list = changed[k] as IList;
                     if (list != null)
                     {
-                        var newList = GetList(inMemoryController, k);
+                        var newList = GetList(entity.Controller.ValueSource, k);
                         ApplyList(newList, list);
                         changed[k] = newList;
                     }
                     var syncList = changed[k] as SyncList;
                     if (syncList != null)
                     {
-                        var newList = GetList(inMemoryController, k);
+                        var newList = GetList(entity.Controller.ValueSource, k);
                         ApplySyncList(newList, syncList);
                         changed[k] = newList;
                     }
                 }
             }
-            if (inMemoryController != null)
+            var collection = Collection(entity.GetType());
+            if (!entity.Controller.IsNew)
             {
-                inMemoryController.Commit();
-                return inMemoryController.CommittedData;
+                InMemoryEntity newInMemoryEntity;
+                var oldInMemoryEntity = (InMemoryEntity) entity.Controller.ValueSource;
+                if (changed == null)
+                    newInMemoryEntity = oldInMemoryEntity;
+                else
+                {
+                    newInMemoryEntity = new InMemoryEntity(entity.GetType(), changed, entity.Controller.ValueSource);
+                    collection.Remove(oldInMemoryEntity);
+                    collection.Add(newInMemoryEntity);
+                }
+                entity.Controller.ResetValueSource(newInMemoryEntity);
+                return newInMemoryEntity;
             }
             var result = changed ?? new Dictionary<string, object>();
-            var inMemoryEntity = new InMemoryEntity(entity.GetType(), result);
+            var inMemoryEntity = new InMemoryEntity(entity.GetType(), result, null);
             if (!isTableSection)
             {
                 var configurationName = ConfigurationName.Get(entity.GetType());
@@ -96,19 +106,21 @@ namespace Simple1C.Impl
                     AssignNewGuid(entity, result, "Код");
                 else if (configurationName.Scope == ConfigurationScope.Документы)
                     AssignNewGuid(entity, result, "Номер");
-                Collection(entity.GetType()).Add(inMemoryEntity);
+                collection.Add(inMemoryEntity);
             }
-            entity.Controller = new InMemoryEntityController(inMemoryEntity);
-            entity.Controller.Revision++;
+            entity.Controller.ResetValueSource(inMemoryEntity);
             return inMemoryEntity;
         }
 
-        private static List<InMemoryEntity> GetList(InMemoryEntityController inMemoryController, string key)
+        private static List<InMemoryEntity> GetList(IValueSource valueSource, string key)
         {
-            var oldList = inMemoryController != null
-                ? (List<InMemoryEntity>)inMemoryController.CommittedData.Properties.GetOrDefault(key)
-                : null;
-            return oldList ?? new List<InMemoryEntity>();
+            List<InMemoryEntity> result = null;
+            if (valueSource != null)
+            {
+                var inmemoryEntity = (InMemoryEntity) valueSource.GetBackingStorage();
+                result = (List<InMemoryEntity>) inmemoryEntity.Properties.GetOrDefault(key);
+            }
+            return result ?? new List<InMemoryEntity>();
         }
 
         private void ApplySyncList(List<InMemoryEntity> target, SyncList syncList)
@@ -133,7 +145,7 @@ namespace Simple1C.Impl
                         break;
                     case SyncList.CommandType.Update:
                         var updateCommand = (SyncList.UpdateCommand)cmd;
-                        Save(updateCommand.item, true);
+                        target[updateCommand.index] = Save(updateCommand.item, true);
                         break;
                     default:
                         throw new ArgumentOutOfRangeException();
@@ -175,23 +187,32 @@ namespace Simple1C.Impl
             return committed.GetOrAdd(type, t => new List<InMemoryEntity>());
         }
 
-        private class InMemoryEntityController : DictionaryBasedEntityController
+        private class InMemoryEntity : IValueSource
         {
-            public InMemoryEntity CommittedData { get; private set; }
+            private readonly Type entityType;
+            private readonly IValueSource previous;
+            public Dictionary<string, object> Properties { get; private set; }
 
-            public InMemoryEntityController(InMemoryEntity committedData)
+            public InMemoryEntity(Type entityType, Dictionary<string, object> properties, IValueSource previous)
             {
-                CommittedData = committedData;
+                this.entityType = entityType;
+                Properties = properties;
+                this.previous = previous;
             }
 
-            protected override bool TryLoadValue(string name, Type type, out object result)
+            public object GetBackingStorage()
             {
-                if (base.TryLoadValue(name, type, out result))
-                    return true;
-                if (!CommittedData.Properties.TryGetValue(name, out result))
-                    return false;
-                result = Convert(type, result);
-                return true;
+                return this;
+            }
+
+            bool IValueSource.TryLoadValue(string name, Type type, out object result)
+            {
+                if (Properties.TryGetValue(name, out result))
+                {
+                    result = Convert(type, result);
+                    return true;    
+                }
+                return previous != null && previous.TryLoadValue(name, type, out result);
             }
 
             private static object Convert(Type type, object value)
@@ -200,8 +221,8 @@ namespace Simple1C.Impl
                 {
                     var entity = value as InMemoryEntity;
                     return entity != null
-                           && typeof (Abstract1CEntity).IsAssignableFrom(entity.Type)
-                        ? CreateEntity(entity.Type, entity)
+                           && typeof (Abstract1CEntity).IsAssignableFrom(entity.entityType)
+                        ? CreateEntity(entity.entityType, entity)
                         : value;
                 }
                 if (typeof (IList).IsAssignableFrom(type))
@@ -217,29 +238,6 @@ namespace Simple1C.Impl
                     ? CreateEntity(type, (InMemoryEntity) value)
                     : value;
             }
-
-            public void Commit()
-            {
-                if (Changed != null)
-                {
-                    foreach (var p in Changed)
-                        CommittedData.Properties[p.Key] = p.Value;
-                    Revision++;
-                    Changed = null;
-                }
-            }
-        }
-
-        private class InMemoryEntity
-        {
-            public InMemoryEntity(Type type, Dictionary<string, object> properties)
-            {
-                Type = type;
-                Properties = properties;
-            }
-
-            public Type Type { get; private set; }
-            public Dictionary<string, object> Properties { get; private set; }
         }
     }
 }

@@ -8,7 +8,7 @@ namespace Simple1C.Interface.ObjectModel
 
         protected Abstract1CEntity()
         {
-            Controller = new DictionaryBasedEntityController();
+            Controller = new EntityController(null);
         }
     }
 }

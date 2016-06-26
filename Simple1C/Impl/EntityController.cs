@@ -1,34 +1,38 @@
-﻿using System;
-using System.Collections;
+﻿using System.Collections;
 using System.Collections.Generic;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl
 {
-    public abstract class EntityController
+    public class EntityController
     {
         private Dictionary<string, ObservedValue> observedValues;
-        internal uint Revision { get; set; }
+        private uint revision;
         internal bool TrackChanges { get; set; }
+        internal Dictionary<string, object> Changed { get; private set; }
+        public IValueSource ValueSource { get; private set; }
 
-        //грязный хак, подумать, как избавитсья
-        public object ComObject { get; protected set; }
-
-        protected EntityController()
+        public bool IsNew
         {
-            Revision = 1;
+            get { return ValueSource == null; }
+        }
+
+        public EntityController(IValueSource valueSource)
+        {
+            revision = 1;
             TrackChanges = true;
+            ValueSource = valueSource;
         }
 
         public T GetValue<T>(ref Requisite<T> requisite, string name)
         {
-            if (Revision > requisite.revision)
+            if (revision > requisite.revision)
             {
                 if (requisite.revision == 0)
                 {
-                    object resultObject;
-                    if (!TryLoadValue(name, typeof (T), out resultObject))
+                    object resultObject = null;
+                    if (ValueSource != null && !ValueSource.TryLoadValue(name, typeof (T), out resultObject))
                         resultObject = default(T);
                     if (resultObject == null && typeof (IList).IsAssignableFrom(typeof (T)))
                     {
@@ -37,7 +41,7 @@ namespace Simple1C.Impl
                     }
                     requisite.value = (T) resultObject;
                 }
-                requisite.revision = Revision;
+                requisite.revision = revision;
                 var needTrack = typeof (Abstract1CEntity).IsAssignableFrom(typeof (T)) ||
                                 typeof (IList).IsAssignableFrom(typeof (T));
                 if (needTrack)
@@ -60,7 +64,7 @@ namespace Simple1C.Impl
         public void SetValue<T>(ref Requisite<T> requisite, string name, object value)
         {
             requisite.value = (T) value;
-            requisite.revision = Revision;
+            requisite.revision = revision;
             if (TrackChanges)
                 MarkAsChanged(name, value);
         }
@@ -94,9 +98,16 @@ namespace Simple1C.Impl
                 observedValues = null;
             }
             var needSave = !EntityHelpers.IsTableSection(owner.GetType()) &&
-                           (Changed != null || this is DictionaryBasedEntityController);
+                           (Changed != null || IsNew);
             if (needSave)
                 entitiesToSave.Add(owner);
+        }
+
+        internal void ResetValueSource(IValueSource newValueSource)
+        {
+            ValueSource = newValueSource;
+            revision++;
+            Changed = null;
         }
 
         protected void MarkAsChanged(string name, object value)
@@ -105,8 +116,5 @@ namespace Simple1C.Impl
                 Changed = new Dictionary<string, object>();
             Changed[name] = value;
         }
-
-        protected abstract bool TryLoadValue(string name, Type type, out object result);
-        protected internal Dictionary<string, object> Changed { get; protected set; }
     }
 }
