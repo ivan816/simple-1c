@@ -49,7 +49,7 @@ namespace Simple1C.Impl
 
         private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
         {
-            if (!source.Controller.IsDirty())
+            if (!source.Controller.IsDirty)
                 return;
             if (pending.Contains(source))
             {

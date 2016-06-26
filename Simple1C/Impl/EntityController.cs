@@ -13,11 +13,6 @@ namespace Simple1C.Impl
         internal Dictionary<string, object> Changed { get; private set; }
         public IValueSource ValueSource { get; private set; }
 
-        public bool IsNew
-        {
-            get { return ValueSource == null; }
-        }
-
         public EntityController(IValueSource valueSource)
         {
             revision = 1;
@@ -31,8 +26,8 @@ namespace Simple1C.Impl
             {
                 if (requisite.revision == 0)
                 {
-                    object resultObject = null;
-                    if (ValueSource != null && !ValueSource.TryLoadValue(name, typeof (T), out resultObject))
+                    object resultObject;
+                    if (ValueSource == null || !ValueSource.TryLoadValue(name, typeof (T), out resultObject))
                         resultObject = default(T);
                     if (resultObject == null && typeof (IList).IsAssignableFrom(typeof (T)))
                     {
@@ -96,13 +91,18 @@ namespace Simple1C.Impl
                 }
                 observedValues = null;
             }
-            if (!EntityHelpers.IsTableSection(owner.GetType()) && IsDirty())
+            if (!EntityHelpers.IsTableSection(owner.GetType()) && IsDirty)
                 entitiesToSave.Add(owner);
         }
 
-        internal bool IsDirty()
+        internal bool IsNew
         {
-            return IsNew || Changed != null;
+            get { return ValueSource == null; }
+        }
+
+        internal bool IsDirty
+        {
+            get { return IsNew || Changed != null; }
         }
 
         internal void ResetDirty(IValueSource newValueSource)
@@ -112,7 +112,7 @@ namespace Simple1C.Impl
             Changed = null;
         }
 
-        protected void MarkAsChanged(string name, object value)
+        private void MarkAsChanged(string name, object value)
         {
             if (Changed == null)
                 Changed = new Dictionary<string, object>();
