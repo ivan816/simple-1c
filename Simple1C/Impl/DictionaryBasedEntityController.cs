@@ -4,7 +4,7 @@ namespace Simple1C.Impl
 {
     internal class DictionaryBasedEntityController : EntityController
     {
-        protected override bool TryGetValue(string name, Type type, out object result)
+        protected override bool TryLoadValue(string name, Type type, out object result)
         {
             if (Changed == null)
             {

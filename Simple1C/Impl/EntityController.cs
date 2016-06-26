@@ -8,7 +8,7 @@ namespace Simple1C.Impl
 {
     public abstract class EntityController
     {
-        private Dictionary<string, TrackedValue> trackedValues;
+        private Dictionary<string, ObservedValue> observedValues;
         public uint Revision { get; set; }
 
         //грязный хак, подумать, как избавитсья
@@ -29,7 +29,7 @@ namespace Simple1C.Impl
                 if (requisite.revision == 0)
                 {
                     object resultObject;
-                    if (!TryGetValue(name, typeof (T), out resultObject))
+                    if (!TryLoadValue(name, typeof (T), out resultObject))
                         resultObject = default(T);
                     result = (T) resultObject;
                     if (result == null && typeof (IList).IsAssignableFrom(typeof (T)))
@@ -46,12 +46,12 @@ namespace Simple1C.Impl
                                 typeof (IList).IsAssignableFrom(typeof (T));
                 if (needTrack)
                 {
-                    if (trackedValues == null)
-                        trackedValues = new Dictionary<string, TrackedValue>();
+                    if (observedValues == null)
+                        observedValues = new Dictionary<string, ObservedValue>();
                     var list = result as IList;
-                    trackedValues[name] = new TrackedValue
+                    observedValues[name] = new ObservedValue
                     {
-                        observedValue = result,
+                        value = result,
                         originalList = list == null
                             ? null
                             : ListFactory.Create(typeof (T).GetGenericArguments()[0], list, 0)
@@ -71,34 +71,34 @@ namespace Simple1C.Impl
 
         internal void MarkPotentiallyChangedAsChanged()
         {
-            if (trackedValues == null)
+            if (observedValues == null)
                 return;
-            foreach (var p in trackedValues)
+            foreach (var item in observedValues)
             {
-                if (Changed != null && Changed.ContainsKey(p.Key))
+                if (Changed != null && Changed.ContainsKey(item.Key))
                     continue;
-                var value = p.Value;
-                var entity = value.observedValue as Abstract1CEntity;
+                var value = item.Value;
+                var entity = value.value as Abstract1CEntity;
                 if (entity != null)
                 {
                     entity.Controller.MarkPotentiallyChangedAsChanged();
                     if (entity.Controller.Changed != null)
-                        MarkAsChanged(p.Key, p.Value.observedValue);
+                        MarkAsChanged(item.Key, item.Value.value);
                     continue;
                 }
-                var list = value.observedValue as IList;
+                var list = value.value as IList;
                 if (list != null)
                 {
-                    foreach (Abstract1CEntity item in list)
-                        item.Controller.MarkPotentiallyChangedAsChanged();
-                    MarkAsChanged(p.Key, new SyncList
+                    foreach (Abstract1CEntity e in list)
+                        e.Controller.MarkPotentiallyChangedAsChanged();
+                    MarkAsChanged(item.Key, new SyncList
                     {
                         current = list,
                         original = value.originalList
                     });
                 }
             }
-            trackedValues = null;
+            observedValues = null;
         }
 
         protected void MarkAsChanged(string name, object value)
@@ -108,7 +108,7 @@ namespace Simple1C.Impl
             Changed[name] = value;
         }
 
-        protected abstract bool TryGetValue(string name, Type type, out object result);
+        protected abstract bool TryLoadValue(string name, Type type, out object result);
         protected internal Dictionary<string, object> Changed { get; protected set; }
     }
 }

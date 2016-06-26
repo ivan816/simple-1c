@@ -148,7 +148,7 @@ namespace Simple1C.Tests
                 AssertQuery(Source<КурсыВалют>()
                     .Where(x => x.Период > new DateTime(2016,6,24)),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период > &p0)",
-                    P("p0", "24.06.16 0:00:00"));
+                    P("p0", new DateTime(2016, 6, 24)));
             }
 
             [Test]
@@ -157,7 +157,7 @@ namespace Simple1C.Tests
                 AssertQuery(Source<КурсыВалют>()
                     .Where(x => x.Период >= new DateTime(2016,6,24)),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период >= &p0)",
-                    P("p0", "24.06.16 0:00:00"));
+                    P("p0", new DateTime(2016, 6, 24)));
             }
 
             [Test]
@@ -166,7 +166,7 @@ namespace Simple1C.Tests
                 AssertQuery(Source<КурсыВалют>()
                     .Where(x => x.Период < new DateTime(2016,6,24)),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период < &p0)",
-                    P("p0", "24.06.16 0:00:00"));
+                    P("p0", new DateTime(2016, 6, 24)));
             }
 
             [Test]
@@ -175,7 +175,7 @@ namespace Simple1C.Tests
                 AssertQuery(Source<КурсыВалют>()
                     .Where(x => x.Период <= new DateTime(2016,6,24)),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.КурсыВалют КАК src ГДЕ (src.Период <= &p0)",
-                    P("p0", "24.06.16 0:00:00"));
+                    P("p0", new DateTime(2016, 6, 24)));
             }
 
             [ConfigurationScope(ConfigurationScope.Справочники)]

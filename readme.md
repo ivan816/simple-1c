@@ -48,7 +48,7 @@ Generator.exe
 		Наименование = "test-counterparty",
 		ЮридическоеФизическоеЛицо = ЮридическоеФизическоеЛицо.ЮридическоеЛицо
 	};
-	dataContext.Save(counterparty);
+	dataContext.Save(контрагент);
 	var контрагент2 = dataContext.Select<Контрагенты>().Single(x => x.Код == counterparty.Код);
 	Assert.That(контрагент2.ИНН, Is.EqualTo("1234567890"));
 ```
@@ -67,7 +67,7 @@ Generator.exe
 		Наименование = "test-counterparty",
 		ЮридическоеФизическоеЛицо = ЮридическоеФизическоеЛицо.ЮридическоеЛицо
 	};
-	dataContext.Save(counterparty);
+	dataContext.Save(контрагент);
 	var организация = dataContext.Select<Организация>().Single();
 	var договор = new ДоговорыКонтрагентов
 	{
@@ -76,7 +76,7 @@ Generator.exe
 		Владелец = контрагент,
 		Организация = организация
 	};
-	dataContext.Save(counterparty);
+	dataContext.Save(договор);
 ```
 
 * Метод Save сохраняет все объекты, до которых может добраться по ссылкам. Пример выше можно

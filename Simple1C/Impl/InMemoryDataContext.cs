@@ -134,9 +134,9 @@ namespace Simple1C.Impl
                 CommittedData = committedData;
             }
 
-            protected override bool TryGetValue(string name, Type type, out object result)
+            protected override bool TryLoadValue(string name, Type type, out object result)
             {
-                if (base.TryGetValue(name, type, out result))
+                if (base.TryLoadValue(name, type, out result))
                     return true;
                 if (!CommittedData.Properties.TryGetValue(name, out result))
                     return false;

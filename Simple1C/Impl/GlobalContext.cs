@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reflection;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Queries;
+using Simple1C.Interface;
 
 namespace Simple1C.Impl
 {
@@ -57,6 +59,43 @@ namespace Simple1C.Impl
         public object Enumerations()
         {
             return ComHelpers.GetProperty(ComObject, "Перечисления");
+        }
+
+        public void Write(object comObject, ConfigurationName name, bool? posting)
+        {
+            var writeModeName = posting.HasValue
+                ? (posting.Value ? "Posting" : "UndoPosting")
+                : "Write";
+            var writeMode = Get("РежимЗаписиДокумента");
+            var writeModeValue = ComHelpers.GetProperty(writeMode, writeModeName);
+            try
+            {
+                ComHelpers.Invoke(comObject, "Write", writeModeValue);
+            }
+            catch (TargetInvocationException e)
+            {
+                const string messageFormat = "error writing document [{0}] with mode [{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    name.Fullname, writeModeName), e.InnerException);
+            }
+        }
+
+        public object CreateNewObject(ConfigurationName configurationName)
+        {
+            if (configurationName.Scope == ConfigurationScope.Справочники)
+            {
+                var catalogs = Get("Справочники");
+                var catalogManager = ComHelpers.GetProperty(catalogs, configurationName.Name);
+                return ComHelpers.Invoke(catalogManager, "CreateItem");
+            }
+            if (configurationName.Scope == ConfigurationScope.Документы)
+            {
+                var documents = Get("Документы");
+                var documentManager = ComHelpers.GetProperty(documents, configurationName.Name);
+                return ComHelpers.Invoke(documentManager, "CreateDocument");
+            }
+            const string messageFormat = "unexpected entityType [{0}]";
+            throw new InvalidOperationException(string.Format(messageFormat, configurationName.Name));
         }
 
         private class Query : DispatchObject

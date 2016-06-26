@@ -88,7 +88,7 @@
     <Compile Include="Interface\Store1CHelpers.cs" />
     <Compile Include="DataContextFactory.cs" />
     <Compile Include="Impl\SyncList.cs" />
-    <Compile Include="Impl\TrackedValue.cs" />
+    <Compile Include="Impl\ObservedValue.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
