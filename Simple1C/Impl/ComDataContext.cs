@@ -116,7 +116,7 @@ namespace Simple1C.Impl
                 UpdateIfExists(source, comObject, "НомерСтроки");
                 valueSourceComObject = comObject;
             }
-            source.Controller.ResetValueSource(new ComValueSource(valueSourceComObject, comObjectMapper));
+            source.Controller.ResetDirty(new ComValueSource(valueSourceComObject, comObjectMapper));
             pending.Pop();
         }
 

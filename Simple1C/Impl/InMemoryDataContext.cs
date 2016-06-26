@@ -102,7 +102,7 @@ namespace Simple1C.Impl
                     Collection(entity.GetType()).Add(inMemoryEntity);
                 }
             }
-            entity.Controller.ResetValueSource(inMemoryEntity.revision);
+            entity.Controller.ResetDirty(inMemoryEntity.revision);
             return inMemoryEntity;
         }
 

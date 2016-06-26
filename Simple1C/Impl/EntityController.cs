@@ -105,7 +105,7 @@ namespace Simple1C.Impl
             return IsNew || Changed != null;
         }
 
-        internal void ResetValueSource(IValueSource newValueSource)
+        internal void ResetDirty(IValueSource newValueSource)
         {
             ValueSource = newValueSource;
             revision++;
