@@ -49,8 +49,7 @@ namespace Simple1C.Impl
 
         private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
         {
-            var changeLog = source.Controller.Changed;
-            if (changeLog == null && !source.Controller.IsNew)
+            if (!source.Controller.IsDirty())
                 return;
             if (pending.Contains(source))
             {
@@ -73,6 +72,7 @@ namespace Simple1C.Impl
             else
                 configurationName = null;
             bool? newPostingValue = null;
+            var changeLog = source.Controller.Changed;
             if(changeLog != null)
                 foreach (var p in changeLog)
                 {

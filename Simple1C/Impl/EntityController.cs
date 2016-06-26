@@ -96,10 +96,13 @@ namespace Simple1C.Impl
                 }
                 observedValues = null;
             }
-            var needSave = !EntityHelpers.IsTableSection(owner.GetType()) &&
-                           (Changed != null || IsNew);
-            if (needSave)
+            if (!EntityHelpers.IsTableSection(owner.GetType()) && IsDirty())
                 entitiesToSave.Add(owner);
+        }
+
+        internal bool IsDirty()
+        {
+            return IsNew || Changed != null;
         }
 
         internal void ResetValueSource(IValueSource newValueSource)
