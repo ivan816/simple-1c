@@ -43,8 +43,10 @@ namespace Simple1C.Impl
 
         public void Save<T>(T entity) where T : Abstract1CEntity
         {
-            entity.Controller.MarkPotentiallyChangedAsChanged();
-            Save(entity, false);
+            var entitiesToSave = new List<Abstract1CEntity>();
+            entity.Controller.PrepareToSave(entity, entitiesToSave);
+            foreach (var e in entitiesToSave)
+                Save(e, false);
         }
 
         private InMemoryEntity Save(Abstract1CEntity entity, bool isTableSection)
@@ -66,10 +68,18 @@ namespace Simple1C.Impl
                     }
                     var list = changed[k] as IList;
                     if (list != null)
-                        changed[k] = ConvertList(inMemoryController, k, list);
+                    {
+                        var newList = GetList(inMemoryController, k);
+                        ApplyList(newList, list);
+                        changed[k] = newList;
+                    }
                     var syncList = changed[k] as SyncList;
                     if (syncList != null)
-                        changed[k] = ConvertList(inMemoryController, k, syncList.current);
+                    {
+                        var newList = GetList(inMemoryController, k);
+                        ApplySyncList(newList, syncList);
+                        changed[k] = newList;
+                    }
                 }
             }
             if (inMemoryController != null)
@@ -93,17 +103,50 @@ namespace Simple1C.Impl
             return inMemoryEntity;
         }
 
-        private IList ConvertList(InMemoryEntityController inMemoryController, string key, IList newList)
+        private static List<InMemoryEntity> GetList(InMemoryEntityController inMemoryController, string key)
         {
             var oldList = inMemoryController != null
-                ? (List<InMemoryEntity>) inMemoryController.CommittedData.Properties.GetOrDefault(key)
+                ? (List<InMemoryEntity>)inMemoryController.CommittedData.Properties.GetOrDefault(key)
                 : null;
-            oldList = oldList ?? new List<InMemoryEntity>();
-            oldList.Clear();
-            oldList.Capacity = newList.Count;
+            return oldList ?? new List<InMemoryEntity>();
+        }
+
+        private void ApplySyncList(List<InMemoryEntity> target, SyncList syncList)
+        {
+            foreach (var cmd in syncList.commands)
+            {
+                switch (cmd.CommandType)
+                {
+                    case SyncList.CommandType.Delete:
+                        var deleteCommand = (SyncList.DeleteCommand)cmd;
+                        target.RemoveAt(deleteCommand.index);
+                        break;
+                    case SyncList.CommandType.Insert:
+                        var insertCommand = (SyncList.InsertCommand) cmd;
+                        target.Insert(insertCommand.index, Save(insertCommand.item, true));
+                        break;
+                    case SyncList.CommandType.Move:
+                        var moveCommand = (SyncList.MoveCommand) cmd;
+                        var item = target[moveCommand.from];
+                        target.RemoveAt(moveCommand.from);
+                        target.Insert(moveCommand.from + moveCommand.delta, item);
+                        break;
+                    case SyncList.CommandType.Update:
+                        var updateCommand = (SyncList.UpdateCommand)cmd;
+                        Save(updateCommand.item, true);
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+            }
+        }
+
+        private void ApplyList(List<InMemoryEntity> target, IList newList)
+        {
+            target.Clear();
+            target.Capacity = newList.Count;
             foreach (var l in newList)
-                oldList.Add(Save((Abstract1CEntity) l, true));
-            return oldList;
+                target.Add(Save((Abstract1CEntity)l, true));
         }
 
         private static void AssignNewGuid(Abstract1CEntity target, Dictionary<string, object> committed, string property)
@@ -111,12 +154,19 @@ namespace Simple1C.Impl
             if (committed.ContainsKey(property))
                 return;
             var codeProperty = target.GetType().GetProperty(property);
-            if (codeProperty != null)
+            if (codeProperty == null)
+                return;
+            var value = Guid.NewGuid().ToString();
+            committed[property] = value;
+            var oldTrackChanges = target.Controller.TrackChanges;
+            target.Controller.TrackChanges = false;
+            try
             {
-                //todo а нужен ли тут TrackChanges?
-                var value = Guid.NewGuid().ToString();
                 codeProperty.SetMethod.Invoke(target, new object[] {value});
-                committed[property] = value;
+            }
+            finally
+            {
+                target.Controller.TrackChanges = oldTrackChanges;
             }
         }
 

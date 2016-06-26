@@ -18,21 +18,31 @@ namespace Simple1C.Impl
             this.typeMapper = typeMapper;
         }
 
-        public object MapFrom1C(object source, Type declaredType)
+        public object MapFrom1C(object source, Type type)
         {
-            var type = declaredType;
             if (source == null || source == DBNull.Value)
                 return null;
-            type = Nullable.GetUnderlyingType(type) ?? type;
             if (type == typeof (object))
-                type = ResolvePropertyType(source);
+                if (source is MarshalByRefObject)
+                {
+                    var typeName = GetFullName(source);
+                    type = typeMapper.GetTypeOrNull(typeName);
+                    if (type == null)
+                    {
+                        const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, typeName));
+                    }
+                }
+                else
+                    type = source.GetType();
+            type = Nullable.GetUnderlyingType(type) ?? type;
             if (type.IsEnum)
                 return (bool) ComHelpers.Invoke(source, "IsEmpty")
                     ? null
                     : enumMapper.MapFrom1C(type, source);
             if (typeof (Abstract1CEntity).IsAssignableFrom(type))
             {
-                var isEmpty = !type.Name.StartsWith("ТабличнаяЧасть")
+                var isEmpty = !EntityHelpers.IsTableSection(type)
                               && (bool) ComHelpers.Invoke(source, "IsEmpty");
                 if (isEmpty)
                     return null;
@@ -54,20 +64,11 @@ namespace Simple1C.Impl
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
         }
 
-        private Type ResolvePropertyType(object value)
+        private static string GetFullName(object source)
         {
-            if (value is string)
-                return typeof (string);
-            if (value is bool)
-                return typeof (bool);
-            if (value is DateTime)
-                return typeof (DateTime);
-            var typeName = Convert.ToString(ComHelpers.Invoke(ComHelpers.Invoke(value, "Метаданные"), "ПолноеИмя"));
-            var type = typeMapper.GetTypeOrNull(typeName);
-            if (type != null)
-                return type;
-            const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
-            throw new InvalidOperationException(string.Format(messageFormat, typeName));
+            var metadata = ComHelpers.Invoke(source, "Метаданные");
+            var result = ComHelpers.Invoke(metadata, "ПолноеИмя");
+            return Convert.ToString(result);
         }
     }
 }

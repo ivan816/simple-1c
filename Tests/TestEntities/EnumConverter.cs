@@ -114,7 +114,7 @@ namespace Simple1C.Tests.TestEntities
 
         private dynamic ComObject()
         {
-            return globalContext.ComObject;
+            return globalContext.ComObject();
         }
 
         private dynamic EnumValue(string enumName, string enumValue)

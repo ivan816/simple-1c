@@ -21,7 +21,7 @@ namespace Simple1C.Tests
         protected override void SetUp()
         {
             base.SetUp();
-            dataContext = DataContextFactory.CreateCOM(globalContext.ComObject, typeof (Контрагенты).Assembly);
+            dataContext = DataContextFactory.CreateCOM(globalContext.ComObject(), typeof (Контрагенты).Assembly);
             enumConverter = new EnumConverter(globalContext);
             testObjectsManager = new TestObjectsManager(globalContext, enumConverter, organizationInn);
         }
@@ -74,8 +74,7 @@ namespace Simple1C.Tests
                 Kind = CounterpartContractKind.OutgoingWithAgency
             });
             string counterpartContractCode = counterpartyContractAccessObject.Код;
-
-
+            
             var contractFromStore = dataContext
                 .Select<ДоговорыКонтрагентов>()
                 .Single(x => x.Код == counterpartContractCode);
@@ -322,15 +321,16 @@ namespace Simple1C.Tests
             dataContext.Save(counterparty);
             Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
-            {
-                {"Code", counterparty.Код}
-            });
+            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
+                    new Dictionary<string, object>
+                    {
+                        {"Code", counterparty.Код}
+                    }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
 
-            dynamic comObject = globalContext.ComObject;
+            dynamic comObject = globalContext.ComObject();
             var enumsDispatchObject = comObject.Перечисления.ЮридическоеФизическоеЛицо;
             var expectedEnumValue = enumConverter.Convert(LegalForm.Organization);
             var expectedEnumValueIndex = enumsDispatchObject.IndexOf(expectedEnumValue);
@@ -354,7 +354,7 @@ namespace Simple1C.Tests
             var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
             {
                 {"Code", counterparty.Код}
-            });
+            }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
@@ -387,14 +387,14 @@ namespace Simple1C.Tests
             var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code", new Dictionary<string, object>
             {
                 {"Code", counterpartyContract.Код}
-            });
+            }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test name"));
             Assert.That(((dynamic)valueTable[0]["Владелец"]).Код, Is.EqualTo(counterparty.Код));
             valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
             {
                 {"Code", counterparty.Код}
-            });
+            }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
         }
 
@@ -421,7 +421,7 @@ namespace Simple1C.Tests
             var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code", new Dictionary<string, object>
             {
                 {"Code", counterpartyContract.Код}
-            });
+            }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test name"));
         }
@@ -464,7 +464,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Code", contract.Код}
-                });
+                }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(ComHelpers.GetProperty(valueTable[0]["Владелец"], "Наименование"), Is.EqualTo("Test counterparty 2"));
         }
@@ -490,7 +490,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Inn", "7711223344"}
-                });
+                }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("Test counterparty 2"));
         }
@@ -580,7 +580,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Number", поступлениеТоваровУслуг.Номер}
-                });
+                }).Unload();
 
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0]["НомерВходящегоДокумента"], Is.EqualTo("12345"));
@@ -643,7 +643,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Number", поступлениеТоваровУслуг.Номер}
-                });
+                }).Unload();
 
             Assert.That(valueTable.Count, Is.EqualTo(1));
 
@@ -709,7 +709,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Number", поступлениеТоваровУслуг.Номер}
-                });
+                }).Unload();
 
             Assert.That(valueTable.Count, Is.EqualTo(1));
 
@@ -777,7 +777,8 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Number", поступлениеТоваровУслуг.Номер}
-                });
+                })
+                .Unload();
 
             Assert.That(valueTable.Count, Is.EqualTo(1));
 
@@ -792,6 +793,21 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanSaveNewEntityWithoutAnyPropertiesSet()
+        {
+            var контрагент = new Контрагенты();
+            dataContext.Save(контрагент);
+
+            Assert.That(string.IsNullOrEmpty(контрагент.Код), Is.False);
+            var counterpartyTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
+                new Dictionary<string, object>
+                {
+                    {"Code", контрагент.Код}
+                }).Unload();
+            Assert.That(counterpartyTable.Count, Is.EqualTo(1));
+        }
+
+        [Test]
         public void ModifyReference()
         {
             var counterpart = new Counterpart
@@ -802,7 +818,6 @@ namespace Simple1C.Tests
                 Name = "Test counterparty"
             };
             dynamic counterpartyAccessObject = testObjectsManager.CreateCounterparty(counterpart);
-
             var counterpartContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartyAccessObject.Ссылка,
                 new CounterpartyContract
                 {
@@ -810,6 +825,7 @@ namespace Simple1C.Tests
                     Kind = CounterpartContractKind.Incoming,
                     CurrencyCode = "643"
                 });
+            string initialCounterpartyContractVersion = counterpartContractAccessObject.DataVersion;
             string counterpartyContractCode = counterpartContractAccessObject.Code;
             var contract = dataContext.Select<ДоговорыКонтрагентов>()
                 .Single(x => x.Код == counterpartyContractCode);
@@ -818,13 +834,24 @@ namespace Simple1C.Tests
             contract.Владелец.НаименованиеПолное = "Test counterparty 2";
             dataContext.Save(contract);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ ИНН=&Inn",
+            var counterpartyTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ ИНН=&Inn",
                 new Dictionary<string, object>
                 {
                     {"Inn", "7711223344"}
-                });
-            Assert.That(valueTable.Count, Is.EqualTo(1));
-            Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("Test counterparty 2"));
+                }).Unload();
+            Assert.That(counterpartyTable.Count, Is.EqualTo(1));
+            Assert.That(counterpartyTable[0].GetString("Наименование"), Is.EqualTo("Test counterparty 2"));
+
+            var counterpartyContractTable = globalContext.Execute("ВЫБРАТЬ Ссылка ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code",
+                new Dictionary<string, object>
+                {
+                    {"Code", counterpartyContractCode}
+                }).Unload();
+            Assert.That(counterpartyContractTable.Count, Is.EqualTo(1));
+            
+            var comObj = counterpartyContractTable[0]["Ссылка"];
+            var dataVersion = ((dynamic)comObj).DataVersion;
+            Assert.That(dataVersion, Is.EqualTo(initialCounterpartyContractVersion));
         }
 
         public interface IGenericCatalog
@@ -862,7 +889,7 @@ namespace Simple1C.Tests
             var exception = Assert.Throws<InvalidOperationException>(()=> dataContext.Save(контрагентВася));
             Assert.That(exception.Message, Does.Contain("cycle detected for entity type [Контрагенты]: [Контрагенты->ГоловнойКонтрагент]"));
 
-//TODO - раскоментировать
+//см. тудушку про ГоловнойКонтрагент
 //            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new[]
 //            {
 //                new KeyValuePair<string, object>("Code", контрагентВася.Код)
@@ -983,7 +1010,7 @@ namespace Simple1C.Tests
                 new Dictionary<string, object>
                 {
                     {"Number", number}
-                });
+                }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             return valueTable[0]["Ссылка"];
         }

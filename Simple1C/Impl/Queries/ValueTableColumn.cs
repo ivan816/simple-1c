@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Queries
 {
-    internal class ValueTableColumn : DispatchObject
+    public class ValueTableColumn : DispatchObject
     {
         public ValueTableColumn(object comObject)
             : base(comObject)

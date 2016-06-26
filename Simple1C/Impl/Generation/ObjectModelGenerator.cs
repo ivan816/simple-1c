@@ -15,7 +15,6 @@ namespace Simple1C.Impl.Generation
             {"Строка", "string"},
             {"Булево", "bool"},
             {"Дата", "DateTime"},
-            //todo какое-то говно, разобраться
             {"Хранилище значения", null},
             {"Уникальный идентификатор", null}
         };

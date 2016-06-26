@@ -1,17 +1,18 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 
 namespace Simple1C.Impl.Com
 {
-    internal class DispatchObject
+    public class DispatchObject
     {
-        internal object ComObject { get; private set; }
+        private readonly object comObject;
 
-        protected internal DispatchObject(object comObject)
+        protected DispatchObject(object comObject)
         {
-            ComObject = comObject;
+            this.comObject = comObject;
         }
 
-        public string GetString(string property)
+        protected string GetString(string property)
         {
             var value = Get(property);
             return Convert.IsDBNull(value) ? null : Convert.ToString(value);
@@ -19,17 +20,27 @@ namespace Simple1C.Impl.Com
 
         protected object Get(string property)
         {
-            return ComHelpers.GetProperty(ComObject, property);
+            return ComHelpers.GetProperty(comObject, property);
         }
 
         protected void Set(string property, object value)
         {
-            ComHelpers.SetProperty(ComObject, property, value);
+            ComHelpers.SetProperty(comObject, property, value);
         }
 
         protected object Invoke(string name, params object[] args)
         {
-            return ComHelpers.Invoke(ComObject, name, args);
+            return ComHelpers.Invoke(comObject, name, args);
+        }
+
+        protected object ComObject()
+        {
+            return comObject;
+        }
+
+        protected void Dispose()
+        {
+            Marshal.FinalReleaseComObject(comObject);
         }
     }
 }

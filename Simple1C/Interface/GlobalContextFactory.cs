@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Runtime.InteropServices;
 using Simple1C.Impl.Com;
 
 namespace Simple1C.Interface
@@ -55,9 +54,9 @@ namespace Simple1C.Interface
                 return Activator.CreateInstance(connectorType);
             }
 
-            public void Dispose()
+            public new void Dispose()
             {
-                Marshal.FinalReleaseComObject(ComObject);
+                base.Dispose();
             }
         }
     }

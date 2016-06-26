@@ -5,7 +5,7 @@ using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queries
 {
-    internal class ValueTable : DispatchObject, IEnumerable<ValueTableRow>
+    public class ValueTable : DispatchObject, IEnumerable<ValueTableRow>
     {
         private readonly Dictionary<string, int> columnsMap;
 

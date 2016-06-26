@@ -41,14 +41,16 @@ namespace Simple1C.Impl
         public void Save<T>(T entity)
             where T : Abstract1CEntity
         {
-            entity.Controller.MarkPotentiallyChangedAsChanged();
-            Update(entity, null, new Stack<object>());
+            var entitiesToSave = new List<Abstract1CEntity>();
+            entity.Controller.PrepareToSave(entity, entitiesToSave);
+            foreach (var e in entitiesToSave)
+                Save(e, null, new Stack<object>());
         }
 
-        private void Update(Abstract1CEntity source, object comObject, Stack<object> pending)
+        private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
         {
             var changeLog = source.Controller.Changed;
-            if (changeLog == null)
+            if (changeLog == null && source.Controller is ComBasedEntityController)
                 return;
             if (pending.Contains(source))
             {
@@ -72,22 +74,20 @@ namespace Simple1C.Impl
             else
                 configurationName = null;
             bool? newPostingValue = null;
-            foreach (var p in changeLog)
-            {
-                var value = p.Value;
-                if (p.Key == "Проведен" && configurationName.HasValue &&
-                    configurationName.Value.Scope == ConfigurationScope.Документы)
+            if(changeLog != null)
+                foreach (var p in changeLog)
                 {
-                    newPostingValue = (bool?) value;
-                    continue;
+                    var value = p.Value;
+                    if (p.Key == "Проведен" && configurationName.HasValue &&
+                        configurationName.Value.Scope == ConfigurationScope.Документы)
+                    {
+                        newPostingValue = (bool?) value;
+                        continue;
+                    }
+                    pending.Push(p.Key);
+                    SaveProperty(p.Key, p.Value, comObject, pending);
+                    pending.Pop();
                 }
-                bool needSet;
-                pending.Push(p.Key);
-                var valueToSet = ProcessProperty(p.Key, p.Value, comObject, pending, out needSet);
-                pending.Pop();
-                if (needSet)
-                    ComHelpers.SetProperty(comObject, p.Key, valueToSet);
-            }
             var oldRevision = source.Controller.Revision;
             if (configurationName.HasValue)
             {
@@ -122,8 +122,7 @@ namespace Simple1C.Impl
             pending.Pop();
         }
 
-        private object ProcessProperty(string name, object value, object comObject, Stack<object> pending,
-            out bool needSet)
+        private void SaveProperty(string name, object value, object comObject, Stack<object> pending)
         {
             var list = value as IList;
             if (list != null)
@@ -131,35 +130,61 @@ namespace Simple1C.Impl
                 var tableSection = ComHelpers.GetProperty(comObject, name);
                 ComHelpers.Invoke(tableSection, "Очистить");
                 foreach (Abstract1CEntity item in (IList) value)
-                    Update(item, ComHelpers.Invoke(tableSection, "Добавить"), pending);
-                needSet = false;
-                return null;
+                    Save(item, ComHelpers.Invoke(tableSection, "Добавить"), pending);
+                return;
             }
             var syncList = value as SyncList;
             if (syncList != null)
             {
-                UpdateSyncList(syncList, ComHelpers.GetProperty(comObject, name), pending);
-                needSet = false;
-                return null;
+                var tableSection = ComHelpers.GetProperty(comObject, name);
+                foreach (var cmd in syncList.commands)
+                    switch (cmd.CommandType)
+                    {
+                        case SyncList.CommandType.Delete:
+                            var deleteCommand = (SyncList.DeleteCommand) cmd;
+                            ComHelpers.Invoke(tableSection, "Удалить", deleteCommand.index);
+                            break;
+                        case SyncList.CommandType.Insert:
+                            var insertCommand = (SyncList.InsertCommand) cmd;
+                            var newItemComObject = ComHelpers.Invoke(tableSection, "Вставить", insertCommand.index);
+                            pending.Push(insertCommand.index);
+                            Save(insertCommand.item, newItemComObject, pending);
+                            pending.Pop();
+                            break;
+                        case SyncList.CommandType.Move:
+                            var moveCommand = (SyncList.MoveCommand) cmd;
+                            ComHelpers.Invoke(tableSection, "Сдвинуть", moveCommand.from, moveCommand.delta);
+                            break;
+                        case SyncList.CommandType.Update:
+                            var updateCommand = (SyncList.UpdateCommand) cmd;
+                            pending.Push(updateCommand.index);
+                            Save(updateCommand.item, ComHelpers.Invoke(tableSection, "Получить", updateCommand.index),
+                                pending);
+                            pending.Pop();
+                            break;
+                        default:
+                            throw new ArgumentOutOfRangeException();
+                    }
+                return;
             }
-            needSet = true;
+            object valueToSet;
             var abstractEntity = value as Abstract1CEntity;
             if (abstractEntity != null)
             {
-                Update(abstractEntity, null, pending);
-                return ((ComBasedEntityController) abstractEntity.Controller).ComObject;
+                Save(abstractEntity, null, pending);
+                valueToSet = ((ComBasedEntityController) abstractEntity.Controller).ComObject;
             }
-            if (value != null && value.GetType().IsEnum)
-                return enumMapper.MapTo1C(value);
-            return value;
+            else if (value != null && value.GetType().IsEnum)
+                valueToSet = enumMapper.MapTo1C(value);
+            else
+                valueToSet = value;
+            ComHelpers.SetProperty(comObject, name, valueToSet);
         }
 
         private void Write(object comObject, ConfigurationName name, bool? posting)
         {
-            var writeModeName = posting.HasValue
-                ? (posting.Value ? "Posting" : "UndoPosting")
-                : "Write";
-            var writeMode = ComHelpers.GetProperty(globalContext.ComObject, "РежимЗаписиДокумента");
+            var writeModeName = posting.HasValue ? (posting.Value ? "Posting" : "UndoPosting") : "Write";
+            var writeMode = globalContext.РежимЗаписиДокумента();
             var writeModeValue = ComHelpers.GetProperty(writeMode, writeModeName);
             try
             {
@@ -168,70 +193,25 @@ namespace Simple1C.Impl
             catch (TargetInvocationException e)
             {
                 const string messageFormat = "error writing document [{0}] with mode [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    name.Fullname, writeModeName), e.InnerException);
-            }
-        }
-
-        private void UpdateSyncList(SyncList syncList, object tableSection, Stack<object> pending)
-        {
-            var original = syncList.original;
-            if (original != null)
-                for (var i = original.Count - 1; i >= 0; i--)
-                {
-                    var item = original[i];
-                    if (syncList.current.IndexOf(item) < 0)
-                    {
-                        ComHelpers.Invoke(tableSection, "Удалить", i);
-                        original.RemoveAt(i);
-                    }
-                }
-            else
-                original = new List<object>();
-            for (var i = 0; i < syncList.current.Count; i++)
-            {
-                var item = (Abstract1CEntity) syncList.current[i];
-                var originalIndex = original.IndexOf(item);
-                if (originalIndex < 0)
-                {
-                    var newItemComObject = ComHelpers.Invoke(tableSection, "Вставить", i);
-                    pending.Push(i);
-                    Update(item, newItemComObject, pending);
-                    pending.Pop();
-                    original.Insert(i, null);
-                }
-                else
-                {
-                    if (originalIndex != i)
-                    {
-                        ComHelpers.Invoke(tableSection, "Сдвинуть", originalIndex, i - originalIndex);
-                        original.RemoveAt(originalIndex);
-                        original.Insert(i, null);
-                    }
-                    if (item.Controller.Changed != null)
-                    {
-                        pending.Push(i);
-                        Update(item, ComHelpers.Invoke(tableSection, "Получить", i), pending);
-                        pending.Pop();
-                    }
-                }
+                throw new InvalidOperationException(string.Format(messageFormat, name.Fullname, writeModeName),
+                    e.InnerException);
             }
         }
 
         private static void UpdateIfExists(Abstract1CEntity target, object source, string propertyName)
         {
             var property = target.GetType().GetProperty(propertyName);
-            if (property != null)
+            if (property == null)
+                return;
+            var oldTrackChanges = target.Controller.TrackChanges;
+            target.Controller.TrackChanges = false;
+            try
             {
-                target.Controller.TrackChanges = false;
-                try
-                {
-                    property.SetValue(target, ComHelpers.GetProperty(source, propertyName));
-                }
-                finally
-                {
-                    target.Controller.TrackChanges = true;
-                }
+                property.SetValue(target, ComHelpers.GetProperty(source, propertyName));
+            }
+            finally
+            {
+                target.Controller.TrackChanges = oldTrackChanges;
             }
         }
 
@@ -239,13 +219,13 @@ namespace Simple1C.Impl
         {
             if (configurationName.Scope == ConfigurationScope.Справочники)
             {
-                var catalogs = ComHelpers.GetProperty(globalContext.ComObject, "Справочники");
+                var catalogs = globalContext.Справочники();
                 var catalogManager = ComHelpers.GetProperty(catalogs, configurationName.Name);
                 return ComHelpers.Invoke(catalogManager, "CreateItem");
             }
             if (configurationName.Scope == ConfigurationScope.Документы)
             {
-                var documents = ComHelpers.GetProperty(globalContext.ComObject, "Документы");
+                var documents = globalContext.Документы();
                 var documentManager = ComHelpers.GetProperty(documents, configurationName.Name);
                 return ComHelpers.Invoke(documentManager, "CreateDocument");
             }
@@ -256,18 +236,15 @@ namespace Simple1C.Impl
         private IEnumerable Execute(BuiltQuery builtQuery)
         {
             var queryText = builtQuery.QueryText;
-            var parameters = builtQuery.Parameters
-                .Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
-            var resultTable = globalContext.Execute(queryText, parameters);
-            return resultTable.Select(x => comObjectMapper.MapFrom1C(x["Ссылка"],
-                builtQuery.EntityType));
+            var parameters =
+                builtQuery.Parameters.Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
+            var selection = globalContext.Execute(queryText, parameters).Select();
+            while (selection.Next())
+                yield return comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
         }
-
         private object ConvertParameterValue(KeyValuePair<string, object> x)
         {
-            return x.Value != null && x.Value.GetType().IsEnum
-                ? enumMapper.MapTo1C(x.Value)
-                : x.Value;
+            return x.Value != null && x.Value.GetType().IsEnum ? enumMapper.MapTo1C(x.Value) : x.Value;
         }
     }
 }

@@ -20,7 +20,7 @@ namespace Simple1C.Tests.TestEntities
 
         public dynamic ComObject
         {
-            get { return globalContext.ComObject; }
+            get { return globalContext.ComObject(); }
         }
 
         public object CreateAccountingDocument(AccountingDocument document) 
@@ -148,7 +148,11 @@ namespace Simple1C.Tests.TestEntities
 	                Справочник.{0} КАК catalog
                 ГДЕ
 	                catalog.{1} = &key";
-            return globalContext.Execute(string.Format(queryFormat, catalogName, keyName), new Dictionary<string, object> {{"key", keyValue}}).Select(x => x["Ссылка"]).FirstOrDefault();
+            return globalContext.Execute(string.Format(queryFormat, catalogName, keyName),
+                new Dictionary<string, object> {{"key", keyValue}})
+                .Unload()
+                .Select(x => x["Ссылка"])
+                .FirstOrDefault();
         }
 
         private object GetUserByDescription(string name)

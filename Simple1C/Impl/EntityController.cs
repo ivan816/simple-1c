@@ -9,11 +9,11 @@ namespace Simple1C.Impl
     public abstract class EntityController
     {
         private Dictionary<string, ObservedValue> observedValues;
-        public uint Revision { get; set; }
+        internal uint Revision { get; set; }
+        internal bool TrackChanges { get; set; }
 
         //грязный хак, подумать, как избавитсья
         public object ComObject { get; protected set; }
-        public bool TrackChanges { get; set; }
 
         protected EntityController()
         {
@@ -25,22 +25,18 @@ namespace Simple1C.Impl
         {
             if (Revision > requisite.revision)
             {
-                T result;
                 if (requisite.revision == 0)
                 {
                     object resultObject;
                     if (!TryLoadValue(name, typeof (T), out resultObject))
                         resultObject = default(T);
-                    result = (T) resultObject;
-                    if (result == null && typeof (IList).IsAssignableFrom(typeof (T)))
+                    if (resultObject == null && typeof (IList).IsAssignableFrom(typeof (T)))
                     {
                         var listItemType = typeof (T).GetGenericArguments()[0];
-                        result = (T) ListFactory.Create(listItemType, null, 1);
+                        resultObject = (T) ListFactory.Create(listItemType, null, 1);
                     }
-                    requisite.value = result;
+                    requisite.value = (T) resultObject;
                 }
-                else
-                    result = requisite.value;
                 requisite.revision = Revision;
                 var needTrack = typeof (Abstract1CEntity).IsAssignableFrom(typeof (T)) ||
                                 typeof (IList).IsAssignableFrom(typeof (T));
@@ -48,10 +44,10 @@ namespace Simple1C.Impl
                 {
                     if (observedValues == null)
                         observedValues = new Dictionary<string, ObservedValue>();
-                    var list = result as IList;
+                    var list = requisite.value as IList;
                     observedValues[name] = new ObservedValue
                     {
-                        value = result,
+                        value = requisite.value,
                         originalList = list == null
                             ? null
                             : ListFactory.Create(typeof (T).GetGenericArguments()[0], list, 0)
@@ -69,36 +65,38 @@ namespace Simple1C.Impl
                 MarkAsChanged(name, value);
         }
 
-        internal void MarkPotentiallyChangedAsChanged()
+        internal void PrepareToSave(Abstract1CEntity owner, List<Abstract1CEntity> entitiesToSave)
         {
-            if (observedValues == null)
-                return;
-            foreach (var item in observedValues)
+            if (observedValues != null)
             {
-                if (Changed != null && Changed.ContainsKey(item.Key))
-                    continue;
-                var value = item.Value;
-                var entity = value.value as Abstract1CEntity;
-                if (entity != null)
+                foreach (var item in observedValues)
                 {
-                    entity.Controller.MarkPotentiallyChangedAsChanged();
-                    if (entity.Controller.Changed != null)
-                        MarkAsChanged(item.Key, item.Value.value);
-                    continue;
-                }
-                var list = value.value as IList;
-                if (list != null)
-                {
-                    foreach (Abstract1CEntity e in list)
-                        e.Controller.MarkPotentiallyChangedAsChanged();
-                    MarkAsChanged(item.Key, new SyncList
+                    if (Changed != null && Changed.ContainsKey(item.Key))
+                        continue;
+                    var value = item.Value;
+                    var entity = value.value as Abstract1CEntity;
+                    if (entity != null)
                     {
-                        current = list,
-                        original = value.originalList
-                    });
+                        entity.Controller.PrepareToSave(entity, entitiesToSave);
+                        continue;
+                    }
+                    var list = value.value as IList;
+                    if (list != null)
+                    {
+                        foreach (Abstract1CEntity e in list)
+                            e.Controller.PrepareToSave(e, entitiesToSave);
+                        var syncList = new SyncList();
+                        syncList.Compare(value.originalList, list);
+                        if (syncList.commands.Count > 0)
+                            MarkAsChanged(item.Key, syncList);
+                    }
                 }
+                observedValues = null;
             }
-            observedValues = null;
+            var needSave = !EntityHelpers.IsTableSection(owner.GetType()) &&
+                           (Changed != null || this is DictionaryBasedEntityController);
+            if (needSave)
+                entitiesToSave.Add(owner);
         }
 
         protected void MarkAsChanged(string name, object value)

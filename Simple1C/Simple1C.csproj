@@ -39,7 +39,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Impl\ComDataContext.cs" />
+    <Compile Include="Impl\EntityHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
+    <Compile Include="Impl\Queries\ValueTable.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumn.cs" />
+    <Compile Include="Impl\Queries\ValueTableColumnCollection.cs" />
+    <Compile Include="Impl\Queries\ValueTableRow.cs" />
+    <Compile Include="Impl\QueryResult.cs" />
     <Compile Include="Interface\IDataContext.cs" />
     <Compile Include="Impl\TypeMapper.cs" />
     <Compile Include="Interface\Connection1CType.cs" />
@@ -69,10 +75,7 @@
     <Compile Include="Impl\Helpers\DictionaryExtensions.cs" />
     <Compile Include="Impl\Helpers\EnumerableExtensions.cs" />
     <Compile Include="Impl\Helpers\Evaluator.cs" />
-    <Compile Include="Impl\Queries\ValueTable.cs" />
-    <Compile Include="Impl\Queries\ValueTableColumn.cs" />
-    <Compile Include="Impl\Queries\ValueTableColumnCollection.cs" />
-    <Compile Include="Impl\Queries\ValueTableRow.cs" />
+    <Compile Include="Impl\Queries\QueryResultSelection.cs" />
     <Compile Include="Impl\Helpers\ListFactory.cs" />
     <Compile Include="Impl\Queriables\BuiltQuery.cs" />
     <Compile Include="Impl\Queriables\IRelinqQueryable.cs" />
