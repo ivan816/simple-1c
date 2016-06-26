@@ -808,6 +808,32 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void DoNotOverwriteDocumentWhenObservedListDoesNotChange()
+        {
+            var акт = new ПоступлениеТоваровУслуг
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = new Контрагенты
+                {
+                    Наименование = "contractor name"
+                }
+            };
+            dataContext.Save(акт);
+
+            var docVersion = GetDocumentByNumber(акт.Номер).DataVersion;
+
+            var акт2 = dataContext.Single<ПоступлениеТоваровУслуг>(x => x.Номер == акт.Номер && x.Дата == акт.Дата);
+            Assert.That(акт2.Услуги.Count, Is.EqualTo(0));
+            акт2.Контрагент.Наименование = "changed contractor name";
+            dataContext.Save(акт2);
+
+            var контрагент = dataContext.Single<Контрагенты>(x => x.Код == акт.Контрагент.Код);
+            Assert.That(контрагент.Наименование, Is.EqualTo("changed contractor name"));
+            var newDocVersion = GetDocumentByNumber(акт.Номер).DataVersion;
+            Assert.That(newDocVersion, Is.EqualTo(docVersion));
+        }
+
+        [Test]
         public void ModifyReference()
         {
             var counterpart = new Counterpart
