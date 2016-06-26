@@ -58,11 +58,11 @@ namespace Simple1C.Tests
             var договор = dataContext.Single<ДоговорыКонтрагентов>();
             Assert.That(договор.Наименование, Is.EqualTo("test contract"));
 
-            var контрагент = dataContext.Single<ДоговорыКонтрагентов>();
+            var контрагент = dataContext.Single<Контрагенты>();
             контрагент.Наименование = "test contractor changed name";
             dataContext.Save(контрагент);
 
-            Assert.That(договор.Владелец.Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(договор.Владелец.Наименование, Is.EqualTo("test contractor changed name"));
         }
 
         [Test]
