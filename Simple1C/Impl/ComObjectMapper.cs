@@ -11,6 +11,7 @@ namespace Simple1C.Impl
     {
         private readonly EnumMapper enumMapper;
         private readonly TypeMapper typeMapper;
+        private static readonly DateTime nullDateTime = new DateTime(100, 1, 1);
 
         public ComObjectMapper(EnumMapper enumMapper, TypeMapper typeMapper)
         {
@@ -36,6 +37,11 @@ namespace Simple1C.Impl
                 else
                     type = source.GetType();
             type = Nullable.GetUnderlyingType(type) ?? type;
+            if (type == typeof (DateTime))
+            {
+                var dateTime = (DateTime) source;
+                return dateTime == nullDateTime ? null : source;
+            }
             if (type.IsEnum)
                 return (bool) ComHelpers.Invoke(source, "IsEmpty")
                     ? null

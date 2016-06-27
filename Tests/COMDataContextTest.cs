@@ -310,6 +310,30 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanSaveNullDateTimes()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test",
+                ИНН = "123456789"
+            };
+            dataContext.Save(контрагент);
+
+            var контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
+            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.Null);
+
+            контрагент2.СвидетельствоДатаВыдачи = new DateTime(2010, 7, 18);
+            dataContext.Save(контрагент2);
+            контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
+            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.EqualTo(new DateTime(2010, 7, 18)));
+
+            контрагент2.СвидетельствоДатаВыдачи = null;
+            dataContext.Save(контрагент2);
+            контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
+            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.Null);
+        }
+
+        [Test]
         public void CanAddCounterparty()
         {
             var counterparty = new Контрагенты
