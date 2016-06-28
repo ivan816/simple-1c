@@ -2,7 +2,8 @@
 
 *This project is licensed under the terms of the MIT license.*
 
-NuGet-пакет: https://www.nuget.org/packages/Simple1C
+##NuGet-пакет
+https://www.nuget.org/packages/Simple1C
 
 Несмотря на то, что еще в 2013-м году 1С опубликовал REST апи
 поверх протокола OData ([раз](https://wonderland.v8.1c.ru/blog/avtomaticheskiy-rest-interfeys-prikladnykh-resheniy),
