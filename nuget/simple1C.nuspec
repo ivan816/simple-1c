@@ -2,17 +2,19 @@
 <package >
   <metadata>
     <id>Simple1C</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <authors>gusev_p, ivan_816</authors>
     <owners>gusev_p, ivan_816</owners>
     <licenseUrl>https://github.com/gusev-p/simple-1c/blob/master/LICENSE.txt</licenseUrl>
     <projectUrl>https://github.com/gusev-p/simple-1c</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Linq provider for 1C</description>
-    <releaseNotes>Initial publish.</releaseNotes>
     <copyright>Copyright 2016</copyright>
   </metadata>
   <files>
-    <file src="..\bin\*.*" target="lib\net45\" /> 
+    <file src="..\bin\Simple1C.dll" target="lib" />
+    <file src="..\bin\Simple1C.pdb" target="lib" /> 
+    <file src="..\bin\Generator.exe" target="tools" />
+    <file src="..\bin\Generator.pdb" target="tools" />
   </files>
 </package>
