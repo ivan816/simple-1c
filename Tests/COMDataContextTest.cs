@@ -454,7 +454,7 @@ namespace Simple1C.Tests
         [Test]
         public void CanWritePreviouslyReadInformationRegister()
         {
-            var период = DateTime.Today;
+            var период = new DateTime(2025, 7, 17);
             var курс = new КурсыВалют
             {
                 Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),
@@ -478,7 +478,7 @@ namespace Simple1C.Tests
         [Test]
         public void CanReadWriteInformationRegister()
         {
-            var период = DateTime.Today;
+            var период = new DateTime(2025, 7, 18);
             var курс = new КурсыВалют
             {
                 Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),

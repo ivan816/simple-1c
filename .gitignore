@@ -3,6 +3,7 @@
 *.mdb
 *.userprefs
 bin/
+bin.tests/
 obj/
 packages/
 *.designer.cs
