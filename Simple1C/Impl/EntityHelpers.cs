@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl
 {
-    public class EntityHelpers
+    internal class EntityHelpers
     {
         public static bool IsTableSection(Type type)
         {

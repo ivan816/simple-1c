@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace Simple1C.Impl.Com
 {
-    public class DispatchObject
+    internal class DispatchObject
     {
         private readonly object comObject;
 

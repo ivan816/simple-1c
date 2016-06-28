@@ -3,7 +3,7 @@ using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl
 {
-    public class ComValueSource : IValueSource
+    internal class ComValueSource : IValueSource
     {
         private readonly ComObjectMapper comObjectMapper;
         private readonly object comObject;

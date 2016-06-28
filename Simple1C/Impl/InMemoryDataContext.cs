@@ -14,16 +14,16 @@ namespace Simple1C.Impl
     {
         private readonly Dictionary<Type, InMemoryEntityCollection> committed = new Dictionary<Type, InMemoryEntityCollection>();
 
-        private readonly TypeMapper typeMapper;
+        private readonly TypeRegistry typeRegistry;
 
         public InMemoryDataContext(Assembly mappingsAssembly)
         {
-            typeMapper = new TypeMapper(mappingsAssembly);
+            typeRegistry = new TypeRegistry(mappingsAssembly);
         }
 
         public Type GetTypeOrNull(string configurationName)
         {
-            return typeMapper.GetTypeOrNull(configurationName);
+            return typeRegistry.GetTypeOrNull(configurationName);
         }
 
         public int GetRevision(Type type)

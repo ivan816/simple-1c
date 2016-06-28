@@ -50,7 +50,7 @@
     <Compile Include="Impl\QueryResult.cs" />
     <Compile Include="Impl\ValueSource.cs" />
     <Compile Include="Interface\IDataContext.cs" />
-    <Compile Include="Impl\TypeMapper.cs" />
+    <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\Connection1CType.cs" />
     <Compile Include="Interface\ConnectionStringBuilder.cs" />
     <Compile Include="Interface\GlobalContextFactory.cs" />

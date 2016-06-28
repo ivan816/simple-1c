@@ -8,13 +8,13 @@ namespace Simple1C.Impl.Queriables
 {
     internal class QueryBuilder
     {
-        private readonly TypeMapper typeMapper;
+        private readonly TypeRegistry typeRegistry;
         private readonly Dictionary<string, object> parameters = new Dictionary<string, object>();
         private readonly List<string> whereParts = new List<string>();
 
-        public QueryBuilder(TypeMapper typeMapper)
+        public QueryBuilder(TypeRegistry typeRegistry)
         {
-            this.typeMapper = typeMapper;
+            this.typeRegistry = typeRegistry;
         }
 
         public Ordering[] Orderings { get; set; }
@@ -83,7 +83,7 @@ namespace Simple1C.Impl.Queriables
             if (!string.IsNullOrEmpty(name))
             {
                 sourceName = name;
-                sourceType = typeMapper.GetTypeOrNull(sourceName);
+                sourceType = typeRegistry.GetTypeOrNull(sourceName);
             }
             else
             {

@@ -10,13 +10,13 @@ namespace Simple1C.Impl
     internal class ComObjectMapper
     {
         private readonly EnumMapper enumMapper;
-        private readonly TypeMapper typeMapper;
+        private readonly TypeRegistry typeRegistry;
         private static readonly DateTime nullDateTime = new DateTime(100, 1, 1);
 
-        public ComObjectMapper(EnumMapper enumMapper, TypeMapper typeMapper)
+        public ComObjectMapper(EnumMapper enumMapper, TypeRegistry typeRegistry)
         {
             this.enumMapper = enumMapper;
-            this.typeMapper = typeMapper;
+            this.typeRegistry = typeRegistry;
         }
 
         public object MapFrom1C(object source, Type type)
@@ -27,7 +27,7 @@ namespace Simple1C.Impl
                 if (source is MarshalByRefObject)
                 {
                     var typeName = GetFullName(source);
-                    type = typeMapper.GetTypeOrNull(typeName);
+                    type = typeRegistry.GetTypeOrNull(typeName);
                     if (type == null)
                     {
                         const string messageFormat = "can't resolve .NET type by 1c type [{0}]";

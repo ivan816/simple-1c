@@ -4,7 +4,7 @@ using Simple1C.Impl.Queries;
 
 namespace Simple1C.Impl
 {
-    public class QueryResult : DispatchObject
+    internal class QueryResult : DispatchObject
     {
         public QueryResult(object comObject)
             : base(comObject)

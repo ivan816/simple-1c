@@ -3,7 +3,7 @@ using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queries
 {
-    public class ValueTableColumnCollection : DispatchObject
+    internal class ValueTableColumnCollection : DispatchObject
     {
         public ValueTableColumnCollection(object comObject)
             : base(comObject)

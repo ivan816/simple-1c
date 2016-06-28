@@ -431,7 +431,7 @@ namespace Simple1C.Tests
 
         protected IQueryable<T> Source<T>(string sourceName = null)
         {
-            var queryProvider = RelinqHelpers.CreateQueryProvider(new TypeMapper(typeof (Контрагенты).Assembly),
+            var queryProvider = RelinqHelpers.CreateQueryProvider(new TypeRegistry(typeof (Контрагенты).Assembly),
                 delegate(BuiltQuery query)
                 {
                     lastQuery = query;

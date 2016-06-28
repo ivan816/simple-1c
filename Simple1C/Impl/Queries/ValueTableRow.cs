@@ -3,7 +3,7 @@ using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queries
 {
-    public class ValueTableRow : DispatchObject
+    internal class ValueTableRow : DispatchObject
     {
         private readonly Dictionary<string, int> columnsMap;
 

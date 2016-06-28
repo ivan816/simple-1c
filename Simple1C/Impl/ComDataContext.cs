@@ -17,22 +17,22 @@ namespace Simple1C.Impl
         private readonly EnumMapper enumMapper;
         private readonly ComObjectMapper comObjectMapper;
         private readonly IQueryProvider queryProvider;
-        private readonly TypeMapper typeMapper;
-        private MetadataAccessor metadataAccessor;
+        private readonly TypeRegistry typeRegistry;
+        private readonly MetadataAccessor metadataAccessor;
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
             this.globalContext = new GlobalContext(globalContext);
             enumMapper = new EnumMapper(this.globalContext);
-            typeMapper = new TypeMapper(mappingsAssembly);
-            comObjectMapper = new ComObjectMapper(enumMapper, typeMapper);
-            queryProvider = RelinqHelpers.CreateQueryProvider(typeMapper, Execute);
+            typeRegistry = new TypeRegistry(mappingsAssembly);
+            comObjectMapper = new ComObjectMapper(enumMapper, typeRegistry);
+            queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
             metadataAccessor = new MetadataAccessor(this.globalContext);
         }
 
         public Type GetTypeOrNull(string configurationName)
         {
-            return typeMapper.GetTypeOrNull(configurationName);
+            return typeRegistry.GetTypeOrNull(configurationName);
         }
 
         public IQueryable<T> Select<T>(string sourceName = null)

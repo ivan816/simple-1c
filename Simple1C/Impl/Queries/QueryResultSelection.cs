@@ -3,7 +3,7 @@ using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queries
 {
-    public class QueryResultSelection
+    internal class QueryResultSelection
     {
         private readonly object comObject;
 
