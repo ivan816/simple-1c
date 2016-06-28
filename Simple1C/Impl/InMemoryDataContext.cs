@@ -10,10 +10,9 @@ using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl
 {
-    internal class InMemoryDataContext : IDataContext
+    public class InMemoryDataContext : IDataContext
     {
-        private readonly Dictionary<Type, List<InMemoryEntity>> committed =
-            new Dictionary<Type, List<InMemoryEntity>>();
+        private readonly Dictionary<Type, InMemoryEntityCollection> committed = new Dictionary<Type, InMemoryEntityCollection>();
 
         private readonly TypeMapper typeMapper;
 
@@ -27,10 +26,16 @@ namespace Simple1C.Impl
             return typeMapper.GetTypeOrNull(configurationName);
         }
 
+        public int GetRevision(Type type)
+        {
+            InMemoryEntityCollection collection;
+            return committed.TryGetValue(type, out collection) ? collection.revision : 0;
+        }
+
         public IQueryable<T> Select<T>(string sourceName = null)
         {
             return Collection(typeof (T))
-                .Select(x => (T) CreateEntity(typeof (T), x))
+                .list.Select(x => (T) CreateEntity(typeof (T), x))
                 .AsQueryable();
         }
 
@@ -82,7 +87,10 @@ namespace Simple1C.Impl
                 var inmemoryEntityRevision = (InMemoryEntityRevision)entity.Controller.ValueSource;
                 inMemoryEntity = inmemoryEntityRevision.inMemoryEntity;
                 if (changed != null)
+                {
                     inMemoryEntity.revision = new InMemoryEntityRevision(inMemoryEntity, inmemoryEntityRevision, changed);
+                    Collection(entity.GetType()).revision++;    
+                }
             }
             else
             {
@@ -99,7 +107,9 @@ namespace Simple1C.Impl
                         AssignNewGuid(entity, changed, "Код");
                     else if (configurationName.Scope == ConfigurationScope.Документы)
                         AssignNewGuid(entity, changed, "Номер");
-                    Collection(entity.GetType()).Add(inMemoryEntity);
+                    var inMemoryEntityCollection = Collection(entity.GetType());
+                    inMemoryEntityCollection.revision++;
+                    inMemoryEntityCollection.list.Add(inMemoryEntity);
                 }
             }
             entity.Controller.ResetDirty(inMemoryEntity.revision);
@@ -135,9 +145,9 @@ namespace Simple1C.Impl
             }
         }
 
-        private List<InMemoryEntity> Collection(Type type)
+        private InMemoryEntityCollection Collection(Type type)
         {
-            return committed.GetOrAdd(type, t => new List<InMemoryEntity>());
+            return committed.GetOrAdd(type, t => new InMemoryEntityCollection{list = new List<InMemoryEntity>()});
         }
 
         private class InMemoryEntityRevision: IValueSource
@@ -203,6 +213,12 @@ namespace Simple1C.Impl
         {
             public Type entityType;
             public InMemoryEntityRevision revision;
+        }
+
+        private class InMemoryEntityCollection
+        {
+            public List<InMemoryEntity> list;
+            public int revision;
         }
     }
 }
