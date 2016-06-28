@@ -2,9 +2,6 @@
 
 *This project is licensed under the terms of the MIT license.*
 
-##NuGet-пакет
-https://www.nuget.org/packages/Simple1C
-
 Несмотря на то, что еще в 2013-м году 1С опубликовал REST апи
 поверх протокола OData ([раз](https://wonderland.v8.1c.ru/blog/avtomaticheskiy-rest-interfeys-prikladnykh-resheniy),
 [два](https://wonderland.v8.1c.ru/blog/rasshirenie-podderzhki-protokola-odata)),
@@ -15,6 +12,13 @@ https://www.nuget.org/packages/Simple1C
 Используем C# как основной язык для автогенерации.
 Механику провайдера упрощаем за счет [вот этой](https://relinq.codeplex.com) классной штуки.
 Аналогичные проекты: http://www.linq-demo.1csoftware.com, http://www.vanessa-sharp.ru/reference-linq.html.
+
+##NuGet
+
+Для установки [Simple1C пакета](https://www.nuget.org/packages/Simple1C),
+выполните следующую команду в [NuGet-консоли](http://docs.nuget.org/docs/start-here/using-the-package-manager-console)
+
+    PM> Install-Package Simple1C
 
 ##Основные возможности
 * Автоматическая генерация классов объектной модели по 1С-конфигурации :
