@@ -7,7 +7,6 @@ namespace Simple1C.Impl
     internal class SyncList
     {
         public List<Command> Commands { get; private set; }
-        public IList Original { get; private set; }
         public IList Current { get; private set; }
 
         public static SyncList Compare(IList original, IList current)
@@ -15,7 +14,6 @@ namespace Simple1C.Impl
             var result = new SyncList
             {
                 Commands = new List<Command>(),
-                Original = original,
                 Current = current
             };
             if (original != null)

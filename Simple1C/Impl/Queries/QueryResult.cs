@@ -1,8 +1,6 @@
-﻿using System.Collections.Generic;
-using Simple1C.Impl.Com;
-using Simple1C.Impl.Queries;
+﻿using Simple1C.Impl.Com;
 
-namespace Simple1C.Impl
+namespace Simple1C.Impl.Queries
 {
     internal class QueryResult : DispatchObject
     {

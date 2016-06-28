@@ -48,8 +48,8 @@
     <Compile Include="Impl\Queries\ValueTableColumn.cs" />
     <Compile Include="Impl\Queries\ValueTableColumnCollection.cs" />
     <Compile Include="Impl\Queries\ValueTableRow.cs" />
-    <Compile Include="Impl\QueryResult.cs" />
-    <Compile Include="Impl\ValueSource.cs" />
+    <Compile Include="Impl\Queries\QueryResult.cs" />
+    <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Interface\IDataContext.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\Connection1CType.cs" />

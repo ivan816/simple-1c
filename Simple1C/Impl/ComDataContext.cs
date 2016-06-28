@@ -276,22 +276,23 @@ namespace Simple1C.Impl
         private IEnumerable Execute(BuiltQuery builtQuery)
         {
             var queryText = builtQuery.QueryText;
-            var parameters =
-                builtQuery.Parameters.Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
+            var parameters = builtQuery.Parameters
+                .Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
+            var hasReference = ConfigurationName.Get(builtQuery.EntityType).HasReference;
             var queryResult = globalContext.Execute(queryText, parameters);
             var selection = queryResult.Select();
             while (selection.Next())
             {
-                var sourceObject = ConfigurationName.Get(builtQuery.EntityType).HasReference
-                    ? selection["Ссылка"]
-                    : selection.ComObject;
+                var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
                 yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
             }
         }
 
         private object ConvertParameterValue(KeyValuePair<string, object> x)
         {
-            return x.Value != null && x.Value.GetType().IsEnum ? enumMapper.MapTo1C(x.Value) : x.Value;
+            return x.Value != null && x.Value.GetType().IsEnum 
+                ? enumMapper.MapTo1C(x.Value) 
+                : x.Value;
         }
     }
 }

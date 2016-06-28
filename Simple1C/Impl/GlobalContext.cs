@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Com;
+using Simple1C.Impl.Queries;
 
 namespace Simple1C.Impl
 {
