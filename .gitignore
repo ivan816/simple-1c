@@ -6,5 +6,6 @@ bin/
 bin.tests/
 obj/
 packages/
+*.nupkg
 *.designer.cs
 *.Designer.cs
