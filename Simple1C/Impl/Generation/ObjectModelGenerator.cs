@@ -31,40 +31,7 @@ namespace Simple1C.Impl.Generation
             AttributePropertyNames = new[] {"Реквизиты"}
         };
 
-        private static readonly Dictionary<ConfigurationScope, ConfigurationItemDescriptor> descriptors =
-            new Dictionary<ConfigurationScope, ConfigurationItemDescriptor>
-            {
-                {
-                    ConfigurationScope.Справочники, new ConfigurationItemDescriptor
-                    {
-                        AttributePropertyNames = new[] {"Реквизиты"},
-                        HasTableSections = true
-                    }
-                },
-                {
-                    ConfigurationScope.Документы,
-                    new ConfigurationItemDescriptor
-                    {
-                        AttributePropertyNames = new[] {"Реквизиты"},
-                        HasTableSections = true
-                    }
-                },
-                {
-                    ConfigurationScope.РегистрыСведений,
-                    new ConfigurationItemDescriptor
-                    {
-                        AttributePropertyNames = new[] {"Реквизиты", "Измерения", "Ресурсы"}
-                    }
-                },
-                {
-                    ConfigurationScope.ПланыСчетов,
-                    new ConfigurationItemDescriptor
-                    {
-                        AttributePropertyNames = new[] {"Реквизиты"},
-                        HasTableSections = true
-                    }
-                }
-            };
+        
 
         private readonly GlobalContext globalContext;
         private readonly object metadata;
@@ -139,7 +106,7 @@ namespace Simple1C.Impl.Generation
 
         private void GenerateClass(ConfigurationItem item, GenerationContext context)
         {
-            var classContent = GenerateClassContent(descriptors[item.Name.Scope],
+            var classContent = GenerateClassContent(MetadataAccessor.GetDescriptor(item.Name.Scope),
                 item.Name.Fullname, item.ComObject, context);
             var fileContent = GeneratorTemplates.classFormat.Apply(new FormatParameters()
                 .With("namespace-name", GetNamespaceName(item.Name.Scope))
@@ -294,12 +261,6 @@ namespace Simple1C.Impl.Generation
         private static string ToCamel(string s)
         {
             return char.ToLower(s[0]) + s.Substring(1);
-        }
-
-        private class ConfigurationItemDescriptor
-        {
-            public string[] AttributePropertyNames { get; set; }
-            public bool HasTableSections { get; set; }
         }
     }
 }

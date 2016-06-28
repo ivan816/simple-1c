@@ -7,6 +7,7 @@ using Simple1C.Interface;
 using Simple1C.Tests.Metadata1C.Документы;
 using Simple1C.Tests.Metadata1C.Перечисления;
 using Simple1C.Tests.Metadata1C.ПланыСчетов;
+using Simple1C.Tests.Metadata1C.РегистрыСведений;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
 
@@ -448,6 +449,63 @@ namespace Simple1C.Tests
             }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test name"));
+        }
+        
+        [Test]
+        public void CanWritePreviouslyReadInformationRegister()
+        {
+            var период = DateTime.Today;
+            var курс = new КурсыВалют
+            {
+                Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),
+                Кратность = 42,
+                Курс = 12,
+                Период = период
+            };
+            dataContext.Save(курс);
+
+            var курс2 = dataContext.Single<КурсыВалют>(x => x.Период == период);
+            курс2.Кратность = 43;
+            dataContext.Save(курс2);
+
+            var курс3 = dataContext.Single<КурсыВалют>(x => x.Период == период);
+            Assert.That(курс3.Валюта.Код, Is.EqualTo("643"));
+            Assert.That(курс3.Кратность, Is.EqualTo(43));
+            Assert.That(курс3.Курс, Is.EqualTo(12));
+            Assert.That(курс3.Период, Is.EqualTo(период));
+        }
+
+        [Test]
+        public void CanReadWriteInformationRegister()
+        {
+            var период = DateTime.Today;
+            var курс = new КурсыВалют
+            {
+                Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),
+                Кратность = 42,
+                Курс = 12,
+                Период = период
+            };
+            dataContext.Save(курс);
+
+            var курс2 = dataContext.Select<КурсыВалют>()
+                .OrderByDescending(x => x.Период)
+                .First();
+            Assert.That(курс2.Валюта.Код, Is.EqualTo("643"));
+            Assert.That(курс2.Кратность, Is.EqualTo(42));
+            Assert.That(курс2.Курс, Is.EqualTo(12));
+            Assert.That(курс2.Период, Is.EqualTo(период));
+
+            курс.Кратность = 43;
+            dataContext.Save(курс);
+
+            var курс3 = dataContext.Select<КурсыВалют>()
+                .OrderByDescending(x => x.Период)
+                .First();
+            Assert.That(курс3.Валюта.Код, Is.EqualTo("643"));
+            Assert.That(курс3.Кратность, Is.EqualTo(43));
+            Assert.That(курс3.Курс, Is.EqualTo(12));
+            Assert.That(курс3.Период, Is.EqualTo(период));
         }
 
         [Test]

@@ -161,12 +161,15 @@ namespace Simple1C.Impl
                 this.inMemoryEntity = inMemoryEntity;
                 this.previous = previous;
                 this.properties = properties;
+                Writable = true;
             }
 
             public object GetBackingStorage()
             {
                 return inMemoryEntity;
             }
+
+            public bool Writable { get; private set; }
 
             public bool TryLoadValue(string name, Type type, out object result)
             {

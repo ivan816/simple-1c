@@ -11,12 +11,12 @@ namespace Simple1C.Impl.Queries
 
         public ValueTable(object comObject) : base(comObject)
         {
-            columnsMap = Columns.GetMap();
+            columnsMap = GetColumns().GetMap();
         }
 
-        public ValueTableColumnCollection Columns
+        public ValueTableColumnCollection GetColumns()
         {
-            get { return new ValueTableColumnCollection(Get("Columns")); }
+            return new ValueTableColumnCollection(Get("Columns"));
         }
 
         public int Count

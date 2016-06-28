@@ -27,6 +27,16 @@ namespace Simple1C.Impl
             get { return scope; }
         }
 
+        public bool HasReference
+        {
+            get
+            {
+                return scope == ConfigurationScope.Документы ||
+                       scope == ConfigurationScope.Справочники ||
+                       scope == ConfigurationScope.ПланыСчетов;
+            }
+        }
+
         public string Name
         {
             get { return name; }

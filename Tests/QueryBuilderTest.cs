@@ -417,7 +417,7 @@ namespace Simple1C.Tests
             public void Test()
             {
                 AssertQuery(Source<ОтветственныеЛицаОрганизаций>(),
-                    "ВЫБРАТЬ src.Ссылка ИЗ РегистрСведений.ОтветственныеЛицаОрганизаций КАК src");
+                    "ВЫБРАТЬ * ИЗ РегистрСведений.ОтветственныеЛицаОрганизаций КАК src");
             }
 
             [ConfigurationScope(ConfigurationScope.РегистрыСведений)]

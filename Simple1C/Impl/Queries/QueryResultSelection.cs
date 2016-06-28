@@ -12,6 +12,11 @@ namespace Simple1C.Impl.Queries
             this.comObject = comObject;
         }
 
+        public object ComObject
+        {
+            get { return comObject; }
+        }
+
         public string GetString(string name)
         {
             return Convert.ToString(ComHelpers.GetProperty(comObject, name));

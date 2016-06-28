@@ -48,12 +48,14 @@ namespace Simple1C.Impl
                     : enumMapper.MapFrom1C(type, source);
             if (typeof (Abstract1CEntity).IsAssignableFrom(type))
             {
-                var isEmpty = !EntityHelpers.IsTableSection(type)
-                              && (bool) ComHelpers.Invoke(source, "IsEmpty");
+                var configurationName = ConfigurationName.GetOrNull(type);
+                var isEmpty = configurationName.HasValue &&
+                              configurationName.Value.HasReference &&
+                              (bool) ComHelpers.Invoke(source, "IsEmpty");
                 if (isEmpty)
                     return null;
                 var result = (Abstract1CEntity) FormatterServices.GetUninitializedObject(type);
-                result.Controller = new EntityController(new ComValueSource(source, this));
+                result.Controller = new EntityController(new ComValueSource(source, this, false));
                 return result;
             }
             if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof (List<>))

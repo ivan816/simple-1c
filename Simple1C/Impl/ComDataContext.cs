@@ -18,6 +18,7 @@ namespace Simple1C.Impl
         private readonly ComObjectMapper comObjectMapper;
         private readonly IQueryProvider queryProvider;
         private readonly TypeMapper typeMapper;
+        private MetadataAccessor metadataAccessor;
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
@@ -26,6 +27,7 @@ namespace Simple1C.Impl
             typeMapper = new TypeMapper(mappingsAssembly);
             comObjectMapper = new ComObjectMapper(enumMapper, typeMapper);
             queryProvider = RelinqHelpers.CreateQueryProvider(typeMapper, Execute);
+            metadataAccessor = new MetadataAccessor(this.globalContext);
         }
 
         public Type GetTypeOrNull(string configurationName)
@@ -65,9 +67,14 @@ namespace Simple1C.Impl
             if (comObject == null)
             {
                 configurationName = ConfigurationName.Get(source.GetType());
-                comObject = source.Controller.IsNew
-                    ? CreateNewObject(configurationName.Value)
-                    : ComHelpers.Invoke(source.Controller.ValueSource.GetBackingStorage(), "ПолучитьОбъект");
+                if (configurationName.Value.Scope == ConfigurationScope.РегистрыСведений)
+                    comObject = source.Controller.ValueSource == null || !source.Controller.ValueSource.Writable
+                        ? CreateRegisterRecordManager(configurationName.Value.Name)
+                        : source.Controller.ValueSource.GetBackingStorage();
+                else
+                    comObject = source.Controller.IsNew
+                        ? CreateNewObject(configurationName.Value)
+                        : ComHelpers.Invoke(source.Controller.ValueSource.GetBackingStorage(), "ПолучитьОбъект");
             }
             else
                 configurationName = null;
@@ -87,6 +94,24 @@ namespace Simple1C.Impl
                     SaveProperty(p.Key, p.Value, comObject, pending);
                     pending.Pop();
                 }
+            var needPatchWithOriginalValues = configurationName.HasValue &&
+                                              configurationName.Value.Scope == ConfigurationScope.РегистрыСведений &&
+                                              source.Controller.ValueSource != null &&
+                                              !source.Controller.ValueSource.Writable &&
+                                              changeLog != null;
+            if (needPatchWithOriginalValues)
+            {
+                var requisiteNames = metadataAccessor.GetRequisiteNames(configurationName.Value);
+                var backingStorage = source.Controller.ValueSource.GetBackingStorage();
+                foreach (var requisiteName in requisiteNames)
+                    if (!changeLog.ContainsKey(requisiteName))
+                    {
+                        pending.Push(requisiteName);
+                        var value = ComHelpers.GetProperty(backingStorage, requisiteName);
+                        SaveProperty(requisiteName, value, comObject, pending);
+                        pending.Pop();
+                    }
+            }
             object valueSourceComObject;
             if (configurationName.HasValue)
             {
@@ -109,14 +134,18 @@ namespace Simple1C.Impl
                         UpdateIfExists(source, comObject, "Номер");
                         break;
                 }
-                valueSourceComObject = ComHelpers.GetProperty(comObject, "Ссылка");
+                valueSourceComObject = configurationName.Value.HasReference
+                    ? ComHelpers.GetProperty(comObject, "Ссылка")
+                    : comObject;
             }
             else
             {
                 UpdateIfExists(source, comObject, "НомерСтроки");
                 valueSourceComObject = comObject;
             }
-            source.Controller.ResetDirty(new ComValueSource(valueSourceComObject, comObjectMapper));
+            var valueSourceIsWriteable = configurationName.HasValue &&
+                                         configurationName.Value.Scope == ConfigurationScope.РегистрыСведений;
+            source.Controller.ResetDirty(new ComValueSource(valueSourceComObject, comObjectMapper, valueSourceIsWriteable));
             pending.Pop();
         }
 
@@ -181,17 +210,23 @@ namespace Simple1C.Impl
 
         private void Write(object comObject, ConfigurationName name, bool? posting)
         {
-            var writeModeName = posting.HasValue ? (posting.Value ? "Posting" : "UndoPosting") : "Write";
-            var writeMode = globalContext.РежимЗаписиДокумента();
-            var writeModeValue = ComHelpers.GetProperty(writeMode, writeModeName);
+            object argument;
+            if (name.Scope == ConfigurationScope.РегистрыСведений)
+                argument = true;
+            else
+            {
+                var writeModeName = posting.HasValue ? (posting.Value ? "Posting" : "UndoPosting") : "Write";
+                var writeMode = globalContext.РежимЗаписиДокумента();
+                argument = ComHelpers.GetProperty(writeMode, writeModeName);
+            }
             try
             {
-                ComHelpers.Invoke(comObject, "Write", writeModeValue);
+                ComHelpers.Invoke(comObject, "Write", argument);
             }
             catch (TargetInvocationException e)
             {
-                const string messageFormat = "error writing document [{0}] with mode [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, name.Fullname, writeModeName),
+                const string messageFormat = "error writing document [{0}] with argument [{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat, name.Fullname, argument),
                     e.InnerException);
             }
         }
@@ -211,6 +246,13 @@ namespace Simple1C.Impl
             {
                 target.Controller.TrackChanges = oldTrackChanges;
             }
+        }
+
+        private object CreateRegisterRecordManager(string name)
+        {
+            var informationRegisters = ComHelpers.GetProperty(globalContext.ComObject(), "РегистрыСведений");
+            var informationRegister = ComHelpers.GetProperty(informationRegisters, name);
+            return ComHelpers.Invoke(informationRegister, "СоздатьМенеджерЗаписи");
         }
 
         private object CreateNewObject(ConfigurationName configurationName)
@@ -236,10 +278,17 @@ namespace Simple1C.Impl
             var queryText = builtQuery.QueryText;
             var parameters =
                 builtQuery.Parameters.Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
-            var selection = globalContext.Execute(queryText, parameters).Select();
+            var queryResult = globalContext.Execute(queryText, parameters);
+            var selection = queryResult.Select();
             while (selection.Next())
-                yield return comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
+            {
+                var sourceObject = ConfigurationName.Get(builtQuery.EntityType).HasReference
+                    ? selection["Ссылка"]
+                    : selection.ComObject;
+                yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
+            }
         }
+
         private object ConvertParameterValue(KeyValuePair<string, object> x)
         {
             return x.Value != null && x.Value.GetType().IsEnum ? enumMapper.MapTo1C(x.Value) : x.Value;

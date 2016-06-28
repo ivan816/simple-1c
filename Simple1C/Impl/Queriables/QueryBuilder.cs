@@ -45,7 +45,8 @@ namespace Simple1C.Impl.Queriables
                 resultBuilder.Append(Take.Value);
                 resultBuilder.Append(" ");
             }
-            resultBuilder.Append("src.Ссылка ИЗ ");
+            resultBuilder.Append(ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*");
+            resultBuilder.Append(" ИЗ ");
             resultBuilder.Append(sourceName);
             resultBuilder.Append(" КАК src");
             if (whereParts.Count > 0)
