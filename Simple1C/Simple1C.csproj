@@ -42,6 +42,7 @@
     <Compile Include="Impl\ComDataContext.cs" />
     <Compile Include="Impl\EntityHelpers.cs" />
     <Compile Include="Impl\Generation\ConfigurationItemDescriptor.cs" />
+    <Compile Include="Impl\Helpers\NameValueCollectionHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
     <Compile Include="Impl\MetadataAccessor.cs" />
     <Compile Include="Impl\Queries\ValueTable.cs" />
