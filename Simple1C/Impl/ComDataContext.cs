@@ -19,6 +19,7 @@ namespace Simple1C.Impl
         private readonly IQueryProvider queryProvider;
         private readonly TypeRegistry typeRegistry;
         private readonly MetadataAccessor metadataAccessor;
+        private readonly ProjectionMapperFactory projectionMapperFactory;
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
@@ -28,6 +29,7 @@ namespace Simple1C.Impl
             comObjectMapper = new ComObjectMapper(enumMapper, typeRegistry);
             queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
             metadataAccessor = new MetadataAccessor(this.globalContext);
+            projectionMapperFactory = new ProjectionMapperFactory(comObjectMapper);
         }
 
         public Type GetTypeOrNull(string configurationName)
@@ -80,7 +82,7 @@ namespace Simple1C.Impl
                 configurationName = null;
             bool? newPostingValue = null;
             var changeLog = source.Controller.Changed;
-            if(changeLog != null)
+            if (changeLog != null)
                 foreach (var p in changeLog)
                 {
                     var value = p.Value;
@@ -145,7 +147,8 @@ namespace Simple1C.Impl
             }
             var valueSourceIsWriteable = configurationName.HasValue &&
                                          configurationName.Value.Scope == ConfigurationScope.РегистрыСведений;
-            source.Controller.ResetDirty(new ComValueSource(valueSourceComObject, comObjectMapper, valueSourceIsWriteable));
+            source.Controller.ResetDirty(new ComValueSource(valueSourceComObject, comObjectMapper,
+                valueSourceIsWriteable));
             pending.Pop();
         }
 
@@ -281,17 +284,23 @@ namespace Simple1C.Impl
             var hasReference = ConfigurationName.Get(builtQuery.EntityType).HasReference;
             var queryResult = globalContext.Execute(queryText, parameters);
             var selection = queryResult.Select();
+            var projection = builtQuery.Projection == null
+                ? null
+                : projectionMapperFactory.GetMapper(builtQuery.Projection);
             while (selection.Next())
-            {
-                var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
-                yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
-            }
+                if (projection != null)
+                    yield return projection(selection.ComObject);
+                else
+                {
+                    var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
+                    yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
+                }
         }
 
         private object ConvertParameterValue(KeyValuePair<string, object> x)
         {
-            return x.Value != null && x.Value.GetType().IsEnum 
-                ? enumMapper.MapTo1C(x.Value) 
+            return x.Value != null && x.Value.GetType().IsEnum
+                ? enumMapper.MapTo1C(x.Value)
                 : x.Value;
         }
     }

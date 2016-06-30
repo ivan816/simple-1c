@@ -1,7 +1,10 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Reflection.Emit;
+using Simple1C.Impl.Helpers.MemberAccessor;
 
 namespace Simple1C.Impl.Helpers
 {
@@ -124,6 +127,101 @@ namespace Simple1C.Impl.Helpers
                 return field.IsStatic;
             var method = memberInfo as MethodBase;
             return method != null && method.IsStatic;
+        }
+
+        private static readonly ConcurrentDictionary<MethodBase, Func<object, object[], object>> compiledMethods =
+            new ConcurrentDictionary<MethodBase, Func<object, object[], object>>();
+
+        private static readonly Func<MethodBase, Func<object, object[], object>> compileMethodDelegate =
+            EmitCallOf;
+
+        public static Func<object, object[], object> GetCompiledDelegate(MethodBase targetMethod)
+        {
+            return compiledMethods.GetOrAdd(targetMethod, compileMethodDelegate);
+        }
+
+        public static Func<object, object[], object> EmitCallOf(MethodBase targetMethod)
+        {
+            var dynamicMethod = new DynamicMethod("",
+                                                  typeof(object),
+                                                  new[] { typeof(object), typeof(object[]) },
+                                                  typeof(ReflectionHelpers),
+                                                  true);
+            var il = dynamicMethod.GetILGenerator();
+            if (!targetMethod.IsStatic && !targetMethod.IsConstructor)
+            {
+                il.Emit(OpCodes.Ldarg_0);
+                if (targetMethod.DeclaringType.IsValueType)
+                {
+                    il.Emit(OpCodes.Unbox_Any, targetMethod.DeclaringType);
+                    il.DeclareLocal(targetMethod.DeclaringType);
+                    il.Emit(OpCodes.Stloc_0);
+                    il.Emit(OpCodes.Ldloca_S, 0);
+                }
+                else
+                    il.Emit(OpCodes.Castclass, targetMethod.DeclaringType);
+            }
+            var parameters = targetMethod.GetParameters();
+            for (var i = 0; i < parameters.Length; i++)
+            {
+                il.Emit(OpCodes.Ldarg_1);
+                if (i <= 8)
+                    il.Emit(ToConstant(i));
+                else
+                    il.Emit(OpCodes.Ldc_I4, i);
+                il.Emit(OpCodes.Ldelem_Ref);
+                var unboxingCaster = new UnboxingCaster(typeof(object), parameters[i].ParameterType);
+                unboxingCaster.EmitCast(il);
+            }
+            Type returnType;
+            if (targetMethod.IsConstructor)
+            {
+                var constructorInfo = (ConstructorInfo)targetMethod;
+                returnType = constructorInfo.DeclaringType;
+                il.Emit(OpCodes.Newobj, constructorInfo);
+            }
+            else
+            {
+                var methodInfo = (MethodInfo)targetMethod;
+                returnType = methodInfo.ReturnType;
+                il.Emit(dynamicMethod.IsStatic ? OpCodes.Call : OpCodes.Callvirt, methodInfo);
+            }
+            if (returnType == typeof(void))
+                il.Emit(OpCodes.Ldnull);
+            else
+            {
+                var resultCaster = new BoxingCaster(typeof(object), returnType);
+                resultCaster.EmitCast(il);
+            }
+            il.Emit(OpCodes.Ret);
+            return (Func<object, object[], object>)dynamicMethod.CreateDelegate(typeof(Func<object, object[], object>));
+        }
+
+        private static OpCode ToConstant(int i)
+        {
+            switch (i)
+            {
+                case 0:
+                    return OpCodes.Ldc_I4_0;
+                case 1:
+                    return OpCodes.Ldc_I4_1;
+                case 2:
+                    return OpCodes.Ldc_I4_2;
+                case 3:
+                    return OpCodes.Ldc_I4_3;
+                case 4:
+                    return OpCodes.Ldc_I4_4;
+                case 5:
+                    return OpCodes.Ldc_I4_5;
+                case 6:
+                    return OpCodes.Ldc_I4_6;
+                case 7:
+                    return OpCodes.Ldc_I4_7;
+                case 8:
+                    return OpCodes.Ldc_I4_8;
+                default:
+                    throw new InvalidOperationException("method can't have more than 9 parameters");
+            }
         }
 
         public static bool IsNullableOf(this Type type1, Type type2)

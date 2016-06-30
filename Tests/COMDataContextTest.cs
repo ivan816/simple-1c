@@ -889,6 +889,105 @@ namespace Simple1C.Tests
             Assert.That(counterpartyTable.Count, Is.EqualTo(1));
         }
 
+        public class TestDataContract
+        {
+            public DateTime Дата { get; set; }
+            public string Контрагент_Инн { get; set; }
+            public string Контрагент_Наименование { get; set; }
+            public string ДоговорКонтрагента_Наименование { get; set; }
+            public bool ДоговорКонтрагента_Валютный { get; set; }
+            public string Грузополучатель_Наименование { get; set; }
+            public string Грузополучатель_ИНН { get; set; }
+        }
+
+        [Test]
+        public void ProjectionToRegularType()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            var акт = new ПоступлениеТоваровУслуг
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                ДоговорКонтрагента = new ДоговорыКонтрагентов
+                {
+                    Владелец = контрагент,
+                    Наименование = "test contract",
+                    Валютный = true
+                }
+            };
+            dataContext.Save(акт);
+
+            var акт2 = dataContext.Select<ПоступлениеТоваровУслуг>()
+                .Where(x => x.Номер == акт.Номер && x.Дата == акт.Дата)
+                .Select(x => new TestDataContract
+                {
+                    Дата = x.Дата.GetValueOrDefault(),
+                    Контрагент_Инн = x.Контрагент.ИНН,
+                    Контрагент_Наименование = x.Контрагент.Наименование,
+                    ДоговорКонтрагента_Наименование = x.ДоговорКонтрагента.Наименование,
+                    ДоговорКонтрагента_Валютный = x.ДоговорКонтрагента.Валютный,
+                    Грузополучатель_Наименование = x.Грузополучатель.Наименование,
+                    Грузополучатель_ИНН = x.Грузополучатель.ИНН
+                })
+                .ToArray();
+            Assert.That(акт2.Length, Is.EqualTo(1));
+            Assert.That(акт2[0].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(акт2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
+            Assert.That(акт2[0].Контрагент_Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(акт2[0].ДоговорКонтрагента_Наименование, Is.EqualTo("test contract"));
+            Assert.That(акт2[0].ДоговорКонтрагента_Валютный, Is.True);
+            Assert.That(акт2[0].Грузополучатель_Наименование, Is.Null);
+            Assert.That(акт2[0].Грузополучатель_ИНН, Is.Null);
+        }
+
+        [Test]
+        public void ProjectionToAnonymousType()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            var акт = new ПоступлениеТоваровУслуг
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                ДоговорКонтрагента = new ДоговорыКонтрагентов
+                {
+                    Владелец = контрагент,
+                    Наименование = "test contract",
+                    Валютный = true
+                }
+            };
+            dataContext.Save(акт);
+
+            var акт2 = dataContext.Select<ПоступлениеТоваровУслуг>()
+                .Where(x => x.Номер == акт.Номер && x.Дата == акт.Дата)
+                .Select(x => new
+                {
+                    x.Дата, 
+                    Контрагент_Инн = x.Контрагент.ИНН,
+                    Контрагент_Наименование = x.Контрагент.Наименование,
+                    ДоговорКонтрагента_Наименование = x.ДоговорКонтрагента.Наименование,
+                    ДоговорКонтрагента_Валютный = x.ДоговорКонтрагента.Валютный,
+                    Грузополучатель_Наименование = x.Грузополучатель.Наименование,
+                    Грузополучатель_ИНН = x.Грузополучатель.ИНН
+                })
+                .ToArray();
+            Assert.That(акт2.Length, Is.EqualTo(1));
+            Assert.That(акт2[0].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(акт2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
+            Assert.That(акт2[0].Контрагент_Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(акт2[0].ДоговорКонтрагента_Наименование, Is.EqualTo("test contract"));
+            Assert.That(акт2[0].ДоговорКонтрагента_Валютный, Is.True);
+            Assert.That(акт2[0].Грузополучатель_Наименование, Is.Null);
+            Assert.That(акт2[0].Грузополучатель_ИНН, Is.Null);
+        }
+
         [Test]
         public void DoNotOverwriteDocumentWhenObservedListDoesNotChange()
         {

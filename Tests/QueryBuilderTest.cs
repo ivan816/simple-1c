@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using NUnit.Framework;
 using Simple1C.Impl;
 using Simple1C.Impl.Helpers;
@@ -27,6 +28,25 @@ namespace Simple1C.Tests
             public class ПрочиеДоходыИРасходы
             {
                 public string Наименование { get; set; }
+            }
+        }
+        
+        public class Projection : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<ПрочиеДоходыИРасходы>()
+                    .Select(x => new { sum = x.Сумма, quantity = x.Количество }),
+                    "ВЫБРАТЬ src.Сумма,src.Количество ИЗ Справочник.ПрочиеДоходыИРасходы КАК src");
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class ПрочиеДоходыИРасходы
+            {
+                public string Наименование { get; set; }
+                public decimal Сумма { get; set; }
+                public decimal Количество { get; set; }
             }
         }
 

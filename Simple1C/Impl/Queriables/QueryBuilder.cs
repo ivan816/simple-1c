@@ -18,10 +18,18 @@ namespace Simple1C.Impl.Queriables
         }
 
         public Ordering[] Orderings { get; set; }
+        private Projection projection;
         private Type sourceType;
         private string sourceName;
 
         public int? Take { get; set; }
+
+        public void SetProjection(Projection newProjection)
+        {
+            if (projection != null)
+                throw new InvalidOperationException("only one select clause supported");
+            projection = newProjection;
+        }
 
         public void AddWherePart(string formatString, params object[] args)
         {
@@ -45,7 +53,10 @@ namespace Simple1C.Impl.Queriables
                 resultBuilder.Append(Take.Value);
                 resultBuilder.Append(" ");
             }
-            resultBuilder.Append(ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*");
+            var selection = projection == null
+                ? ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*"
+                : projection.GetSelection();
+            resultBuilder.Append(selection);
             resultBuilder.Append(" ИЗ ");
             resultBuilder.Append(sourceName);
             resultBuilder.Append(" КАК src");
@@ -70,12 +81,14 @@ namespace Simple1C.Impl.Queriables
                     if (i != 0)
                         resultBuilder.Append(',');
                     var ordering = Orderings[i];
-                    resultBuilder.Append(memberAccessBuilder.GetMembers(ordering.Expression));
+                    var fieldPath = "src." +
+                                    memberAccessBuilder.GetMembers(ordering.Expression).JoinStrings(".");
+                    resultBuilder.Append(fieldPath);
                     if (ordering.OrderingDirection == OrderingDirection.Desc)
                         resultBuilder.Append(" УБЫВ");
                 }
             }
-            return new BuiltQuery(sourceType, resultBuilder.ToString(), parameters);
+            return new BuiltQuery(sourceType, resultBuilder.ToString(), parameters, projection);
         }
 
         public void SetSource(Type type, string name)
