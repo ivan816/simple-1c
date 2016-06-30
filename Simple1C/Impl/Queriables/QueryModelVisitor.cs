@@ -17,11 +17,13 @@ namespace Simple1C.Impl.Queriables
         private readonly QueryBuilder queryBuilder;
 
         private readonly Dictionary<IQuerySource, string> querySourceMapping =
-            new Dictionary<IQuerySource, string>(); 
+            new Dictionary<IQuerySource, string>();
+        private readonly MemberAccessBuilder memberAccessBuilder;
 
         public QueryModelVisitor(QueryBuilder queryBuilder)
         {
             this.queryBuilder = queryBuilder;
+            memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
         }
 
         public override void VisitSelectClause(SelectClause selectClause, QueryModel queryModel)
@@ -34,7 +36,6 @@ namespace Simple1C.Impl.Queriables
             MemberInfo[] members;
             QueryField[] fields;
             NewExpression xNew;
-            var memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
             if (xMemberInit != null)
             {
                 members = new MemberInfo[xMemberInit.Bindings.Count];
@@ -134,7 +135,6 @@ namespace Simple1C.Impl.Queriables
             {
                 var subQueryModel = xSubquery.QueryModel;
                 var mainFromClause = subQueryModel.MainFromClause;
-                var memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
                 var fromMembers = memberAccessBuilder.GetMembers(mainFromClause.FromExpression);
                 if (fromMembers.PathItems.Length != 1)
                 {
@@ -153,8 +153,6 @@ namespace Simple1C.Impl.Queriables
             {
                 var orderByClause = o as OrderByClause;
                 if (orderByClause != null)
-                {
-                    var memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
                     queryBuilder.Orderings = orderByClause
                         .Orderings.Select(x => new Ordering
                         {
@@ -162,7 +160,6 @@ namespace Simple1C.Impl.Queriables
                             IsAsc = x.OrderingDirection == OrderingDirection.Asc
                         })
                         .ToArray();
-                }
             }
             base.VisitBodyClauses(bodyClauses, queryModel);
         }
