@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
+using Remotion.Linq.Clauses;
 using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing;
 
@@ -11,17 +12,19 @@ namespace Simple1C.Impl.Queriables
     internal class WhereClauseFormatter : RelinqExpressionVisitor
     {
         private readonly QueryBuilder queryBuilder;
+        private readonly Dictionary<IQuerySource, string> querySourceMapping;
         private readonly StringBuilder filterBuilder = new StringBuilder();
         private readonly Dictionary<Expression, Type> typeMappings = new Dictionary<Expression, Type>();
 
-        public WhereClauseFormatter(QueryBuilder queryBuilder)
+        public WhereClauseFormatter(QueryBuilder queryBuilder, Dictionary<IQuerySource, string> querySourceMapping)
         {
             this.queryBuilder = queryBuilder;
+            this.querySourceMapping = querySourceMapping;
         }
 
-        public static void Apply(QueryBuilder queryBuilder, Expression xFilter)
+        public static void Apply(QueryBuilder queryBuilder, Expression xFilter, Dictionary<IQuerySource, string> querySourceMapping)
         {
-            var formatter = new WhereClauseFormatter(queryBuilder);
+            var formatter = new WhereClauseFormatter(queryBuilder, querySourceMapping);
             formatter.Visit(xFilter);
             queryBuilder.AddWherePart(formatter.filterBuilder.ToString());
         }
@@ -47,7 +50,7 @@ namespace Simple1C.Impl.Queriables
 
         protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression expression)
         {
-            filterBuilder.Append("src");
+            filterBuilder.Append(querySourceMapping[expression.ReferencedQuerySource]);
             return expression;
         }
 

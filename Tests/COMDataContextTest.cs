@@ -989,6 +989,64 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void SelectMany()
+        {
+            var акт = new ПоступлениеТоваровУслуг
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = new Контрагенты
+                {
+                    Наименование = "test contractor name",
+                    ИНН = "test-inn"
+                },
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "чайник фарфоровый"},
+                        Цена = 12,
+                        Количество = 3
+                    },
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "самовар"},
+                        Цена = 56,
+                        Количество = 1
+                    }
+                }
+            };
+            dataContext.Save(акт);
+
+            var акт2 = dataContext.Select<ПоступлениеТоваровУслуг>()
+                .Where(x => x.Номер == акт.Номер && x.Дата == акт.Дата)
+                .SelectMany(x => x.Услуги.Select(y => new
+                {
+                    x.Дата,
+                    Контрагент_Инн = x.Контрагент.ИНН,
+                    Контрагент_Наименование = x.Контрагент.Наименование,
+                    Услуги_Номенклатура_Наименование = y.Номенклатура.Наименование,
+                    Услуги_Номенклатура_Количество = y.Количество,
+                    Услуги_Номенклатура_Цена = y.Цена
+                }))
+                .ToArray();
+            Assert.That(акт2.Length, Is.EqualTo(2));
+
+            Assert.That(акт2[0].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(акт2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
+            Assert.That(акт2[0].Контрагент_Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(акт2[0].Услуги_Номенклатура_Наименование, Is.EqualTo("чайник фарфоровый"));
+            Assert.That(акт2[0].Услуги_Номенклатура_Цена, Is.EqualTo(12));
+            Assert.That(акт2[0].Услуги_Номенклатура_Количество, Is.EqualTo(3));
+
+            Assert.That(акт2[1].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(акт2[1].Контрагент_Инн, Is.EqualTo("test-inn"));
+            Assert.That(акт2[1].Контрагент_Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(акт2[1].Услуги_Номенклатура_Наименование, Is.EqualTo("самовар"));
+            Assert.That(акт2[1].Услуги_Номенклатура_Цена, Is.EqualTo(56));
+            Assert.That(акт2[1].Услуги_Номенклатура_Количество, Is.EqualTo(1));
+        }
+
+        [Test]
         public void DoNotOverwriteDocumentWhenObservedListDoesNotChange()
         {
             var акт = new ПоступлениеТоваровУслуг

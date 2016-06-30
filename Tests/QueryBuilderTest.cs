@@ -38,7 +38,7 @@ namespace Simple1C.Tests
             {
                 AssertQuery(Source<ПрочиеДоходыИРасходы>()
                     .Select(x => new { sum = x.Сумма, quantity = x.Количество }),
-                    "ВЫБРАТЬ src.Сумма,src.Количество ИЗ Справочник.ПрочиеДоходыИРасходы КАК src");
+                    "ВЫБРАТЬ src.Сумма,src.Количество КАК Quantity ИЗ Справочник.ПрочиеДоходыИРасходы КАК src");
             }
 
             [ConfigurationScope(ConfigurationScope.Справочники)]

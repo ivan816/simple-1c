@@ -58,6 +58,8 @@
     <Compile Include="Impl\InMemoryDataContext.cs" />
     <Compile Include="Impl\MetadataAccessor.cs" />
     <Compile Include="Impl\ProjectionMapperFactory.cs" />
+    <Compile Include="Impl\Queriables\QueryField.cs" />
+    <Compile Include="Impl\Queriables\Ordering.cs" />
     <Compile Include="Impl\Queriables\Projection.cs" />
     <Compile Include="Impl\Queries\ValueTable.cs" />
     <Compile Include="Impl\Queries\ValueTableColumn.cs" />

@@ -7,8 +7,7 @@ namespace Simple1C.Impl.Queriables
 {
     internal class Projection
     {
-        public string[] sourceFieldNames;
-        public string[] aliasFieldNames;
+        public QueryField[] fields;
         public Type resultType;
         public ConstructorInfo ctor;
         public MemberInfo[] initMembers;
@@ -16,16 +15,16 @@ namespace Simple1C.Impl.Queriables
         public string GetSelection()
         {
             var b = new StringBuilder();
-            for (var i = 0; i < sourceFieldNames.Length; i++)
+            for (var i = 0; i < fields.Length; i++)
             {
-                b.Append("src.");
-                b.Append(sourceFieldNames[i]);
-                if (sourceFieldNames[i] != aliasFieldNames[i])
+                var queryField = fields[i];
+                b.Append(queryField.Expression);
+                if (queryField.Path != queryField.Alias)
                 {
                     b.Append(" КАК ");
-                    b.Append(aliasFieldNames[i]);
+                    b.Append(queryField.Alias);
                 }
-                if (i != sourceFieldNames.Length - 1)
+                if (i != fields.Length - 1)
                     b.Append(',');
             }
             return b.ToString();
@@ -36,9 +35,9 @@ namespace Simple1C.Impl.Queriables
             var b = new StringBuilder();
             b.Append(resultType.FormatName());
             b.Append('-');
-            foreach (var t in aliasFieldNames)
+            foreach (var t in fields)
             {
-                b.Append(t);
+                b.Append(t.Alias);
                 b.Append('-');
             }
             return b.ToString();

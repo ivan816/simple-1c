@@ -40,7 +40,7 @@ namespace Simple1C.Impl
                         var instance = compiledCtorDelegate(null, emptyObjectArray);
                         for (var i = 0; i < memberAccessors.Length; i++)
                         {
-                            var value = ComHelpers.GetProperty(o, projection.aliasFieldNames[i]);
+                            var value = ComHelpers.GetProperty(o, projection.fields[i].Alias);
                             var memberAccessor = memberAccessors[i];
                             memberAccessor.Set(instance, comObjectMapper.MapFrom1C(value, memberAccessor.MemberType));
                         }
@@ -52,10 +52,10 @@ namespace Simple1C.Impl
                     var parameters = projection.ctor.GetParameters();
                     result = delegate(object o)
                     {
-                        var arguments = new object[projection.aliasFieldNames.Length];
-                        for (var i = 0; i < projection.aliasFieldNames.Length; i++)
+                        var arguments = new object[projection.fields.Length];
+                        for (var i = 0; i < projection.fields.Length; i++)
                         {
-                            var value = ComHelpers.GetProperty(o, projection.aliasFieldNames[i]);
+                            var value = ComHelpers.GetProperty(o, projection.fields[i].Alias);
                             arguments[i] = comObjectMapper.MapFrom1C(value, parameters[i].ParameterType);
                         }
                         return compiledCtorDelegate(null, arguments);

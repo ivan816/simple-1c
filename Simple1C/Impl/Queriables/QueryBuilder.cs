@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
-using Remotion.Linq.Clauses;
 using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl.Queriables
@@ -18,6 +17,7 @@ namespace Simple1C.Impl.Queriables
         }
 
         public Ordering[] Orderings { get; set; }
+        public string TableSectionName { get; set; }
         private Projection projection;
         private Type sourceType;
         private string sourceName;
@@ -59,6 +59,11 @@ namespace Simple1C.Impl.Queriables
             resultBuilder.Append(selection);
             resultBuilder.Append(" ИЗ ");
             resultBuilder.Append(sourceName);
+            if (TableSectionName != null)
+            {
+                resultBuilder.Append('.');
+                resultBuilder.Append(TableSectionName);
+            }
             resultBuilder.Append(" КАК src");
             if (whereParts.Count > 0)
             {
@@ -75,16 +80,13 @@ namespace Simple1C.Impl.Queriables
             if (Orderings != null)
             {
                 resultBuilder.Append(" УПОРЯДОЧИТЬ ПО ");
-                var memberAccessBuilder = new MemberAccessBuilder();
                 for (var i = 0; i < Orderings.Length; i++)
                 {
                     if (i != 0)
                         resultBuilder.Append(',');
                     var ordering = Orderings[i];
-                    var fieldPath = "src." +
-                                    memberAccessBuilder.GetMembers(ordering.Expression).JoinStrings(".");
-                    resultBuilder.Append(fieldPath);
-                    if (ordering.OrderingDirection == OrderingDirection.Desc)
+                    resultBuilder.Append(ordering.Field.Expression);
+                    if (!ordering.IsAsc)
                         resultBuilder.Append(" УБЫВ");
                 }
             }
