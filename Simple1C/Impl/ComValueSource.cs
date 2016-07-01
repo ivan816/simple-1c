@@ -24,7 +24,10 @@ namespace Simple1C.Impl
 
         bool IValueSource.TryLoadValue(string name, Type type, out object result)
         {
-            var propertyValue = ComHelpers.GetProperty(comObject, name);
+            var isUniqueIdentifier = name == "УникальныйИдентификатор" && type == typeof(Guid?);
+            var propertyValue = isUniqueIdentifier
+                ? ComHelpers.Invoke(comObject, name)
+                : ComHelpers.GetProperty(comObject, name);
             result = comObjectMapper.MapFrom1C(propertyValue, type);
             return true;
         }

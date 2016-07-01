@@ -11,12 +11,14 @@ namespace Simple1C.Impl
     {
         private readonly EnumMapper enumMapper;
         private readonly TypeRegistry typeRegistry;
+        private readonly GlobalContext globalContext;
         private static readonly DateTime nullDateTime = new DateTime(100, 1, 1);
 
-        public ComObjectMapper(EnumMapper enumMapper, TypeRegistry typeRegistry)
+        public ComObjectMapper(EnumMapper enumMapper, TypeRegistry typeRegistry, GlobalContext globalContext)
         {
             this.enumMapper = enumMapper;
             this.typeRegistry = typeRegistry;
+            this.globalContext = globalContext;
         }
 
         public object MapFrom1C(object source, Type type)
@@ -41,6 +43,12 @@ namespace Simple1C.Impl
             {
                 var dateTime = (DateTime) source;
                 return dateTime == nullDateTime ? null : source;
+            }
+            if (type == typeof(Guid))
+            {
+                var stringFunctions = ComHelpers.GetProperty(globalContext.ComObject(), "СтроковыеФункцииКлиентСервер");
+                var guidString = Convert.ToString(ComHelpers.Invoke(stringFunctions, "СтрокаЛатиницей", source));
+                return Guid.Parse(guidString);
             }
             if (type.IsEnum)
                 return (bool) ComHelpers.Invoke(source, "IsEmpty")

@@ -989,6 +989,23 @@ namespace Simple1C.Tests
         }
 
         [Test]
+        public void CanUseUniqueIdentifier()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            Assert.That(контрагент.УникальныйИдентификатор, Is.Null);
+            dataContext.Save(контрагент);
+            Assert.That(контрагент.УникальныйИдентификатор, Is.Not.Null);
+            Assert.That(контрагент.УникальныйИдентификатор, Is.Not.EqualTo(Guid.Empty));
+
+            var контрагент2 = dataContext.Single<Контрагенты>(x => x.ИНН == контрагент.ИНН);
+            Assert.That(контрагент2.УникальныйИдентификатор, Is.EqualTo(контрагент.УникальныйИдентификатор));
+        }
+
+        [Test]
         public void SelectMany()
         {
             var акт = new ПоступлениеТоваровУслуг

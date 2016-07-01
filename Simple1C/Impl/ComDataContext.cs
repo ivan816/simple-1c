@@ -26,7 +26,7 @@ namespace Simple1C.Impl
             this.globalContext = new GlobalContext(globalContext);
             enumMapper = new EnumMapper(this.globalContext);
             typeRegistry = new TypeRegistry(mappingsAssembly);
-            comObjectMapper = new ComObjectMapper(enumMapper, typeRegistry);
+            comObjectMapper = new ComObjectMapper(enumMapper, typeRegistry, this.globalContext);
             queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
             metadataAccessor = new MetadataAccessor(this.globalContext);
             projectionMapperFactory = new ProjectionMapperFactory(comObjectMapper);
@@ -136,9 +136,13 @@ namespace Simple1C.Impl
                         UpdateIfExists(source, comObject, "Номер");
                         break;
                 }
-                valueSourceComObject = configurationName.Value.HasReference
-                    ? ComHelpers.GetProperty(comObject, "Ссылка")
-                    : comObject;
+                if (configurationName.Value.HasReference)
+                {
+                    valueSourceComObject = ComHelpers.GetProperty(comObject, "Ссылка");
+                    UpdateId(valueSourceComObject, source, configurationName.Value);
+                }
+                else
+                    valueSourceComObject = comObject;
             }
             else
             {
@@ -234,16 +238,36 @@ namespace Simple1C.Impl
             }
         }
 
+        private const string idPropertyName = "УникальныйИдентификатор";
+
+        private void UpdateId(object source, Abstract1CEntity target, ConfigurationName name)
+        {
+            var property = target.GetType().GetProperty(idPropertyName);
+            if (property == null)
+            {
+                const string messageFormat = "type [{0}] has no id";
+                throw new InvalidOperationException(string.Format(messageFormat, name));
+            }
+            var idValue = ComHelpers.Invoke(source, idPropertyName);
+            idValue = comObjectMapper.MapFrom1C(idValue, typeof(Guid));
+            SetValueWithoutTracking(target, property, idValue);
+        }
+
         private static void UpdateIfExists(Abstract1CEntity target, object source, string propertyName)
         {
             var property = target.GetType().GetProperty(propertyName);
             if (property == null)
                 return;
+            SetValueWithoutTracking(target, property, ComHelpers.GetProperty(source, propertyName));
+        }
+        
+        private static void SetValueWithoutTracking(Abstract1CEntity target, PropertyInfo property, object value)
+        {
             var oldTrackChanges = target.Controller.TrackChanges;
             target.Controller.TrackChanges = false;
             try
             {
-                property.SetValue(target, ComHelpers.GetProperty(source, propertyName));
+                property.SetValue(target, value);
             }
             finally
             {

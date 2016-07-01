@@ -107,7 +107,7 @@ namespace Simple1C.Impl.Generation
         private void GenerateClass(ConfigurationItem item, GenerationContext context)
         {
             var classContent = GenerateClassContent(MetadataAccessor.GetDescriptor(item.Name.Scope),
-                item.Name.Fullname, item.ComObject, context);
+                item.Name.Fullname, item.ComObject, context, item.Name);
             var fileContent = GeneratorTemplates.classFormat.Apply(new FormatParameters()
                 .With("namespace-name", GetNamespaceName(item.Name.Scope))
                 .With("configuration-scope", item.Name.Scope.ToString())
@@ -117,7 +117,8 @@ namespace Simple1C.Impl.Generation
         }
 
         private string GenerateClassContent(ConfigurationItemDescriptor descriptor,
-            string configurationItemFullName, object comObject, GenerationContext context)
+            string configurationItemFullName, object comObject, GenerationContext context, 
+            ConfigurationName? configurationName)
         {
             var properties = new List<string>();
             var standardAttributes = ComHelpers.GetProperty(comObject, "СтандартныеРеквизиты");
@@ -141,6 +142,14 @@ namespace Simple1C.Impl.Generation
                     properties.Add(FormatProperty(attr, configurationItemFullName, context));
                 }
             }
+            if (configurationName.HasValue && configurationName.Value.HasReference)
+            {
+                var uniqueIdentifierProperty = GeneratorTemplates.propertyFormat.Apply(new FormatParameters()
+                    .With("field-name", "уникальныйИдентификатор")
+                    .With("type", "Guid?")
+                    .With("property-name", "УникальныйИдентификатор"));
+                properties.Add(uniqueIdentifierProperty);
+            }
             var nestedClasses = new List<string>();
             if (descriptor.HasTableSections)
             {
@@ -152,7 +161,7 @@ namespace Simple1C.Impl.Generation
                     var tableSectionName = Convert.ToString(ComHelpers.GetProperty(tableSection, "Имя"));
                     var nestedClassContent = GenerateClassContent(tableSectionDescriptor,
                         Convert.ToString(ComHelpers.Invoke(tableSection, "ПолноеИмя")),
-                        tableSection, context);
+                        tableSection, context, null);
                     var nestedClassName = "ТабличнаяЧасть" + tableSectionName;
                     var nestedClass = GeneratorTemplates.nestedClassFormat.Apply(new FormatParameters()
                         .With("class-name", nestedClassName)
