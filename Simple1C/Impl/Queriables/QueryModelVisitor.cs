@@ -19,11 +19,13 @@ namespace Simple1C.Impl.Queriables
         private readonly Dictionary<IQuerySource, string> querySourceMapping =
             new Dictionary<IQuerySource, string>();
         private readonly MemberAccessBuilder memberAccessBuilder;
+        private readonly FilterPredicateAnalyzer filterPredicateAnalyer;
 
         public QueryModelVisitor(QueryBuilder queryBuilder)
         {
             this.queryBuilder = queryBuilder;
             memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
+            filterPredicateAnalyer = new FilterPredicateAnalyzer(queryBuilder, memberAccessBuilder);
         }
 
         public override void VisitSelectClause(SelectClause selectClause, QueryModel queryModel)
@@ -99,8 +101,8 @@ namespace Simple1C.Impl.Queriables
 
         public override void VisitWhereClause(WhereClause whereClause, QueryModel queryModel, int index)
         {
-            WhereClauseFormatter.Apply(queryBuilder, whereClause.Predicate, querySourceMapping);
             base.VisitWhereClause(whereClause, queryModel, index);
+            filterPredicateAnalyer.Apply(whereClause.Predicate);
         }
 
         protected override void VisitResultOperators(ObservableCollection<ResultOperatorBase> resultOperators,

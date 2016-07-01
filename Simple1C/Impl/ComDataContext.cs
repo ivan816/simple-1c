@@ -20,6 +20,7 @@ namespace Simple1C.Impl
         private readonly TypeRegistry typeRegistry;
         private readonly MetadataAccessor metadataAccessor;
         private readonly ProjectionMapperFactory projectionMapperFactory;
+        private readonly ParametersConverter parametersConverter;
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
@@ -30,6 +31,7 @@ namespace Simple1C.Impl
             queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
             metadataAccessor = new MetadataAccessor(this.globalContext);
             projectionMapperFactory = new ProjectionMapperFactory(comObjectMapper);
+            parametersConverter = new ParametersConverter(enumMapper, this.globalContext);
         }
 
         public Type GetTypeOrNull(string configurationName)
@@ -303,8 +305,8 @@ namespace Simple1C.Impl
         private IEnumerable Execute(BuiltQuery builtQuery)
         {
             var queryText = builtQuery.QueryText;
-            var parameters = builtQuery.Parameters
-                .Select(x => new KeyValuePair<string, object>(x.Key, ConvertParameterValue(x)));
+            var parameters = builtQuery.Parameters;
+            parametersConverter.ConvertParametersTo1C(parameters);
             var hasReference = ConfigurationName.Get(builtQuery.EntityType).HasReference;
             var queryResult = globalContext.Execute(queryText, parameters);
             var selection = queryResult.Select();
@@ -319,13 +321,6 @@ namespace Simple1C.Impl
                     var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
                     yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
                 }
-        }
-
-        private object ConvertParameterValue(KeyValuePair<string, object> x)
-        {
-            return x.Value != null && x.Value.GetType().IsEnum
-                ? enumMapper.MapTo1C(x.Value)
-                : x.Value;
         }
     }
 }

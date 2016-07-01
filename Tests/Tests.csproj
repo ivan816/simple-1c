@@ -43,7 +43,13 @@
     <Reference Include="System.Management" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Integration\COMDataContextTestBase.cs" />
     <Compile Include="InMemoryDataContextTest.cs" />
+    <Compile Include="Integration\InformationRegisterTest.cs" />
+    <Compile Include="Integration\ProjectionTest.cs" />
+    <Compile Include="Integration\SaveTest.cs" />
+    <Compile Include="Integration\TableSectionsTest.cs" />
+    <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />
     <Compile Include="TestEntities\AdvanceWay.cs" />
     <Compile Include="TestEntities\Bank.cs" />
@@ -60,10 +66,10 @@
     <Compile Include="TestEntities\Counterpart.cs" />
     <Compile Include="Helpers\ProcessesHelpers.cs" />
     <Compile Include="Helpers\Robocopy.cs" />
-    <Compile Include="IntegrationTestBase.cs" />
+    <Compile Include="Integration\IntegrationTestBase.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="QueryBuilderTest.cs" />
-    <Compile Include="COMDataContextTest.cs" />
+    <Compile Include="Integration\COMDataContextTest.cs" />
     <Compile Include="Helpers\TestBase.cs" />
     <Compile Include="Helpers\Testing1CConnector.cs" />
   </ItemGroup>

@@ -40,9 +40,9 @@ namespace Simple1C.Impl
                         var instance = compiledCtorDelegate(null, emptyObjectArray);
                         for (var i = 0; i < memberAccessors.Length; i++)
                         {
-                            var value = ComHelpers.GetProperty(o, projection.fields[i].Alias);
                             var memberAccessor = memberAccessors[i];
-                            memberAccessor.Set(instance, comObjectMapper.MapFrom1C(value, memberAccessor.MemberType));
+                            var fieldValue = ReadFieldValue(o, projection.fields[i], i, memberAccessor.MemberType);
+                            memberAccessor.Set(instance, fieldValue);
                         }
                         return instance;
                     };
@@ -54,16 +54,24 @@ namespace Simple1C.Impl
                     {
                         var arguments = new object[projection.fields.Length];
                         for (var i = 0; i < projection.fields.Length; i++)
-                        {
-                            var value = ComHelpers.GetProperty(o, projection.fields[i].Alias);
-                            arguments[i] = comObjectMapper.MapFrom1C(value, parameters[i].ParameterType);
-                        }
+                            arguments[i] = ReadFieldValue(o, projection.fields[i], i, parameters[i].ParameterType);
                         return compiledCtorDelegate(null, arguments);
-                    };    
+                    };
                 }
                 mappers.TryAdd(cacheKey, result);
             }
             return result;
+        }
+
+        private object ReadFieldValue(object comObject, QueryField queryField, int fieldIndex, Type fieldType)
+        {
+            var result = ComHelpers.GetProperty(comObject, queryField.Alias);
+            var isUniqueIdentifier =
+                queryField.UniqueIdentifierFieldIndexes != null &&
+                Array.IndexOf(queryField.UniqueIdentifierFieldIndexes, fieldIndex) >= 0;
+            if (isUniqueIdentifier)
+                result = ComHelpers.Invoke(result, "”никальный»дентификатор");
+            return comObjectMapper.MapFrom1C(result, fieldType);
         }
     }
 }

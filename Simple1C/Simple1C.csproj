@@ -57,7 +57,11 @@
     <Compile Include="Impl\Helpers\NameValueCollectionHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
     <Compile Include="Impl\MetadataAccessor.cs" />
+    <Compile Include="Impl\ParametersConverter.cs" />
     <Compile Include="Impl\ProjectionMapperFactory.cs" />
+    <Compile Include="Impl\Queriables\ConvertEnumCmd.cs" />
+    <Compile Include="Impl\Queriables\ConvertUniqueIdentifierCmd.cs" />
+    <Compile Include="Impl\Queriables\IConvertParmeterCmd.cs" />
     <Compile Include="Impl\Queriables\QueryField.cs" />
     <Compile Include="Impl\Queriables\Ordering.cs" />
     <Compile Include="Impl\Queriables\Projection.cs" />
@@ -106,7 +110,7 @@
     <Compile Include="Impl\Queriables\RelinqQueryable.cs" />
     <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
     <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
-    <Compile Include="Impl\Queriables\WhereClauseFormatter.cs" />
+    <Compile Include="Impl\Queriables\FilterPredicateAnalyzer.cs" />
     <Compile Include="Interface\ObjectModel\Requisite.cs" />
     <Compile Include="Interface\Store1CHelpers.cs" />
     <Compile Include="DataContextFactory.cs" />

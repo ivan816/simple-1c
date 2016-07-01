@@ -59,7 +59,7 @@ namespace Generator
                             OutputAssembly = resultAssemblyFullPath,
                             GenerateExecutable = false,
                             GenerateInMemory = false,
-                            IncludeDebugInformation = true
+                            IncludeDebugInformation = false
                         };
                         var linqTo1CFilePath = PathHelpers.AppendBasePath("Simple1C.dll");
                         compilerParameters.ReferencedAssemblies.Add(linqTo1CFilePath);

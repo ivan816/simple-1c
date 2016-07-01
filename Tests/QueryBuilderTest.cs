@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Linq.Expressions;
 using NUnit.Framework;
 using Simple1C.Impl;
 using Simple1C.Impl.Helpers;
@@ -110,6 +109,46 @@ namespace Simple1C.Tests
             public class ПрочиеДоходыИРасходы
             {
                 public string Наименование { get; set; }
+            }
+        }
+
+        public class UniqueIdentifier : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<Контрагенты>()
+                    .Select(x => new
+                    {
+                        x.Наименование,
+                        x.УникальныйИдентификатор
+                    }),
+                    "ВЫБРАТЬ src.Наименование,src.Ссылка ИЗ Справочник.Контрагенты КАК src");
+            }
+
+            [Test]
+            public void QueryByParameter()
+            {
+                var guid = Guid.NewGuid();
+                AssertQuery(Source<Контрагенты>()
+                    .Where(x => x.УникальныйИдентификатор == guid)
+                    .Select(x => new
+                    {
+                        x.Наименование
+                    }),
+                    "ВЫБРАТЬ src.Наименование ИЗ Справочник.Контрагенты КАК src ГДЕ (src.Ссылка = &p0)",
+                    P("p0", new ConvertUniqueIdentifierCmd
+                    {
+                        entityType = typeof(Контрагенты),
+                        id = guid
+                    }));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class Контрагенты
+            {
+                public string Наименование { get; set; }
+                public Guid? УникальныйИдентификатор { get; set; }
             }
         }
 
@@ -479,7 +518,18 @@ namespace Simple1C.Tests
         private static string DumpParametersToString(IEnumerable<KeyValuePair<string, object>> parameters)
         {
             return parameters
-                .Select(x => string.Format("{0}={1}", x.Key, x.Value))
+                .Select(delegate(KeyValuePair<string, object> x)
+                {
+                    var value = x.Value;
+                    var convertUniqueIdentifier = value as ConvertUniqueIdentifierCmd;
+                    if (convertUniqueIdentifier != null)
+                        value = "convert-uniqueidentifier:" + convertUniqueIdentifier.entityType.FormatName() + ":" +
+                                convertUniqueIdentifier.id;
+                    var convertEnum = value as ConvertEnumCmd;
+                    if (convertEnum != null)
+                        value = "convert-enum:" + value;
+                    return string.Format("{0}={1}", x.Key, value);
+                })
                 .JoinStrings(";");
         }
     }

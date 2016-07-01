@@ -1,23 +1,39 @@
+using System.Collections.Generic;
+using System.Linq;
 using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl.Queriables
 {
     internal class QueryField
     {
-        public QueryField(string sourceName, string[] pathItems)
+        public QueryField(string sourceName, IEnumerable<string> pathItems)
         {
-            PathItems = pathItems;
+            PathItems = pathItems.ToArray();
+            List<int> uniqueIdentifierFieldIndexesList = null;
+            for (var i = 0; i < PathItems.Length; i++)
+            {
+                var fieldName = PathItems[i];
+                if (fieldName == "”никальный»дентификатор")
+                {
+                    if (uniqueIdentifierFieldIndexesList == null)
+                        uniqueIdentifierFieldIndexesList = new List<int>();
+                    uniqueIdentifierFieldIndexesList.Add(i);
+                    PathItems[i] = "—сылка";
+                }
+            }
+            if (uniqueIdentifierFieldIndexesList != null)
+                UniqueIdentifierFieldIndexes = uniqueIdentifierFieldIndexesList.ToArray();
             Path = PathItems.JoinStrings(".");
             Expression = sourceName + "." + Path;
-            var aliasItems = new string[pathItems.Length];
-            for (var i = 0; i < pathItems.Length; i++)
+            var aliasItems = new string[PathItems.Length];
+            for (var i = 0; i < PathItems.Length; i++)
             {
-                var item = pathItems[i];
+                var item = PathItems[i];
                 aliasItems[i] = item == " оличество" ? "Quantity" : item;
             }
             Alias = aliasItems.JoinStrings("_");
         }
-
+        public int[] UniqueIdentifierFieldIndexes { get; private set; }
         public string[] PathItems { get; private set; }
         public string Path { get; private set; }
         public string Alias { get; private set; }
