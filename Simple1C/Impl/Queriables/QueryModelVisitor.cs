@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.ObjectModel;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Remotion.Linq;
@@ -79,10 +78,13 @@ namespace Simple1C.Impl.Queriables
             var xConstant = (ConstantExpression) fromClause.FromExpression;
             var relinqQueryable = (IRelinqQueryable) xConstant.Value;
             queryBuilder.SetSource(fromClause.ItemType, relinqQueryable.SourceName);
-
-            var additionalFromClause = queryModel.BodyClauses
-                .OfType<AdditionalFromClause>()
-                .FirstOrDefault();
+            AdditionalFromClause additionalFromClause = null;
+            foreach (var c in queryModel.BodyClauses)
+            {
+                additionalFromClause = c as AdditionalFromClause;
+                if (additionalFromClause != null)
+                    break;
+            }
             if (additionalFromClause != null)
             {
                 memberAccessBuilder.Map(fromClause, "src.Ссылка");
@@ -150,13 +152,19 @@ namespace Simple1C.Impl.Queriables
             {
                 var orderByClause = o as OrderByClause;
                 if (orderByClause != null)
-                    queryBuilder.Orderings = orderByClause
-                        .Orderings.Select(x => new Ordering
+                {
+                    var orderings = new Ordering[orderByClause.Orderings.Count];
+                    for (var i = 0; i < orderings.Length; i++)
+                    {
+                        var ordering = orderByClause.Orderings[i];
+                        orderings[i] = new Ordering
                         {
-                            Field = memberAccessBuilder.GetMembers(x.Expression),
-                            IsAsc = x.OrderingDirection == OrderingDirection.Asc
-                        })
-                        .ToArray();
+                            Field = memberAccessBuilder.GetMembers(ordering.Expression),
+                            IsAsc = ordering.OrderingDirection == OrderingDirection.Asc
+                        };
+                    }
+                    queryBuilder.Orderings = orderings;
+                }
             }
             base.VisitBodyClauses(bodyClauses, queryModel);
         }

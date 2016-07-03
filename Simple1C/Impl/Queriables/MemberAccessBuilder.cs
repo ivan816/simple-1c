@@ -18,7 +18,7 @@ namespace Simple1C.Impl.Queriables
         {
             members.Clear();
             Visit(expression);
-            return new QueryField(sourceName, members.ToArray());
+            return new QueryField(sourceName, members);
         }
 
         public void Map(IQuerySource source, string value)

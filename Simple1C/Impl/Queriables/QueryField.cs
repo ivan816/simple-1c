@@ -1,12 +1,11 @@
 using System.Collections.Generic;
-using System.Linq;
 using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl.Queriables
 {
     internal class QueryField
     {
-        public QueryField(string sourceName, IEnumerable<string> pathItems)
+        public QueryField(string sourceName, List<string> pathItems)
         {
             PathItems = pathItems.ToArray();
             List<int> uniqueIdentifierFieldIndexesList = null;
