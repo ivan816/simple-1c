@@ -24,7 +24,7 @@ namespace Simple1C.Impl
 
         bool IValueSource.TryLoadValue(string name, Type type, out object result)
         {
-            var isUniqueIdentifier = name == "УникальныйИдентификатор" && type == typeof(Guid?);
+            var isUniqueIdentifier = name == EntityHelpers.idPropertyName && type == typeof(Guid?);
             var propertyValue = isUniqueIdentifier
                 ? ComHelpers.Invoke(comObject, name)
                 : ComHelpers.GetProperty(comObject, name);

@@ -70,7 +70,7 @@ namespace Simple1C.Impl
                 queryField.UniqueIdentifierFieldIndexes != null &&
                 Array.IndexOf(queryField.UniqueIdentifierFieldIndexes, fieldIndex) >= 0;
             if (isUniqueIdentifier)
-                result = ComHelpers.Invoke(result, "”никальный»дентификатор");
+                result = ComHelpers.Invoke(result, EntityHelpers.idPropertyName);
             return comObjectMapper.MapFrom1C(result, fieldType);
         }
     }

@@ -49,8 +49,11 @@ namespace Simple1C.Impl
         {
             var entitiesToSave = new List<Abstract1CEntity>();
             entity.Controller.PrepareToSave(entity, entitiesToSave);
+            if (entitiesToSave.Count == 0)
+                return;
+            var pending = new Stack<object>();
             foreach (var e in entitiesToSave)
-                Save(e, null, new Stack<object>());
+                Save(e, null, pending);
         }
 
         private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
@@ -60,10 +63,10 @@ namespace Simple1C.Impl
             if (pending.Contains(source))
             {
                 const string messageFormat = "cycle detected for entity type [{0}]: [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, source.GetType().Name,
+                throw new InvalidOperationException(string.Format(messageFormat, source.GetType().FormatName(),
                     pending
                         .Reverse()
-                        .Select(x => x is Abstract1CEntity ? x.GetType().Name : x)
+                        .Select(x => x is Abstract1CEntity ? x.GetType().FormatName() : x)
                         .JoinStrings("->")));
             }
             pending.Push(source);
@@ -73,7 +76,7 @@ namespace Simple1C.Impl
                 configurationName = ConfigurationName.Get(source.GetType());
                 if (configurationName.Value.Scope == ConfigurationScope.РегистрыСведений)
                     comObject = source.Controller.ValueSource == null || !source.Controller.ValueSource.Writable
-                        ? CreateRegisterRecordManager(configurationName.Value.Name)
+                        ? CreateRegisterRecordManager(configurationName.Value)
                         : source.Controller.ValueSource.GetBackingStorage();
                 else
                     comObject = source.Controller.IsNew
@@ -240,17 +243,15 @@ namespace Simple1C.Impl
             }
         }
 
-        private const string idPropertyName = "УникальныйИдентификатор";
-
         private void UpdateId(object source, Abstract1CEntity target, ConfigurationName name)
         {
-            var property = target.GetType().GetProperty(idPropertyName);
+            var property = target.GetType().GetProperty(EntityHelpers.idPropertyName);
             if (property == null)
             {
                 const string messageFormat = "type [{0}] has no id";
                 throw new InvalidOperationException(string.Format(messageFormat, name));
             }
-            var idValue = ComHelpers.Invoke(source, idPropertyName);
+            var idValue = ComHelpers.Invoke(source, EntityHelpers.idPropertyName);
             idValue = comObjectMapper.MapFrom1C(idValue, typeof(Guid));
             SetValueWithoutTracking(target, property, idValue);
         }
@@ -277,29 +278,24 @@ namespace Simple1C.Impl
             }
         }
 
-        private object CreateRegisterRecordManager(string name)
+        private object CreateRegisterRecordManager(ConfigurationName name)
         {
-            var informationRegisters = ComHelpers.GetProperty(globalContext.ComObject(), "РегистрыСведений");
-            var informationRegister = ComHelpers.GetProperty(informationRegisters, name);
-            return ComHelpers.Invoke(informationRegister, "СоздатьМенеджерЗаписи");
+            return ComHelpers.Invoke(globalContext.GetManager(name), "СоздатьМенеджерЗаписи");
         }
 
         private object CreateNewObject(ConfigurationName configurationName)
         {
-            if (configurationName.Scope == ConfigurationScope.Справочники)
+            var manager = globalContext.GetManager(configurationName);
+            switch (configurationName.Scope)
             {
-                var catalogs = globalContext.Справочники();
-                var catalogManager = ComHelpers.GetProperty(catalogs, configurationName.Name);
-                return ComHelpers.Invoke(catalogManager, "CreateItem");
+                case ConfigurationScope.Справочники:
+                    return ComHelpers.Invoke(manager, "CreateItem");
+                case ConfigurationScope.Документы:
+                    return ComHelpers.Invoke(manager, "CreateDocument");
+                default:
+                    const string messageFormat = "unexpected entityType [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, configurationName.Name));
             }
-            if (configurationName.Scope == ConfigurationScope.Документы)
-            {
-                var documents = globalContext.Документы();
-                var documentManager = ComHelpers.GetProperty(documents, configurationName.Name);
-                return ComHelpers.Invoke(documentManager, "CreateDocument");
-            }
-            const string messageFormat = "unexpected entityType [{0}]";
-            throw new InvalidOperationException(string.Format(messageFormat, configurationName.Name));
         }
 
         private IEnumerable Execute(BuiltQuery builtQuery)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Linq.Expressions;
@@ -15,16 +14,12 @@ namespace Simple1C.Impl.Queriables
     internal class QueryModelVisitor : QueryModelVisitorBase
     {
         private readonly QueryBuilder queryBuilder;
-
-        private readonly Dictionary<IQuerySource, string> querySourceMapping =
-            new Dictionary<IQuerySource, string>();
-        private readonly MemberAccessBuilder memberAccessBuilder;
+        private readonly MemberAccessBuilder memberAccessBuilder = new MemberAccessBuilder();
         private readonly FilterPredicateAnalyzer filterPredicateAnalyer;
 
         public QueryModelVisitor(QueryBuilder queryBuilder)
         {
             this.queryBuilder = queryBuilder;
-            memberAccessBuilder = new MemberAccessBuilder(querySourceMapping);
             filterPredicateAnalyer = new FilterPredicateAnalyzer(queryBuilder, memberAccessBuilder);
         }
 
@@ -90,12 +85,12 @@ namespace Simple1C.Impl.Queriables
                 .FirstOrDefault();
             if (additionalFromClause != null)
             {
-                querySourceMapping[fromClause] = "src.Ссылка";
+                memberAccessBuilder.Map(fromClause, "src.Ссылка");
                 var xSubquery = (SubQueryExpression) additionalFromClause.FromExpression;
-                querySourceMapping[xSubquery.QueryModel.MainFromClause] = "src";
+                memberAccessBuilder.Map(xSubquery.QueryModel.MainFromClause, "src");
             }
             else
-                querySourceMapping[fromClause] = "src";
+                memberAccessBuilder.Map(fromClause, "src");
             base.VisitMainFromClause(fromClause, queryModel);
         }
 

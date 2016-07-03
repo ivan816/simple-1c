@@ -445,5 +445,34 @@ namespace Simple1C.Tests.Integration
                 .Single();
             Assert.That(catalogItem, Is.TypeOf<Контрагенты>());
         }
+
+        [Test]
+        public void CanQueryByReference()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            var акт = new ПоступлениеТоваровУслуг
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                ДоговорКонтрагента = new ДоговорыКонтрагентов
+                {
+                    Наименование = "test contract",
+                    Владелец = контрагент
+                }
+            };
+            dataContext.Save(акт);
+            var id = акт.Контрагент.УникальныйИдентификатор;
+            var контрагент2 = dataContext.Single<Контрагенты>(x => x.УникальныйИдентификатор == id);
+
+            var queryResult = dataContext.Select<ПоступлениеТоваровУслуг>()
+                .Where(x => x.Контрагент == контрагент2)
+                .ToArray();
+            Assert.That(queryResult.Length, Is.EqualTo(1));
+            Assert.That(queryResult[0].ДоговорКонтрагента.Наименование, Is.EqualTo("test contract"));
+        }
     }
 }

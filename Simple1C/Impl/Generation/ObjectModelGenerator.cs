@@ -147,7 +147,7 @@ namespace Simple1C.Impl.Generation
                 var uniqueIdentifierProperty = GeneratorTemplates.propertyFormat.Apply(new FormatParameters()
                     .With("field-name", "уникальныйИдентификатор")
                     .With("type", "Guid?")
-                    .With("property-name", "УникальныйИдентификатор"));
+                    .With("property-name", EntityHelpers.idPropertyName));
                 properties.Add(uniqueIdentifierProperty);
             }
             var nestedClasses = new List<string>();

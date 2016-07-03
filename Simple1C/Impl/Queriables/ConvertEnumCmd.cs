@@ -1,7 +1,10 @@
-﻿namespace Simple1C.Impl.Queriables
+﻿using System;
+
+namespace Simple1C.Impl.Queriables
 {
     internal class ConvertEnumCmd : IConvertParmeterCmd
     {
-        public object value;
+        public int valueIndex;
+        public Type enumType;
     }
 }

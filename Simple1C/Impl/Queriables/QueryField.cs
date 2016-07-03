@@ -13,7 +13,7 @@ namespace Simple1C.Impl.Queriables
             for (var i = 0; i < PathItems.Length; i++)
             {
                 var fieldName = PathItems[i];
-                if (fieldName == "”никальный»дентификатор")
+                if (fieldName == EntityHelpers.idPropertyName)
                 {
                     if (uniqueIdentifierFieldIndexesList == null)
                         uniqueIdentifierFieldIndexesList = new List<int>();

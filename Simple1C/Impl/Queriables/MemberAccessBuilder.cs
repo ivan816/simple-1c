@@ -8,20 +8,22 @@ namespace Simple1C.Impl.Queriables
 {
     internal class MemberAccessBuilder : RelinqExpressionVisitor
     {
-        private readonly Dictionary<IQuerySource, string> querySourceMapping;
+        private readonly Dictionary<IQuerySource, string> querySourceMapping =
+            new Dictionary<IQuerySource, string>();
+
         private readonly List<string> members = new List<string>();
         private string sourceName;
-
-        public MemberAccessBuilder(Dictionary<IQuerySource, string> querySourceMapping)
-        {
-            this.querySourceMapping = querySourceMapping;
-        }
 
         public QueryField GetMembers(Expression expression)
         {
             members.Clear();
             Visit(expression);
             return new QueryField(sourceName, members.ToArray());
+        }
+
+        public void Map(IQuerySource source, string value)
+        {
+            querySourceMapping[source] = value;
         }
 
         protected override Expression VisitMember(MemberExpression node)

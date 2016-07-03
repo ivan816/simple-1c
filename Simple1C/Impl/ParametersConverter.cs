@@ -18,38 +18,34 @@ namespace Simple1C.Impl
 
         public void ConvertParametersTo1C(Dictionary<string, object> parameters)
         {
-            List<string> convertParameterKeys = null;
+            List<string> keys = null;
             foreach (var p in parameters)
                 if (p.Value is IConvertParmeterCmd)
                 {
-                    if (convertParameterKeys == null)
-                        convertParameterKeys = new List<string>();
-                    convertParameterKeys.Add(p.Key);
+                    if (keys == null)
+                        keys = new List<string>();
+                    keys.Add(p.Key);
                 }
-            if (convertParameterKeys == null)
-                return;
-            foreach (var k in convertParameterKeys)
+            if (keys != null)
+                foreach (var k in keys)
+                    parameters[k] = ConvertParameterValue(parameters[k]);
+        }
+
+        private object ConvertParameterValue(object value)
+        {
+            var convertEnum = value as ConvertEnumCmd;
+            if (convertEnum != null)
+                return enumMapper.MapTo1C(convertEnum.valueIndex, convertEnum.enumType);
+            var convertUniqueIdentifier = value as ConvertUniqueIdentifierCmd;
+            if (convertUniqueIdentifier != null)
             {
-                var value = parameters[k];
-                var convertEnum = value as ConvertEnumCmd;
-                if (convertEnum != null)
-                {
-                    parameters[k] = enumMapper.MapTo1C(convertEnum.value);
-                    continue;
-                }
-                var convertUniqueIdentifier = value as ConvertUniqueIdentifierCmd;
-                if (convertUniqueIdentifier != null)
-                {
-                    var name = ConfigurationName.Get(convertUniqueIdentifier.entityType);
-                    var scopeManager = ComHelpers.GetProperty(globalContext.ComObject(), name.Scope.ToString());
-                    var itemManager = ComHelpers.GetProperty(scopeManager, name.Name);
-                    var guidComObject = ComHelpers.Invoke(globalContext.ComObject(),
-                        "NewObject", "”никальный»дентификатор", convertUniqueIdentifier.id.ToString());
-                    parameters[k] = ComHelpers.Invoke(itemManager, "ѕолучить—сылку", guidComObject);
-                    continue;
-                }
-                throw new InvalidOperationException("assertion failure");
+                var name = ConfigurationName.Get(convertUniqueIdentifier.entityType);
+                var itemManager = globalContext.GetManager(name);
+                var guidComObject = ComHelpers.Invoke(globalContext.ComObject(),
+                    "NewObject", "”никальный»дентификатор", convertUniqueIdentifier.id.ToString());
+                return ComHelpers.Invoke(itemManager, "ѕолучить—сылку", guidComObject);
             }
+            throw new InvalidOperationException("assertion failure");
         }
     }
 }

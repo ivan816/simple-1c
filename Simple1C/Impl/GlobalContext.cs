@@ -52,24 +52,15 @@ namespace Simple1C.Impl
             return (string) Invoke("String", value);
         }
 
-        public object Перечисления()
-        {
-            return Get("Перечисления");
-        }
-
         public object РежимЗаписиДокумента()
         {
             return Get("РежимЗаписиДокумента");
         }
 
-        public object Справочники()
+        public object GetManager(ConfigurationName name)
         {
-            return Get("Справочники");
-        }
-
-        public object Документы()
-        {
-            return Get("Документы");
+            var scopeManager = Get(name.Scope.ToString());
+            return ComHelpers.GetProperty(scopeManager, name.Name);
         }
 
         public new object ComObject()

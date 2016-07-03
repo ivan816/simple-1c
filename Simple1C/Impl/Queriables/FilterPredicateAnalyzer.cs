@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
 using Remotion.Linq.Parsing;
 using Simple1C.Impl.Helpers;
+using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl.Queriables
 {
@@ -13,7 +13,7 @@ namespace Simple1C.Impl.Queriables
         private readonly QueryBuilder queryBuilder;
         private readonly MemberAccessBuilder memberAccessBuilder;
         private readonly StringBuilder filterBuilder = new StringBuilder();
-        private readonly Dictionary<Expression, Type> typeMappings = new Dictionary<Expression, Type>();
+        private readonly Dictionary<Expression, Expression> binaryExpressionMappings = new Dictionary<Expression, Expression>();
 
         public FilterPredicateAnalyzer(QueryBuilder queryBuilder, MemberAccessBuilder memberAccessBuilder)
         {
@@ -44,45 +44,61 @@ namespace Simple1C.Impl.Queriables
         {
             var queryField = memberAccessBuilder.GetMembers(node);
             filterBuilder.Append(queryField.Expression);
+            var comparand = binaryExpressionMappings.GetOrDefault(node) as ConstantExpression;
+            var needReferenceKeyword = typeof(Abstract1CEntity).IsAssignableFrom(node.Type) &&
+                                       comparand != null &&
+                                       comparand.Value != null;
+            if (needReferenceKeyword)
+                filterBuilder.Append(".Ссылка");
             return node;
         }
 
-        protected override Expression VisitConstant(ConstantExpression expression)
+        protected override Expression VisitConstant(ConstantExpression node)
         {
-            if (expression.Value == null)
+            var value = node.Value;
+            var type = node.Type;
+            var comparand = binaryExpressionMappings.GetOrDefault(node);
+            if (comparand != null)
             {
-                var type = expression.Type;
-                if (type == typeof(object))
-                    typeMappings.TryGetValue(expression, out type);
-                if (type != null)
-                    type = Nullable.GetUnderlyingType(type) ?? type;
+                if (type == typeof(object) && comparand.Type != typeof(object))
+                    type = comparand.Type;
+                if (comparand.NodeType == ExpressionType.Convert)
+                    type = ((UnaryExpression)comparand).Operand.Type;    
+            }
+            type = Nullable.GetUnderlyingType(type) ?? type;
+            if (value == null)
+            {
                 var name = ConfigurationName.GetOrNull(type);
                 if (name == null)
                     filterBuilder.Append("NULL");
                 else
                     filterBuilder.AppendFormat("ЗНАЧЕНИЕ({0}.ПустаяСсылка)", name.Value.Fullname);
             }
-            else if (expression.Value.GetType().FullName == "System.RuntimeType")
+            else if (value.GetType().FullName == "System.RuntimeType")
             {
-                var valueType = (Type) expression.Value;
+                var valueType = (Type)value;
                 filterBuilder.Append("ТИП(");
                 filterBuilder.Append(Get1CTypeName(valueType));
                 filterBuilder.Append(")");
             }
             else
-                EmitParameterReference(expression.Value, typeMappings.GetOrDefault(expression));
-            return expression;
-        }
-
-        private void EmitParameterReference(object value, Type type)
-        {
-            if (value is Guid && type != null)
-                value = new ConvertUniqueIdentifierCmd {entityType = type, id = (Guid) value};
-            else if (value.GetType().IsEnum)
-                value = new ConvertEnumCmd {value = value};
-            var parameterName = queryBuilder.AddParameter(value);
-            filterBuilder.Append('&');
-            filterBuilder.Append(parameterName);
+            {
+                var xMember = comparand as MemberExpression;
+                if (value is Guid && xMember != null && xMember.Member.Name == EntityHelpers.idPropertyName)
+                    value = new ConvertUniqueIdentifierCmd
+                    {
+                        entityType = xMember.Member.DeclaringType,
+                        id = (Guid) value
+                    };
+                else if (type.IsEnum)
+                    value = new ConvertEnumCmd {enumType = type, valueIndex = (int) value};
+                else if (value is Abstract1CEntity)
+                    value = ((Abstract1CEntity) value).Controller.ValueSource.GetBackingStorage();
+                var parameterName = queryBuilder.AddParameter(value);
+                filterBuilder.Append('&');
+                filterBuilder.Append(parameterName);
+            }
+            return node;
         }
 
         protected override Expression VisitTypeBinary(TypeBinaryExpression node)
@@ -113,44 +129,12 @@ namespace Simple1C.Impl.Queriables
             return base.VisitMethodCall(node);
         }
 
-        private void RegisterTypeMappingForUniqueIdentifier(Expression left, Expression right)
-        {
-            if (left.NodeType != ExpressionType.MemberAccess)
-                return;
-            if (right.NodeType != ExpressionType.Constant)
-                return;
-            if (right.Type != typeof(Guid?))
-                return;
-            var xMember = (MemberExpression) left;
-            if (xMember.Member.Name != "УникальныйИдентификатор")
-                return;
-            if (ConfigurationName.GetOrNull(xMember.Expression.Type) == null)
-                return;
-            typeMappings.Add(right, xMember.Expression.Type);
-        }
-
         protected override Expression VisitBinary(BinaryExpression expression)
         {
             filterBuilder.Append("(");
-            var left = expression.Left;
-            var right = expression.Right;
-            if (right.NodeType == ExpressionType.Convert && left.NodeType == ExpressionType.Constant)
-            {
-                left = RestoreEnumConstant(left, right);
-                right = ((UnaryExpression) right).Operand;
-            }
-            else if (left.NodeType == ExpressionType.Convert && right.NodeType == ExpressionType.Constant)
-            {
-                right = RestoreEnumConstant(right, left);
-                left = ((UnaryExpression) left).Operand;
-            }
-            if (left.Type == typeof(object) && right.Type != typeof(object))
-                typeMappings.Add(left, right.Type);
-            else if (right.Type == typeof(object) && left.Type != typeof(object))
-                typeMappings.Add(right, left.Type);
-            RegisterTypeMappingForUniqueIdentifier(left, right);
-            RegisterTypeMappingForUniqueIdentifier(right, left);
-            Visit(left);
+            binaryExpressionMappings.Add(expression.Left, expression.Right);
+            binaryExpressionMappings.Add(expression.Right, expression.Left);
+            Visit(expression.Left);
             switch (expression.NodeType)
             {
                 case ExpressionType.Equal:
@@ -207,34 +191,9 @@ namespace Simple1C.Impl.Queriables
                     const string messageFormat = "unsupported operator [{0}]";
                     throw new InvalidOperationException(string.Format(messageFormat, expression.NodeType));
             }
-            Visit(right);
+            Visit(expression.Right);
             filterBuilder.Append(")");
             return expression;
-        }
-
-        private static Expression RestoreEnumConstant(Expression left, Expression right)
-        {
-            var enumValue = ((ConstantExpression) left).Value;
-            var operandType = ((UnaryExpression) right).Operand.Type;
-            Type enumType = null;
-            if (operandType.IsEnum)
-                enumType = operandType;
-            else if (IsNullable(operandType) && operandType.GetGenericArguments()[0].IsEnum)
-                enumType = operandType.GetGenericArguments()[0];
-            if (enumValue == null)
-                left = Expression.Constant(null, typeof(object));
-            //typeof (Nullable<>).MakeGenericType(enumType));
-            else if (enumType != null)
-                left = Expression.Constant(Enum.GetValues(enumType)
-                    .Cast<object>()
-                    .Where((x, i) => i == (int) enumValue)
-                    .Single(), operandType);
-            return left;
-        }
-
-        private static bool IsNullable(Type type)
-        {
-            return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(Nullable<>);
         }
 
         private static string Get1CTypeName(Type type)

@@ -12,14 +12,16 @@ namespace Simple1C.Impl
         private static readonly ConcurrentDictionary<Type, MapItem[]> mappings =
             new ConcurrentDictionary<Type, MapItem[]>();
 
+        private readonly object enumerations;
+
         public EnumMapper(GlobalContext globalContext)
         {
             this.globalContext = globalContext;
+            enumerations = ComHelpers.GetProperty(globalContext.ComObject(), "Перечисления");
         }
 
         public object MapFrom1C(Type enumType, object value1C)
         {
-            var enumerations = globalContext.Перечисления();
             var enumeration = ComHelpers.GetProperty(enumerations, enumType.Name);
             var valueIndex = Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf", value1C));
             var result = mappings.GetOrAdd(enumType, GetMappings)
@@ -35,14 +37,18 @@ namespace Simple1C.Impl
 
         public object MapTo1C(object value)
         {
-            var enumerations = globalContext.Перечисления();
             var enumeration = ComHelpers.GetProperty(enumerations, value.GetType().Name);
             return ComHelpers.GetProperty(enumeration, value.ToString());
         }
 
+        public object MapTo1C(int valueIndex, Type enumType)
+        {
+            var enumValue = Enum.GetValues(enumType).GetValue(valueIndex);
+            return MapTo1C(enumValue);
+        }
+
         private MapItem[] GetMappings(Type enumType)
         {
-            var enumerations = globalContext.Перечисления();
             var enumeration = ComHelpers.GetProperty(enumerations, enumType.Name);
             return Enum.GetValues(enumType)
                 .Cast<object>()
