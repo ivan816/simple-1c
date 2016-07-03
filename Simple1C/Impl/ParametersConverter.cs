@@ -20,7 +20,7 @@ namespace Simple1C.Impl
         {
             List<string> keys = null;
             foreach (var p in parameters)
-                if (p.Value is IConvertParmeterCmd)
+                if (p.Value is IConvertParameterCmd)
                 {
                     if (keys == null)
                         keys = new List<string>();

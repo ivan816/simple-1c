@@ -61,7 +61,7 @@
     <Compile Include="Impl\ProjectionMapperFactory.cs" />
     <Compile Include="Impl\Queriables\ConvertEnumCmd.cs" />
     <Compile Include="Impl\Queriables\ConvertUniqueIdentifierCmd.cs" />
-    <Compile Include="Impl\Queriables\IConvertParmeterCmd.cs" />
+    <Compile Include="Impl\Queriables\IConvertParameterCmd.cs" />
     <Compile Include="Impl\Queriables\QueryField.cs" />
     <Compile Include="Impl\Queriables\Ordering.cs" />
     <Compile Include="Impl\Queriables\Projection.cs" />

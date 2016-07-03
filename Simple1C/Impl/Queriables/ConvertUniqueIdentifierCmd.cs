@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Queriables
 {
-    internal class ConvertUniqueIdentifierCmd : IConvertParmeterCmd
+    internal class ConvertUniqueIdentifierCmd : IConvertParameterCmd
     {
         public Guid id;
         public Type entityType;
