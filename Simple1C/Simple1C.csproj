@@ -41,7 +41,22 @@
   <ItemGroup>
     <Compile Include="Impl\ComDataContext.cs" />
     <Compile Include="Impl\EntityHelpers.cs" />
+    <Compile Include="Impl\Generation\Rendering\ClassFileTemplateGrip.cs" />
+    <Compile Include="Impl\Generation\Rendering\ClassFileModel.cs" />
+    <Compile Include="Impl\Generation\Rendering\EnumFileTemplate.cs">
+      <DependentUpon>EnumFileTemplate.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
+    <Compile Include="Impl\Generation\Rendering\ClassFileTemplate.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>ClassFileTemplate.tt</DependentUpon>
+    </Compile>
     <Compile Include="Impl\Generation\ConfigurationItemDescriptor.cs" />
+    <Compile Include="Impl\Generation\Rendering\ClassModel.cs" />
+    <Compile Include="Impl\Generation\Rendering\EnumFileModel.cs" />
+    <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\FieldAccessorFactory.cs" />
@@ -119,9 +134,19 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Impl\Generation\Rendering\EnumFileTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>EnumFileTemplate.cs</LastGenOutput>
+    </None>
+    <None Include="Impl\Generation\Rendering\ClassFileTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>ClassFileTemplate.cs</LastGenOutput>
+    </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.
