@@ -1,7 +1,10 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
+using Simple1C.Interface;
 using Simple1C.Tests.Metadata1C.Документы;
+using Simple1C.Tests.Metadata1C.ПланыСчетов;
 using Simple1C.Tests.Metadata1C.Справочники;
 
 namespace Simple1C.Tests.Integration
@@ -134,6 +137,40 @@ namespace Simple1C.Tests.Integration
         private static string GetConstant()
         {
             return "test-constant";
+        }
+
+        [Test]
+        public void CanSelectSameFieldWithDifferentAliases()
+        {
+            var счет2001 = dataContext.Single<Хозрасчетный>(x => x.Код == "20.01");
+            var счет26 = dataContext.Single<Хозрасчетный>(x => x.Код == "26");
+            var контрагент = new Контрагенты();
+            var требованиеНакладная = new ТребованиеНакладная
+            {
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                СчетЗатрат = счет2001,
+                Материалы = new List<ТребованиеНакладная.ТабличнаяЧастьМатериалы>()
+                {
+                    new ТребованиеНакладная.ТабличнаяЧастьМатериалы()
+                    {
+                        СчетЗатрат = счет26
+                    }
+                }
+            }; 
+            dataContext.Save(требованиеНакладная);
+
+            var result = dataContext.Select<ТребованиеНакладная>()
+                .Where(x => x.Контрагент == контрагент)
+                .SelectMany(накладная => накладная.Материалы.Select(x =>
+                    new
+                    {
+                        ItemCode = x.СчетЗатрат.Код,
+                        DocCode = накладная.СчетЗатрат.Код
+                    }))
+                .Single();
+            Assert.That(result.DocCode, Is.EqualTo("20.01"));
+            Assert.That(result.ItemCode, Is.EqualTo("26"));
         }
     }
 }

@@ -30,13 +30,7 @@ namespace Simple1C.Impl.Queriables
                 UniqueIdentifierFieldIndexes = uniqueIdentifierFieldIndexesList.ToArray();
             Path = PathItems.JoinStrings(".");
             Expression = sourceName + "." + Path;
-            var aliasItems = new string[PathItems.Length];
-            for (var i = 0; i < PathItems.Length; i++)
-            {
-                var item = PathItems[i];
-                aliasItems[i] = item == "Количество" ? "Quantity" : item;
-            }
-            Alias = aliasItems.JoinStrings("_");
+            Alias = sourceName.Replace('.', '_') + "_" + PathItems.JoinStrings("_");
         }
 
         public object Constant { get; set; }

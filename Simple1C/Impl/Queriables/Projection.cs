@@ -20,11 +20,8 @@ namespace Simple1C.Impl.Queriables
                 if (queryField.EvaluatedLocally)
                     continue;
                 b.Append(queryField.Expression);
-                if (queryField.Path != queryField.Alias)
-                {
-                    b.Append(" КАК ");
-                    b.Append(queryField.Alias);
-                }
+                b.Append(" КАК ");
+                b.Append(queryField.Alias);
                 b.Append(',');
             }
             b.Length = b.Length - 1;
