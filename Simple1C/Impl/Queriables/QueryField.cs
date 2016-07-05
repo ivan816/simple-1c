@@ -5,6 +5,12 @@ namespace Simple1C.Impl.Queriables
 {
     internal class QueryField
     {
+        public QueryField(object constant)
+        {
+            EvaluatedLocally = true;
+            Constant = constant;
+        }
+
         public QueryField(string sourceName, List<string> pathItems)
         {
             PathItems = pathItems.ToArray();
@@ -32,6 +38,9 @@ namespace Simple1C.Impl.Queriables
             }
             Alias = aliasItems.JoinStrings("_");
         }
+
+        public object Constant { get; set; }
+        public bool EvaluatedLocally { get; set; }
         public int[] UniqueIdentifierFieldIndexes { get; private set; }
         public string[] PathItems { get; private set; }
         public string Path { get; private set; }

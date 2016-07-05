@@ -10,3 +10,5 @@ todo
 	* Научиться мапиться на sql для чтения, как здесь http://www.linq-demo.1csoftware.com делают
 	* создавать DispatchObject-ы через Reflection.Emit
 	* inmemoryDataContext, LoadNewestRevisionWhenAccessPropertyForTheFirstTime: выяснить, какое поведение дожно быть
+	* клиентские expression-ы в проекциях, которые нельзя транслировать в 1C (тернарные операторы).
+	Генерить лямбды, принимающие на вход филды из результата запроса и как-то их преобразующие.

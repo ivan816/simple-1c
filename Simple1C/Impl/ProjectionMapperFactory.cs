@@ -65,6 +65,8 @@ namespace Simple1C.Impl
 
         private object ReadFieldValue(object comObject, QueryField queryField, int fieldIndex, Type fieldType)
         {
+            if (queryField.EvaluatedLocally)
+                return queryField.Constant;
             var result = ComHelpers.GetProperty(comObject, queryField.Alias);
             var isUniqueIdentifier =
                 queryField.UniqueIdentifierFieldIndexes != null &&

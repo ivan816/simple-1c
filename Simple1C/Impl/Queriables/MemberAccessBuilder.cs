@@ -17,6 +17,9 @@ namespace Simple1C.Impl.Queriables
         public QueryField GetMembers(Expression expression)
         {
             members.Clear();
+            var xConstant = expression as ConstantExpression;
+            if (xConstant != null)
+                return new QueryField(xConstant.Value);
             Visit(expression);
             return new QueryField(sourceName, members);
         }

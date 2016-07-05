@@ -15,18 +15,19 @@ namespace Simple1C.Impl.Queriables
         public string GetSelection()
         {
             var b = new StringBuilder();
-            for (var i = 0; i < fields.Length; i++)
+            foreach (var queryField in fields)
             {
-                var queryField = fields[i];
+                if (queryField.EvaluatedLocally)
+                    continue;
                 b.Append(queryField.Expression);
                 if (queryField.Path != queryField.Alias)
                 {
                     b.Append(" КАК ");
                     b.Append(queryField.Alias);
                 }
-                if (i != fields.Length - 1)
-                    b.Append(',');
+                b.Append(',');
             }
+            b.Length = b.Length - 1;
             return b.ToString();
         }
 
@@ -37,7 +38,7 @@ namespace Simple1C.Impl.Queriables
             b.Append('-');
             foreach (var t in fields)
             {
-                b.Append(t.Alias);
+                b.Append(t.EvaluatedLocally ? t.Constant ?? "<null>" : t.Alias);
                 b.Append('-');
             }
             return b.ToString();

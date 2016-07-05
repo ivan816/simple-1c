@@ -106,5 +106,34 @@ namespace Simple1C.Tests.Integration
             Assert.That(акт2[0].Грузополучатель_Наименование, Is.Null);
             Assert.That(акт2[0].Грузополучатель_ИНН, Is.Null);
         }
+
+        [Test]
+        public void ProjectionToAnonymousTypeWithConstants()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+            var контрагент2 = dataContext.Select<Контрагенты>()
+                .Where(x => x.Наименование == "test contractor name")
+                .Select(x => new
+                {
+                    Контрагент_Инн = x.ИНН,
+                    SomeConstant = GetConstant(),
+                    SomeNullContant = (string) null
+                })
+                .ToArray();
+            Assert.That(контрагент2.Length, Is.EqualTo(1));
+            Assert.That(контрагент2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
+            Assert.That(контрагент2[0].SomeConstant, Is.EqualTo("test-constant"));
+            Assert.That(контрагент2[0].SomeNullContant, Is.Null);
+        }
+
+        private static string GetConstant()
+        {
+            return "test-constant";
+        }
     }
 }
