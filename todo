@@ -1,6 +1,5 @@
 todo
 	* UnionType
-	* перевести Generator на T4
 	* сделать параметр генератору: "не создавать то, что уже создано"
 	* научить Generator патчить проектный файл
 	* перевести все Set-property на MemberAccessor
