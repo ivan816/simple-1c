@@ -41,7 +41,6 @@
   <ItemGroup>
     <Compile Include="Impl\ComDataContext.cs" />
     <Compile Include="Impl\EntityHelpers.cs" />
-    <Compile Include="Impl\Generation\Rendering\ClassFileTemplateGrip.cs" />
     <Compile Include="Impl\Generation\Rendering\ClassFileModel.cs" />
     <Compile Include="Impl\Generation\Rendering\EnumFileTemplate.cs">
       <DependentUpon>EnumFileTemplate.tt</DependentUpon>
@@ -104,10 +103,7 @@
     <Compile Include="Impl\Generation\ConfigurationItem.cs" />
     <Compile Include="Impl\Generation\FormatParameters.cs" />
     <Compile Include="Impl\Generation\GenerationContext.cs" />
-    <Compile Include="Impl\Generation\GenerationHelpers.cs" />
     <Compile Include="Impl\Generation\ObjectModelGenerator.cs" />
-    <Compile Include="Impl\Generation\GeneratorTemplates.cs" />
-    <Compile Include="Impl\Generation\SimpleFormat.cs" />
     <Compile Include="Impl\GlobalContext.cs" />
     <Compile Include="Impl\Helpers\PathHelpers.cs" />
     <Compile Include="Impl\Helpers\ReflectionHelpers.cs" />

@@ -28,8 +28,65 @@ namespace Simple1C.Impl.Generation.Rendering
         /// </summary>
         public virtual string TransformText()
         {
+            this.Write("using System;\r\n\r\nnamespace ");
+            
+            #line 8 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Namespace));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n{\r\n\tpublic enum ");
+            
+            #line 10 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Name));
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t{");
+            
+            #line 11 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+for(var i = 0; i < Model.Items.Count; i++)
+	{
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t\t");
+            
+            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Items[i]));
+            
+            #line default
+            #line hidden
+            
+            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+if(i != Model.Items.Count - 1){
+            
+            #line default
+            #line hidden
+            this.Write(",");
+            
+            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+}
+            
+            #line default
+            #line hidden
+            
+            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+}
+            
+            #line default
+            #line hidden
+            this.Write("\r\n\t}\r\n}");
             return this.GenerationEnvironment.ToString();
         }
+        
+        #line 17 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+
+public EnumFileModel Model { get; set; }
+
+        
+        #line default
+        #line hidden
     }
     
     #line default

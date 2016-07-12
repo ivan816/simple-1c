@@ -3,7 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Com;
-using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Generation.Rendering;
 using Simple1C.Interface;
 
 namespace Simple1C.Impl.Generation
@@ -30,8 +30,6 @@ namespace Simple1C.Impl.Generation
         {
             AttributePropertyNames = new[] {"Реквизиты"}
         };
-
-        
 
         private readonly GlobalContext globalContext;
         private readonly object metadata;
@@ -106,23 +104,36 @@ namespace Simple1C.Impl.Generation
 
         private void GenerateClass(ConfigurationItem item, GenerationContext context)
         {
-            var classContent = GenerateClassContent(MetadataAccessor.GetDescriptor(item.Name.Scope),
-                item.Name.Fullname, item.ComObject, context, item.Name);
-            var fileContent = GeneratorTemplates.classFormat.Apply(new FormatParameters()
-                .With("namespace-name", GetNamespaceName(item.Name.Scope))
-                .With("configuration-scope", item.Name.Scope.ToString())
-                .With("class-name", item.Name.Name)
-                .With("content", classContent));
-            context.Write(item.Name.Scope, item.Name.Name, fileContent);
+            var classContext = new ClassGenerationContext
+            {
+                configurationName = item.Name,
+                target = new ClassModel
+                {
+                    Name = item.Name.Name,
+                    ConfigurationScope = item.Name.Scope
+                },
+                comObject = item.ComObject,
+                generationContext = context,
+                descriptor = MetadataAccessor.GetDescriptor(item.Name.Scope),
+                configurationItemFullName = item.Name.Fullname
+            };
+            EmitClass(classContext);
+            var fileTemplate = new ClassFileTemplate
+            {
+                Model = new ClassFileModel
+                {
+                    Namespace = GetNamespaceName(item.Name.Scope),
+                    MainClass = classContext.target
+                }
+            };
+            context.Write(item.Name, fileTemplate.TransformText());
         }
 
-        private string GenerateClassContent(ConfigurationItemDescriptor descriptor,
-            string configurationItemFullName, object comObject, GenerationContext context, 
-            ConfigurationName? configurationName)
+        private void EmitClass(ClassGenerationContext classContext)
         {
-            var properties = new List<string>();
-            var standardAttributes = ComHelpers.GetProperty(comObject, "СтандартныеРеквизиты");
-            var isChartOfAccounts = Convert.ToString(ComHelpers.GetProperty(comObject, "Имя")) == "Хозрасчетный";
+            var standardAttributes = ComHelpers.GetProperty(classContext.comObject, "СтандартныеРеквизиты");
+            var isChartOfAccounts = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Имя")) ==
+                                    "Хозрасчетный";
             foreach (var attr in (IEnumerable) standardAttributes)
             {
                 var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
@@ -130,54 +141,55 @@ namespace Simple1C.Impl.Generation
                     continue;
                 if (standardPropertiesToExclude.Contains(name))
                     continue;
-                properties.Add(FormatProperty(attr, configurationItemFullName, context));
+                EmitProperty(attr, classContext);
             }
-            foreach (var propertyName in descriptor.AttributePropertyNames)
+            foreach (var propertyName in classContext.descriptor.AttributePropertyNames)
             {
-                var attributes = ComHelpers.GetProperty(comObject, propertyName);
+                var attributes = ComHelpers.GetProperty(classContext.comObject, propertyName);
                 var attributesCount = Convert.ToInt32(ComHelpers.Invoke(attributes, "Количество"));
                 for (var i = 0; i < attributesCount; ++i)
                 {
                     var attr = ComHelpers.Invoke(attributes, "Получить", i);
-                    properties.Add(FormatProperty(attr, configurationItemFullName, context));
+                    EmitProperty(attr, classContext);
                 }
             }
-            if (configurationName.HasValue && configurationName.Value.HasReference)
+            if (classContext.configurationName.HasValue && classContext.configurationName.Value.HasReference)
+                classContext.EmitProperty(new PropertyModel
+                {
+                    Type = "Guid?",
+                    PropertyName = EntityHelpers.idPropertyName
+                });
+            if (classContext.descriptor.HasTableSections)
             {
-                var uniqueIdentifierProperty = GeneratorTemplates.propertyFormat.Apply(new FormatParameters()
-                    .With("field-name", "уникальныйИдентификатор")
-                    .With("type", "Guid?")
-                    .With("property-name", EntityHelpers.idPropertyName));
-                properties.Add(uniqueIdentifierProperty);
-            }
-            var nestedClasses = new List<string>();
-            if (descriptor.HasTableSections)
-            {
-                var tableSections = ComHelpers.GetProperty(comObject, "ТабличныеЧасти");
+                var tableSections = ComHelpers.GetProperty(classContext.comObject, "ТабличныеЧасти");
                 var tableSectionsCount = Convert.ToInt32(ComHelpers.Invoke(tableSections, "Количество"));
                 for (var i = 0; i < tableSectionsCount; i++)
                 {
                     var tableSection = ComHelpers.Invoke(tableSections, "Получить", i);
                     var tableSectionName = Convert.ToString(ComHelpers.GetProperty(tableSection, "Имя"));
-                    var nestedClassContent = GenerateClassContent(tableSectionDescriptor,
-                        Convert.ToString(ComHelpers.Invoke(tableSection, "ПолноеИмя")),
-                        tableSection, context, null);
-                    var nestedClassName = "ТабличнаяЧасть" + tableSectionName;
-                    var nestedClass = GeneratorTemplates.nestedClassFormat.Apply(new FormatParameters()
-                        .With("class-name", nestedClassName)
-                        .With("content", nestedClassContent));
-                    nestedClasses.Add(GenerationHelpers.IncrementIndent(nestedClass));
-                    var formattedProperty = GeneratorTemplates.propertyFormat.Apply(new FormatParameters()
-                        .With("type", string.Format("List<{0}>", nestedClassName))
-                        .With("field-name", ToCamel(tableSectionName))
-                        .With("property-name", tableSectionName));
-                    properties.Add(formattedProperty);
+                    var nestedClassContext = new ClassGenerationContext
+                    {
+                        configurationItemFullName = Convert.ToString(ComHelpers.Invoke(tableSection, "ПолноеИмя")),
+                        comObject = tableSection,
+                        descriptor = tableSectionDescriptor,
+                        generationContext = classContext.generationContext,
+                        target = new ClassModel
+                        {
+                            Name = "ТабличнаяЧасть" + tableSectionName
+                        }
+                    };
+                    EmitClass(nestedClassContext);
+                    classContext.EmitNestedClass(nestedClassContext.target);
+                    classContext.EmitProperty(new PropertyModel
+                    {
+                        Type = string.Format("List<{0}>", nestedClassContext.target.Name),
+                        PropertyName = tableSectionName
+                    });
                 }
             }
-            return properties.NotNull().Concat(nestedClasses).JoinStrings("\r\n\r\n");
         }
 
-        private string FormatProperty(object attribute, string configurationItemFullName, GenerationContext context)
+        private void EmitProperty(object attribute, ClassGenerationContext classContext)
         {
             var propertyName = Convert.ToString(ComHelpers.GetProperty(attribute, "Имя"));
             var type = ComHelpers.GetProperty(attribute, "Тип");
@@ -186,7 +198,8 @@ namespace Simple1C.Impl.Generation
             if (typesCount == 0)
             {
                 const string messageFormat = "no types for [{0}.{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, configurationItemFullName, propertyName));
+                throw new InvalidOperationException(string.Format(messageFormat, classContext.configurationItemFullName,
+                    propertyName));
             }
             var isEnum = false;
             string propertyType;
@@ -201,7 +214,7 @@ namespace Simple1C.Impl.Generation
                     {
                         var configurationItem = FindByType(typeObject);
                         if (configurationItem != null)
-                            context.EnqueueIfNeeded(configurationItem);
+                            classContext.generationContext.EnqueueIfNeeded(configurationItem);
                     }
                 }
                 propertyType = "object";
@@ -229,20 +242,18 @@ namespace Simple1C.Impl.Generation
                         if (propertyItem != null)
                         {
                             propertyType = FormatClassName(propertyItem.Name);
-                            context.EnqueueIfNeeded(propertyItem);
+                            classContext.generationContext.EnqueueIfNeeded(propertyItem);
                             isEnum = propertyItem.Name.Scope == ConfigurationScope.Перечисления;
                         }
                     }
                 }
             }
             if (propertyType != null)
-            {
-                return GeneratorTemplates.propertyFormat.Apply(new FormatParameters()
-                    .With("type", propertyType + (isEnum ? "?" : ""))
-                    .With("field-name", ToCamel(propertyName))
-                    .With("property-name", propertyName));
-            }
-            return null;
+                classContext.target.Properties.Add(new PropertyModel
+                {
+                    Type = propertyType + (isEnum ? "?" : ""),
+                    PropertyName = propertyName
+                });
         }
 
         private string FormatClassName(ConfigurationName name)
@@ -252,24 +263,44 @@ namespace Simple1C.Impl.Generation
 
         private void GenerateEnum(ConfigurationItem item, GenerationContext context)
         {
-            var items = new List<string>();
+            var model = new EnumFileModel
+            {
+                Name = item.Name.Name,
+                Namespace = GetNamespaceName(item.Name.Scope)
+            };
             var values = ComHelpers.GetProperty(item.ComObject, "ЗначенияПеречисления");
             var count = Convert.ToInt32(ComHelpers.Invoke(values, "Количество"));
             for (var i = 0; i < count; i++)
             {
                 var value = ComHelpers.Invoke(values, "Получить", i);
-                items.Add("\t\t" + Convert.ToString(ComHelpers.GetProperty(value, "Имя")));
+                var name = Convert.ToString(ComHelpers.GetProperty(value, "Имя"));
+                model.Items.Add(name);
             }
-            var enumContent = GeneratorTemplates.enumFormat.Apply(new FormatParameters()
-                .With("namespace-name", GetNamespaceName(item.Name.Scope))
-                .With("name", item.Name.Name)
-                .With("content", items.JoinStrings(",\r\n")));
-            context.Write(ConfigurationScope.Перечисления, item.Name.Name, enumContent);
+            var enumFileTemplate = new EnumFileTemplate
+            {
+                Model = model
+            };
+            context.Write(item.Name, enumFileTemplate.TransformText());
         }
 
-        private static string ToCamel(string s)
+        private class ClassGenerationContext
         {
-            return char.ToLower(s[0]) + s.Substring(1);
+            public ConfigurationItemDescriptor descriptor;
+            public string configurationItemFullName;
+            public object comObject;
+            public GenerationContext generationContext;
+            public ConfigurationName? configurationName;
+            public ClassModel target;
+
+            public void EmitProperty(PropertyModel property)
+            {
+                target.Properties.Add(property);
+            }
+
+            public void EmitNestedClass(ClassModel classModel)
+            {
+                target.NestedClasses.Add(classModel);
+            }
         }
     }
 }

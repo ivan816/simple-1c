@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using Simple1C.Impl.Helpers;
-using Simple1C.Interface;
 
 namespace Simple1C.Impl.Generation
 {
@@ -19,9 +18,9 @@ namespace Simple1C.Impl.Generation
 
         public Queue<ConfigurationItem> ItemsToProcess { get; private set; }
 
-        public void Write(ConfigurationScope scope, string name, string content)
+        public void Write(ConfigurationName name, string content)
         {
-            var fileFullPath = Path.Combine(rootDirectoryFullPath, scope.ToString(), name) + ".cs";
+            var fileFullPath = Path.Combine(rootDirectoryFullPath, name.Scope.ToString(), name.Name) + ".cs";
             var directoryFullPath = PathHelpers.GetDirectoryName(fileFullPath);
             if (!Directory.Exists(directoryFullPath))
                 Directory.CreateDirectory(directoryFullPath);

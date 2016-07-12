@@ -7,12 +7,45 @@ using System;
 using System.Collections.Generic;
 using Simple1C.Interface;
 using Simple1C.Interface.ObjectModel;
-huj
+
+namespace <#=Model.Namespace#>
+{
+<# 
+	PushIndent("\t"); 
+	RenderClass(Model.MainClass);
+	PopIndent();
+#>
+}
 <#+
-protected void SharedText(int n)
+public ClassFileModel Model { get; set; }
+
+private void RenderClass(ClassModel model)
 {
 #>
-   Shared Text <#= n #>
-<#+
+<#+if(model.ConfigurationScope.HasValue)
+{#>
+[ConfigurationScope(ConfigurationScope.<#=model.ConfigurationScope.Value.ToString()#>)]
+<#+}#>
+public partial class <#=model.Name#> : Abstract1CEntity
+{
+<#+for(var i = 0; i < model.Properties.Count; i++)
+	{
+		var prop = model.Properties[i];
+		if(i != 0)
+			Write("\r\n");
+	#>	private Requisite<<#=prop.Type#>> <#=prop.FieldName#>;
+	public <#=prop.Type#> <#=prop.PropertyName#>
+	{
+		get { return Controller.GetValue(ref <#=prop.FieldName#>, "<#=prop.PropertyName#>"); }
+		set { Controller.SetValue(ref <#=prop.FieldName#>, "<#=prop.PropertyName#>", value); }
+	}
+<#+}#><#+if(model.NestedClasses != null)
+		foreach(var nestedClass in model.NestedClasses)
+		{
+			Write("\r\n");
+			PushIndent("\t");
+			RenderClass(nestedClass);
+			PopIndent();
+		}#>
 }
-#>
+<#+}#>
