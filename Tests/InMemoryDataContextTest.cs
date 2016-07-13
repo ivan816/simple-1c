@@ -354,6 +354,31 @@ namespace Simple1C.Tests
             Assert.That(((Контрагенты) array[0].Владелец).Наименование,
                 Is.EqualTo("Тестовый контрагент"));
         }
+
+        [Test]
+        public void CanReadUniqueIdentifierAfterSave()
+        {
+            var counterparty = new Контрагенты
+            {
+                Наименование = "Тестовый контрагент"
+            };
+            dataContext.Save(counterparty);
+            Assert.IsNotNull(counterparty.УникальныйИдентификатор);
+            Assert.That(counterparty.УникальныйИдентификатор.Value, Is.Not.EqualTo(Guid.Empty));
+
+            var loadedCounterparty = dataContext
+                .Select<Контрагенты>()
+                .Single(x => x.УникальныйИдентификатор == counterparty.УникальныйИдентификатор.Value);
+            Assert.That(loadedCounterparty.Наименование, Is.EqualTo("Тестовый контрагент"));
+
+            loadedCounterparty.Наименование = "changed";
+            dataContext.Save(loadedCounterparty);
+
+            var loadedCounterparty2 = dataContext
+                .Select<Контрагенты>()
+                .Single(x => x.УникальныйИдентификатор == counterparty.УникальныйИдентификатор.Value);
+            Assert.That(loadedCounterparty2.Наименование, Is.EqualTo("changed"));
+        }
         
         [Test]
         public void UnionTypeWithEnumValue()

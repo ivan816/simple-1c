@@ -107,6 +107,13 @@ namespace Simple1C.Impl
                         AssignNewGuid(entity, changed, "Код");
                     else if (configurationName.Scope == ConfigurationScope.Документы)
                         AssignNewGuid(entity, changed, "Номер");
+                    if (entity.Controller.IsNew && configurationName.HasReference)
+                    {
+                        var idProperty = entity.GetType().GetProperty(EntityHelpers.idPropertyName);
+                        if (idProperty == null)
+                            throw new InvalidOperationException("assertion failure");
+                        AssignValue(entity, changed, idProperty, Guid.NewGuid());
+                    }
                     var inMemoryEntityCollection = Collection(entity.GetType());
                     inMemoryEntityCollection.revision++;
                     inMemoryEntityCollection.list.Add(inMemoryEntity);
@@ -131,13 +138,17 @@ namespace Simple1C.Impl
             var codeProperty = target.GetType().GetProperty(property);
             if (codeProperty == null)
                 return;
-            var value = Guid.NewGuid().ToString();
-            committed[property] = value;
+            AssignValue(target, committed, codeProperty, Guid.NewGuid().ToString());
+        }
+        
+        private static void AssignValue(Abstract1CEntity target, Dictionary<string, object> committed, PropertyInfo property, object value)
+        {
+            committed[property.Name] = value;
             var oldTrackChanges = target.Controller.TrackChanges;
             target.Controller.TrackChanges = false;
             try
             {
-                codeProperty.SetMethod.Invoke(target, new object[] {value});
+                property.SetMethod.Invoke(target, new object[] {value});
             }
             finally
             {
