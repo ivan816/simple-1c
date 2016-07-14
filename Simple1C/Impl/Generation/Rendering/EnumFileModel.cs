@@ -2,7 +2,7 @@ using System.Collections.Generic;
 
 namespace Simple1C.Impl.Generation.Rendering
 {
-    public class EnumFileModel
+    internal class EnumFileModel
     {
         public EnumFileModel()
         {

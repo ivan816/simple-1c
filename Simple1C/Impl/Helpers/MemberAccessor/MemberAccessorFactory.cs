@@ -4,7 +4,7 @@ using System.Reflection.Emit;
 
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public abstract class MemberAccessorFactory<TOutput>
+	internal abstract class MemberAccessorFactory<TOutput>
 	{
 		private readonly MemberInfo member;
 

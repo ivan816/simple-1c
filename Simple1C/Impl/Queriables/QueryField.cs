@@ -1,44 +1,38 @@
+using System;
 using System.Collections.Generic;
+using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl.Queriables
 {
     internal class QueryField
     {
-        public QueryField(object constant)
-        {
-            EvaluatedLocally = true;
-            Constant = constant;
-        }
+        private readonly bool isUniqueIdentifier;
 
-        public QueryField(string sourceName, List<string> pathItems)
+        public QueryField(string sourceName, List<string> pathItems, Type type)
         {
+            Type = type;
             PathItems = pathItems.ToArray();
-            List<int> uniqueIdentifierFieldIndexesList = null;
-            for (var i = 0; i < PathItems.Length; i++)
-            {
-                var fieldName = PathItems[i];
-                if (fieldName == EntityHelpers.idPropertyName)
-                {
-                    if (uniqueIdentifierFieldIndexesList == null)
-                        uniqueIdentifierFieldIndexesList = new List<int>();
-                    uniqueIdentifierFieldIndexesList.Add(i);
-                    PathItems[i] = "—сылка";
-                }
-            }
-            if (uniqueIdentifierFieldIndexesList != null)
-                UniqueIdentifierFieldIndexes = uniqueIdentifierFieldIndexesList.ToArray();
+            isUniqueIdentifier = PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
+            if (isUniqueIdentifier)
+                PathItems[PathItems.Length - 1] = "—сылка";
             Path = PathItems.JoinStrings(".");
             Expression = sourceName + "." + Path;
             Alias = sourceName.Replace('.', '_') + "_" + PathItems.JoinStrings("_");
         }
 
-        public object Constant { get; set; }
-        public bool EvaluatedLocally { get; set; }
-        public int[] UniqueIdentifierFieldIndexes { get; private set; }
+        public object GetValue(object queryResultRow)
+        {
+            var result = ComHelpers.GetProperty(queryResultRow, Alias);
+            if (isUniqueIdentifier)
+                result = ComHelpers.Invoke(result, EntityHelpers.idPropertyName);
+            return result;
+        }
+
         public string[] PathItems { get; private set; }
         public string Path { get; private set; }
         public string Alias { get; private set; }
         public string Expression { get; private set; }
+        public Type Type { get; private set; }
     }
 }

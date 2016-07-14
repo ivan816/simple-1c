@@ -13,20 +13,32 @@ namespace Simple1C.Impl.Queriables
 
         private readonly List<string> members = new List<string>();
         private string sourceName;
+        private bool isLocal;
 
-        public QueryField GetMembers(Expression expression)
+        public QueryField GetFieldOrNull(Expression expression)
         {
             members.Clear();
-            var xConstant = expression as ConstantExpression;
-            if (xConstant != null)
-                return new QueryField(xConstant.Value);
+            isLocal = false;
             Visit(expression);
-            return new QueryField(sourceName, members);
+            return isLocal ? null : new QueryField(sourceName, members, expression.Type);
         }
 
         public void Map(IQuerySource source, string value)
         {
             querySourceMapping[source] = value;
+        }
+
+        public override Expression Visit(Expression node)
+        {
+            if (isLocal)
+                return node;
+            var isMembersChain = node is MemberExpression || node is QuerySourceReferenceExpression;
+            if (!isMembersChain)
+            {
+                isLocal = true;
+                return node;
+            }
+            return base.Visit(node);
         }
 
         protected override Expression VisitMember(MemberExpression node)

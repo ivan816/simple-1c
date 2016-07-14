@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public class BoxingCaster : Caster
+	internal class BoxingCaster : Caster
 	{
 		public BoxingCaster(Type outputType, Type memberType)
 			: base(outputType, memberType) {}

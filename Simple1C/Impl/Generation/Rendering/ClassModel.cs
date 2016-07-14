@@ -3,7 +3,7 @@ using Simple1C.Interface;
 
 namespace Simple1C.Impl.Generation.Rendering
 {
-    public class ClassModel
+    internal class ClassModel
     {
         public ClassModel()
         {

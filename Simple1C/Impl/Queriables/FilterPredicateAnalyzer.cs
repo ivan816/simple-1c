@@ -42,7 +42,7 @@ namespace Simple1C.Impl.Queriables
 
         protected override Expression VisitMember(MemberExpression node)
         {
-            var queryField = memberAccessBuilder.GetMembers(node);
+            var queryField = memberAccessBuilder.GetFieldOrNull(node);
             filterBuilder.Append(queryField.Expression);
             var comparand = binaryExpressionMappings.GetOrDefault(node) as ConstantExpression;
             var needReferenceKeyword = typeof(Abstract1CEntity).IsAssignableFrom(node.Type) &&

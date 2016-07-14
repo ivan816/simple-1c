@@ -3,7 +3,7 @@ using System.Reflection.Emit;
 
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public class PropertyAccessorFactory<TOutput>: MemberAccessorFactory<TOutput>
+	internal class PropertyAccessorFactory<TOutput>: MemberAccessorFactory<TOutput>
 	{
 		private readonly PropertyInfo propertyInfo;
 

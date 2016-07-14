@@ -20,7 +20,7 @@ namespace Simple1C.Impl.Generation.Rendering
     
     #line 1 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    public partial class ClassFileTemplate : ClassFileTemplateBase
+    internal partial class ClassFileTemplate : ClassFileTemplateBase
     {
 #line hidden
         /// <summary>
@@ -287,7 +287,7 @@ this.Write("}\r\n");
     /// Base class for this transformation
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    public class ClassFileTemplateBase
+    internal class ClassFileTemplateBase
     {
         #region Fields
         private global::System.Text.StringBuilder generationEnvironmentField;

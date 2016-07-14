@@ -20,7 +20,7 @@ namespace Simple1C.Impl.Generation.Rendering
     
     #line 1 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    public partial class EnumFileTemplate : EnumFileTemplateBase
+    internal partial class EnumFileTemplate : EnumFileTemplateBase
     {
 #line hidden
         /// <summary>
@@ -96,7 +96,7 @@ public EnumFileModel Model { get; set; }
     /// Base class for this transformation
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    public class EnumFileTemplateBase
+    internal class EnumFileTemplateBase
     {
         #region Fields
         private global::System.Text.StringBuilder generationEnvironmentField;

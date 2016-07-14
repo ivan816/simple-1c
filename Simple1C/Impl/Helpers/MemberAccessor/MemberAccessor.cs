@@ -5,7 +5,7 @@ using System.Reflection;
 
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public class MemberAccessor<TOutput>: IMemberAccessor
+	internal class MemberAccessor<TOutput>: IMemberAccessor
 	{
 		private readonly Func<object, TOutput> getter;
 		private readonly Action<object, TOutput> setter;

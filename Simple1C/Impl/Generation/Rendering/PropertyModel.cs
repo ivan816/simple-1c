@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Generation.Rendering
 {
-    public class PropertyModel
+    internal class PropertyModel
     {
         public string PropertyName { get; set; }
 

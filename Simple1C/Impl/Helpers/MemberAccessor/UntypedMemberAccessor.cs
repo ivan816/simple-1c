@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public class UntypedMemberAccessor
+	internal class UntypedMemberAccessor
 	{
 		public static IMemberAccessor Create(MemberInfo memberInfo)
 		{

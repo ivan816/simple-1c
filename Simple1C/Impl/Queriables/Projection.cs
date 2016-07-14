@@ -8,6 +8,7 @@ namespace Simple1C.Impl.Queriables
     internal class Projection
     {
         public QueryField[] fields;
+        public SelectedProperty[] properties;
         public Type resultType;
         public ConstructorInfo ctor;
         public MemberInfo[] initMembers;
@@ -17,8 +18,6 @@ namespace Simple1C.Impl.Queriables
             var b = new StringBuilder();
             foreach (var queryField in fields)
             {
-                if (queryField.EvaluatedLocally)
-                    continue;
                 b.Append(queryField.Expression);
                 b.Append(" КАК ");
                 b.Append(queryField.Alias);
@@ -35,7 +34,7 @@ namespace Simple1C.Impl.Queriables
             b.Append('-');
             foreach (var t in fields)
             {
-                b.Append(t.EvaluatedLocally ? t.Constant ?? "<null>" : t.Alias);
+                b.Append(t.Alias);
                 b.Append('-');
             }
             return b.ToString();

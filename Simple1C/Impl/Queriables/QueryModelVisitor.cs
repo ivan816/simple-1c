@@ -15,11 +15,13 @@ namespace Simple1C.Impl.Queriables
         private readonly QueryBuilder queryBuilder;
         private readonly MemberAccessBuilder memberAccessBuilder = new MemberAccessBuilder();
         private readonly FilterPredicateAnalyzer filterPredicateAnalyer;
+        private PropertiesExtractingVisitor propertiesExtractor;
 
         public QueryModelVisitor(QueryBuilder queryBuilder)
         {
             this.queryBuilder = queryBuilder;
             filterPredicateAnalyer = new FilterPredicateAnalyzer(queryBuilder, memberAccessBuilder);
+            propertiesExtractor = new PropertiesExtractingVisitor(memberAccessBuilder);
         }
 
         public override void VisitSelectClause(SelectClause selectClause, QueryModel queryModel)
@@ -30,12 +32,12 @@ namespace Simple1C.Impl.Queriables
                 return;
             var xMemberInit = xSelector as MemberInitExpression;
             MemberInfo[] members;
-            QueryField[] fields;
+            SelectedProperty[] properties;
             NewExpression xNew;
             if (xMemberInit != null)
             {
                 members = new MemberInfo[xMemberInit.Bindings.Count];
-                fields = new QueryField[xMemberInit.Bindings.Count];
+                properties = new SelectedProperty[xMemberInit.Bindings.Count];
                 for (var i = 0; i < xMemberInit.Bindings.Count; i++)
                 {
                     var binding = xMemberInit.Bindings[i];
@@ -46,7 +48,7 @@ namespace Simple1C.Impl.Queriables
                             binding.Member.Name, xSelector));
                     }
                     var memberAssignment = (MemberAssignment) binding;
-                    fields[i] = memberAccessBuilder.GetMembers(memberAssignment.Expression);
+                    properties[i] = propertiesExtractor.GetProperty(memberAssignment.Expression);
                     members[i] = binding.Member;
                 }
                 xNew = xMemberInit.NewExpression;
@@ -59,14 +61,15 @@ namespace Simple1C.Impl.Queriables
                     const string messageFormat = "selector [{0}] is not supported";
                     throw new InvalidOperationException(string.Format(messageFormat, selectClause.Selector));
                 }
-                fields = new QueryField[xNew.Arguments.Count];
+                properties = new SelectedProperty[xNew.Arguments.Count];
                 members = null;
-                for (var i = 0; i < fields.Length; i++)
-                    fields[i] = memberAccessBuilder.GetMembers(xNew.Arguments[i]);
+                for (var i = 0; i < properties.Length; i++)
+                    properties[i] = propertiesExtractor.GetProperty(xNew.Arguments[i]);
             }
             queryBuilder.SetProjection(new Projection
             {
-                fields = fields,
+                fields = propertiesExtractor.GetFields(),
+                properties = properties,
                 resultType = xNew.Type,
                 ctor = xNew.Constructor,
                 initMembers = members
@@ -134,7 +137,7 @@ namespace Simple1C.Impl.Queriables
             {
                 var subQueryModel = xSubquery.QueryModel;
                 var mainFromClause = subQueryModel.MainFromClause;
-                var fromMembers = memberAccessBuilder.GetMembers(mainFromClause.FromExpression);
+                var fromMembers = memberAccessBuilder.GetFieldOrNull(mainFromClause.FromExpression);
                 if (fromMembers.PathItems.Length != 1)
                 {
                     const string messageFormat = "unexpected members [{0}], expression [{1}]";
@@ -159,7 +162,7 @@ namespace Simple1C.Impl.Queriables
                         var ordering = orderByClause.Orderings[i];
                         orderings[i] = new Ordering
                         {
-                            Field = memberAccessBuilder.GetMembers(ordering.Expression),
+                            Field = memberAccessBuilder.GetFieldOrNull(ordering.Expression),
                             IsAsc = ordering.OrderingDirection == OrderingDirection.Asc
                         };
                     }

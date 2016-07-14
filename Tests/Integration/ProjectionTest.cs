@@ -140,6 +140,101 @@ namespace Simple1C.Tests.Integration
         }
 
         [Test]
+        public void CanEvaluateExpressionsLocally()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+            var selectedContractor = dataContext.Select<Контрагенты>()
+                .Where(x => x.Наименование == "test contractor name")
+                .Select(x => new
+                {
+                    x.Наименование,
+                    НаименованиеИИнн = x.Наименование + "$$$" + x.ИНН
+                })
+                .ToArray()
+                .Single();
+            Assert.That(selectedContractor.Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(selectedContractor.НаименованиеИИнн, Is.EqualTo("test contractor name$$$test-inn"));
+        }
+
+        private class NameWithDescription
+        {
+            public string name;
+            public string description;
+        }
+
+        [Test]
+        public void CanMapLocalExpresionToNamedType()
+        {
+            var контрагент1 = new Контрагенты
+            {
+                Наименование = "test-shortname1",
+                ИНН = "test-inn1",
+                КПП = "test-kpp",
+                Комментарий = "test-comment1"
+            };
+            var контрагент2 = new Контрагенты
+            {
+                Наименование = "test-shortname2",
+                НаименованиеПолное = "test-fullname2",
+                ИНН = "test-inn2",
+                КПП = "test-kpp",
+                Комментарий = "test-comment2"
+            };
+            dataContext.Save(контрагент1);
+            dataContext.Save(контрагент2);
+            var selectedContractors = dataContext.Select<Контрагенты>()
+                .Where(x => x.КПП == "test-kpp")
+                .Select(x => new NameWithDescription
+                {
+                    name = x.Наименование,
+                    description = (string.IsNullOrEmpty(x.НаименованиеПолное) ? x.Наименование : x.НаименованиеПолное)
+                                  + "(" + x.ИНН + ") " + x.Комментарий
+                })
+                .OrderBy(x => x.name)
+                .ToArray();
+            Assert.That(selectedContractors[0].name, Is.EqualTo("test-shortname1"));
+            Assert.That(selectedContractors[0].description, Is.EqualTo("test-shortname1(test-inn1) test-comment1"));
+
+            Assert.That(selectedContractors[1].name, Is.EqualTo("test-shortname2"));
+            Assert.That(selectedContractors[1].description, Is.EqualTo("test-fullname2(test-inn2) test-comment2"));
+        }
+
+        [Test]
+        public void CanUseLocalMethodsInProjection()
+        {
+            var контрагент1 = new Контрагенты
+            {
+                Наименование = "test-shortname1",
+                КПП = "test-kpp"
+            };
+
+            dataContext.Save(контрагент1);
+            var selectedContractors = dataContext.Select<Контрагенты>()
+                .Where(x => x.КПП == "test-kpp")
+                .Select(x => new
+                {
+                    GetWrap(x.Наименование).description
+                })
+                .Single();
+            Assert.That(selectedContractors.description, Is.EqualTo("test-shortname1"));
+        }
+
+        private static DescriptionHolder GetWrap(string description)
+        {
+            return new DescriptionHolder {description = description};
+        }
+
+        private class DescriptionHolder
+        {
+            public string description;
+        }
+
+        [Test]
         public void CanSelectSameFieldWithDifferentAliases()
         {
             var счет2001 = dataContext.Single<Хозрасчетный>(x => x.Код == "20.01");

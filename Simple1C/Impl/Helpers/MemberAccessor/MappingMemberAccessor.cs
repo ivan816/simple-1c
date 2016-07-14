@@ -1,6 +1,6 @@
 namespace Simple1C.Impl.Helpers.MemberAccessor
 {
-	public class MappingMemberAccessor: IAccessMember
+	internal class MappingMemberAccessor: IAccessMember
 	{
 		private readonly IAccessMember parent;
 		private readonly IAccessMember child;
