@@ -184,6 +184,25 @@ namespace Simple1C.Tests
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.ПрочиеДоходыИРасходы КАК src УПОРЯДОЧИТЬ ПО src.Наименование УБЫВ,src.Период");
             }
 
+            [Test]
+            public void GracefullCrashForInvalidOrderByExpression()
+            {
+                ПрочиеДоходыИРасходы value = null;
+                var exception = Assert.Throws<InvalidOperationException>(() => value = Source<ПрочиеДоходыИРасходы>()
+                    .OrderByDescending(x => LocalFunc(x.Наименование))
+                    .Single());
+                Assert.That(value, Is.Null);
+                const string expectedMessage = "can't apply [OrderByDescending] operator by " +
+                                               "expression [LocalFunc([x].Наименование)]." +
+                                               "Expression must be a chain of member accesses.";
+                Assert.That(exception.Message, Is.EqualTo(expectedMessage));
+            }
+
+            private static string LocalFunc(string s)
+            {
+                return s;
+            }
+
             [ConfigurationScope(ConfigurationScope.Справочники)]
             public class ПрочиеДоходыИРасходы
             {
@@ -315,6 +334,58 @@ namespace Simple1C.Tests
                     .Where(x => x.Наименование == "test"),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.ПрочиеДоходыИРасходы КАК src ГДЕ (src.Наименование = &p0)",
                     P("p0", "test"));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class ПрочиеДоходыИРасходы
+            {
+                public string Наименование { get; set; }
+            }
+        }
+        
+        public class FilterByInvalidExpression : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                ПрочиеДоходыИРасходы value = null;
+                var exception = Assert.Throws<InvalidOperationException>(() => value =
+                    Source<ПрочиеДоходыИРасходы>()
+                        .Single(x => LocalFunc(x.Наименование) == "."));
+                Assert.That(value, Is.Null);
+                const string expectedMessage = "can't apply 'Where' operator for " +
+                                               "expression [(LocalFunc([x].Наименование) == \".\")]." +
+                                               "Expression must be a chain of member accesses.";
+                Assert.That(exception.Message, Is.EqualTo(expectedMessage));
+            }
+            
+            [Test]
+            public void LocalMemberChain()
+            {
+                ПрочиеДоходыИРасходы value = null;
+                var exception = Assert.Throws<InvalidOperationException>(() => value =
+                    Source<ПрочиеДоходыИРасходы>()
+                        .Single(x => LocalWrapFunc(x.Наименование).s == "."));
+                Assert.That(value, Is.Null);
+                const string expectedMessage = "can't apply 'Where' operator for " +
+                                               "expression [(LocalWrapFunc([x].Наименование).s == \".\")]." +
+                                               "Expression must be a chain of member accesses.";
+                Assert.That(exception.Message, Is.EqualTo(expectedMessage));
+            }
+
+            private static string LocalFunc(string s)
+            {
+                return s;
+            }
+            
+            private static ValueWrap LocalWrapFunc(string s)
+            {
+                return new ValueWrap{s = s};
+            }
+
+            private class ValueWrap
+            {
+                public string s;
             }
 
             [ConfigurationScope(ConfigurationScope.Справочники)]

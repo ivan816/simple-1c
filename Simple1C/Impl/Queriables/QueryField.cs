@@ -16,8 +16,7 @@ namespace Simple1C.Impl.Queriables
             isUniqueIdentifier = PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
             if (isUniqueIdentifier)
                 PathItems[PathItems.Length - 1] = "—сылка";
-            Path = PathItems.JoinStrings(".");
-            Expression = sourceName + "." + Path;
+            Expression = sourceName + "." + PathItems.JoinStrings(".");
             Alias = sourceName.Replace('.', '_') + "_" + PathItems.JoinStrings("_");
         }
 
@@ -30,7 +29,6 @@ namespace Simple1C.Impl.Queriables
         }
 
         public string[] PathItems { get; private set; }
-        public string Path { get; private set; }
         public string Alias { get; private set; }
         public string Expression { get; private set; }
         public Type Type { get; private set; }

@@ -15,7 +15,7 @@ namespace Simple1C.Impl.Queriables
         private readonly QueryBuilder queryBuilder;
         private readonly MemberAccessBuilder memberAccessBuilder = new MemberAccessBuilder();
         private readonly FilterPredicateAnalyzer filterPredicateAnalyer;
-        private PropertiesExtractingVisitor propertiesExtractor;
+        private readonly PropertiesExtractingVisitor propertiesExtractor;
 
         public QueryModelVisitor(QueryBuilder queryBuilder)
         {
@@ -137,14 +137,15 @@ namespace Simple1C.Impl.Queriables
             {
                 var subQueryModel = xSubquery.QueryModel;
                 var mainFromClause = subQueryModel.MainFromClause;
-                var fromMembers = memberAccessBuilder.GetFieldOrNull(mainFromClause.FromExpression);
-                if (fromMembers.PathItems.Length != 1)
+                var fromField = memberAccessBuilder.GetFieldOrNull(mainFromClause.FromExpression);
+                if (fromField == null || fromField.PathItems.Length != 1)
                 {
                     const string messageFormat = "unexpected members [{0}], expression [{1}]";
                     throw new InvalidOperationException(string.Format(messageFormat,
-                        fromMembers.PathItems.JoinStrings(","), mainFromClause.FromExpression));
+                        fromField == null ? "<empty>" : fromField.PathItems.JoinStrings(","),
+                        mainFromClause.FromExpression));
                 }
-                queryBuilder.TableSectionName = fromMembers.PathItems[0];
+                queryBuilder.TableSectionName = fromField.PathItems[0];
                 VisitSelectClause(xSubquery.QueryModel.SelectClause, xSubquery.QueryModel);
             }
         }
@@ -160,9 +161,18 @@ namespace Simple1C.Impl.Queriables
                     for (var i = 0; i < orderings.Length; i++)
                     {
                         var ordering = orderByClause.Orderings[i];
+                        var field = memberAccessBuilder.GetFieldOrNull(ordering.Expression);
+                        if (field == null)
+                        {
+                            const string messageFormat = "can't apply [{0}] operator by expression [{1}]." +
+                                                         "Expression must be a chain of member accesses.";
+                            throw new InvalidOperationException(string.Format(messageFormat,
+                                ordering.OrderingDirection == OrderingDirection.Asc ? "OrderBy" : "OrderByDescending",
+                                ordering.Expression));
+                        }
                         orderings[i] = new Ordering
                         {
-                            Field = memberAccessBuilder.GetFieldOrNull(ordering.Expression),
+                            Field = field,
                             IsAsc = ordering.OrderingDirection == OrderingDirection.Asc
                         };
                     }

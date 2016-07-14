@@ -49,9 +49,8 @@ namespace Simple1C.Impl
                 else
                 {
                     var valuesFactory = CreatePropertyValuesFactory(projection);
-                    result =
-                        (queryResultItem, currentProjection) =>
-                            compiledCtorDelegate(null, valuesFactory(queryResultItem, currentProjection));
+                    result = (queryResultItem, currentProjection) =>
+                        compiledCtorDelegate(null, valuesFactory(queryResultItem, currentProjection));
                 }
                 mappers.TryAdd(cacheKey, result);
             }

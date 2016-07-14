@@ -14,6 +14,7 @@ namespace Simple1C.Impl.Queriables
         private readonly MemberAccessBuilder memberAccessBuilder;
         private readonly StringBuilder filterBuilder = new StringBuilder();
         private readonly Dictionary<Expression, Expression> binaryExpressionMappings = new Dictionary<Expression, Expression>();
+        private Expression xFilter;
 
         public FilterPredicateAnalyzer(QueryBuilder queryBuilder, MemberAccessBuilder memberAccessBuilder)
         {
@@ -21,8 +22,9 @@ namespace Simple1C.Impl.Queriables
             this.memberAccessBuilder = memberAccessBuilder;
         }
 
-        public void Apply(Expression xFilter)
+        public void Apply(Expression xTargetFilter)
         {
+            xFilter = xTargetFilter;
             filterBuilder.Clear();
             Visit(xFilter);
             queryBuilder.AddWherePart(filterBuilder.ToString());
@@ -40,9 +42,41 @@ namespace Simple1C.Impl.Queriables
             return base.VisitUnary(node);
         }
 
+        public override Expression Visit(Expression node)
+        {
+            if (!IsValid(node))
+            {
+                var message = GetInvalidFilterErrorMessage();
+                throw new InvalidOperationException(message);
+            }
+            return base.Visit(node);
+        }
+
+        private static bool IsValid(Expression node)
+        {
+            var isValid = node is MemberExpression ||
+                          node is ConstantExpression ||
+                          node.NodeType == ExpressionType.Convert ||
+                          node.NodeType == ExpressionType.TypeIs ||
+                          node.NodeType == ExpressionType.Not ||
+                          node is BinaryExpression;
+            if (isValid)
+                return true;
+            var xMethodCall = node as MethodCallExpression;
+            if (xMethodCall != null)
+                return xMethodCall.Method.DeclaringType == typeof(object) &&
+                       xMethodCall.Method.Name == "GetType";
+            return false;
+        }
+
         protected override Expression VisitMember(MemberExpression node)
         {
             var queryField = memberAccessBuilder.GetFieldOrNull(node);
+            if (queryField == null)
+            {
+                var message = GetInvalidFilterErrorMessage();
+                throw new InvalidOperationException(message);
+            }
             filterBuilder.Append(queryField.Expression);
             var comparand = binaryExpressionMappings.GetOrDefault(node) as ConstantExpression;
             var needReferenceKeyword = typeof(Abstract1CEntity).IsAssignableFrom(node.Type) &&
@@ -194,6 +228,13 @@ namespace Simple1C.Impl.Queriables
             Visit(expression.Right);
             filterBuilder.Append(")");
             return expression;
+        }
+
+        private string GetInvalidFilterErrorMessage()
+        {
+            const string messageFormat = "can't apply 'Where' operator for expression [{0}]." +
+                                         "Expression must be a chain of member accesses.";
+            return string.Format(messageFormat, xFilter);
         }
 
         private static string Get1CTypeName(Type type)
