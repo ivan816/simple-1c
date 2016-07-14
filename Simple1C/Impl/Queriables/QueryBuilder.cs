@@ -10,6 +10,9 @@ namespace Simple1C.Impl.Queriables
         private readonly TypeRegistry typeRegistry;
         private readonly Dictionary<string, object> parameters = new Dictionary<string, object>();
         private readonly List<string> whereParts = new List<string>();
+        private Projection projection;
+        private Type sourceType;
+        private string sourceName;
 
         public QueryBuilder(TypeRegistry typeRegistry)
         {
@@ -18,10 +21,6 @@ namespace Simple1C.Impl.Queriables
 
         public Ordering[] Orderings { get; set; }
         public string TableSectionName { get; set; }
-        private Projection projection;
-        private Type sourceType;
-        private string sourceName;
-
         public int? Take { get; set; }
 
         public void SetProjection(Projection newProjection)
