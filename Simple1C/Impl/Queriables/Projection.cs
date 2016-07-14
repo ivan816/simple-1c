@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using Simple1C.Impl.Helpers;
 
@@ -12,6 +13,15 @@ namespace Simple1C.Impl.Queriables
         public Type resultType;
         public ConstructorInfo ctor;
         public MemberInfo[] initMembers;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public object GetValue(object[] fieldValues, int propertyIndex, int itemIndex)
+        {
+            var propertyItem = properties[propertyIndex].items[itemIndex];
+            return propertyItem.queryFieldIndex < 0
+                ? propertyItem.constant
+                : fieldValues[propertyItem.queryFieldIndex];
+        }
 
         public string GetSelection()
         {

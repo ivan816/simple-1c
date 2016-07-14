@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Linq.Expressions;
-using System.Runtime.CompilerServices;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Helpers.MemberAccessor;
 using Simple1C.Impl.Queriables;
@@ -91,26 +90,17 @@ namespace Simple1C.Impl
                 {
                     var property = projection.properties[i];
                     if (propArguments == null || property.items.Length == 1)
-                        propertyValues[i] = GetValue(currentProjection, fieldValues, i, 0);
+                        propertyValues[i] = currentProjection.GetValue(fieldValues, i, 0);
                     else
                     {
                         for (var j = 0; j < property.items.Length; j++)
-                            propArguments[j] = GetValue(currentProjection, fieldValues, i, j);
+                            propArguments[j] = currentProjection.GetValue(fieldValues, i, j);
                         var getter = propertyValueGetters[i];
                         propertyValues[i] = getter(propArguments);
                     }
                 }
                 return propertyValues;
             };
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private static object GetValue(Projection projection, object[] fieldValues, int propertyIndex, int itemIndex)
-        {
-            var propertyItem = projection.properties[propertyIndex].items[itemIndex];
-            return propertyItem.queryFieldIndex < 0
-                ? propertyItem.constant
-                : fieldValues[propertyItem.queryFieldIndex];
         }
     }
 }
