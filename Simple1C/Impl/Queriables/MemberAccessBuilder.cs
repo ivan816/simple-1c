@@ -32,7 +32,9 @@ namespace Simple1C.Impl.Queriables
         {
             if (isLocal)
                 return node;
-            var isMembersChain = node is MemberExpression || node is QuerySourceReferenceExpression;
+            var isMembersChain = node is MemberExpression ||
+                                 node is QuerySourceReferenceExpression ||
+                                 node.NodeType == ExpressionType.Convert;
             if (!isMembersChain)
             {
                 isLocal = true;

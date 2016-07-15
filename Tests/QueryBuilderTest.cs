@@ -478,6 +478,30 @@ namespace Simple1C.Tests
             }
         }
 
+        public class CastInQuery : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<Счет>()
+                    .Where(x => ((Контрагенты) x.Владелец).Наименование == "test"),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.Счет КАК src ГДЕ (src.Владелец.Наименование = &p0)",
+                    P("p0", "test"));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class Контрагенты
+            {
+                public object Наименование { get; set; }
+            }
+            
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class Счет
+            {
+                public object Владелец { get; set; }
+            }
+        }
+
         public class IsCatalogTest : QueryBuilderTest
         {
             [Test]
