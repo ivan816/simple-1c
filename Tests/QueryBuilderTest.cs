@@ -492,7 +492,7 @@ namespace Simple1C.Tests
             [ConfigurationScope(ConfigurationScope.Справочники)]
             public class Контрагенты
             {
-                public object Наименование { get; set; }
+                public string Наименование { get; set; }
             }
             
             [ConfigurationScope(ConfigurationScope.Справочники)]

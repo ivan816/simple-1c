@@ -161,10 +161,10 @@ namespace Simple1C.Tests.Integration
             Assert.That(selectedContractor.НаименованиеИИнн, Is.EqualTo("test contractor name$$$test-inn"));
         }
 
-        private class NameWithDescription
+        public class NameWithDescription
         {
-            public string name;
-            public string description;
+            public string Name { get; set; }
+            public string Description { get; set; }
         }
 
         [Test]
@@ -191,17 +191,17 @@ namespace Simple1C.Tests.Integration
                 .Where(x => x.КПП == "test-kpp")
                 .Select(x => new NameWithDescription
                 {
-                    name = x.Наименование,
-                    description = (string.IsNullOrEmpty(x.НаименованиеПолное) ? x.Наименование : x.НаименованиеПолное)
+                    Name = x.Наименование,
+                    Description = (string.IsNullOrEmpty(x.НаименованиеПолное) ? x.Наименование : x.НаименованиеПолное)
                                   + "(" + x.ИНН + ") " + x.Комментарий
                 })
-                .OrderBy(x => x.name)
+                .OrderBy(x => x.Name)
                 .ToArray();
-            Assert.That(selectedContractors[0].name, Is.EqualTo("test-shortname1"));
-            Assert.That(selectedContractors[0].description, Is.EqualTo("test-shortname1(test-inn1) test-comment1"));
+            Assert.That(selectedContractors[0].Name, Is.EqualTo("test-shortname1"));
+            Assert.That(selectedContractors[0].Description, Is.EqualTo("test-shortname1(test-inn1) test-comment1"));
 
-            Assert.That(selectedContractors[1].name, Is.EqualTo("test-shortname2"));
-            Assert.That(selectedContractors[1].description, Is.EqualTo("test-fullname2(test-inn2) test-comment2"));
+            Assert.That(selectedContractors[1].Name, Is.EqualTo("test-shortname2"));
+            Assert.That(selectedContractors[1].Description, Is.EqualTo("test-fullname2(test-inn2) test-comment2"));
         }
 
         [Test]
