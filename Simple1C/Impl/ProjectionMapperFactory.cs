@@ -11,52 +11,32 @@ namespace Simple1C.Impl
     {
         private readonly ComObjectMapper comObjectMapper;
 
-        private readonly ConcurrentDictionary<string, Func<object, Projection, object>> mappers =
-            new ConcurrentDictionary<string, Func<object, Projection, object>>();
+        private readonly ConcurrentDictionary<string, Func<Projection, Func<object, object>>> mappers =
+            new ConcurrentDictionary<string, Func<Projection, Func<object, object>>>();
 
         public ProjectionMapperFactory(ComObjectMapper comObjectMapper)
         {
             this.comObjectMapper = comObjectMapper;
         }
 
-        private static readonly object[] emptyObjectArray = new object[0];
-
-        public Func<object, Projection, object> GetMapper(Projection projection)
+        public Func<object, object> GetMapper(Projection projection)
         {
             var cacheKey = projection.GetCacheKey();
-            Func<object, Projection, object> result;
+            Func<Projection, Func<object, object>> result;
             if (!mappers.TryGetValue(cacheKey, out result))
             {
-                var compiledCtorDelegate = ReflectionHelpers.GetCompiledDelegate(projection.ctor);
-                if (projection.initMembers != null)
+                var argumentsExtractor = CreateArgumentsExtractor(projection);
+                var instanceFactory = CreateInstanceFactory(projection);
+                mappers.TryAdd(cacheKey, result = delegate(Projection currentProjection)
                 {
-                    if (projection.ctor.GetParameters().Length != 0)
-                        throw new InvalidOperationException("assertion exception");
-                    var valuesFactory = CreatePropertyValuesFactory(projection);
-                    var memberAccessors = new MemberAccessor<object>[projection.initMembers.Length];
-                    for (var i = 0; i < memberAccessors.Length; i++)
-                        memberAccessors[i] = MemberAccessor<object>.Get(projection.initMembers[i]);
-                    result = delegate(object queryResultItem, Projection currentProjection)
-                    {
-                        var instance = compiledCtorDelegate(null, emptyObjectArray);
-                        var propertyValues = valuesFactory(queryResultItem, currentProjection);
-                        for (var i = 0; i < memberAccessors.Length; i++)
-                            memberAccessors[i].Set(instance, propertyValues[i]);
-                        return instance;
-                    };
-                }
-                else
-                {
-                    var valuesFactory = CreatePropertyValuesFactory(projection);
-                    result = (queryResultItem, currentProjection) =>
-                        compiledCtorDelegate(null, valuesFactory(queryResultItem, currentProjection));
-                }
-                mappers.TryAdd(cacheKey, result);
+                    var arguments = argumentsExtractor(currentProjection);
+                    return queryResultRow => instanceFactory(arguments(queryResultRow));
+                });
             }
-            return result;
+            return result(projection);
         }
 
-        private Func<object, Projection, object[]> CreatePropertyValuesFactory(Projection projection)
+        private Func<Projection, Func<object, object[]>> CreateArgumentsExtractor(Projection projection)
         {
             var propertyValueGetters = new Func<object[], object>[projection.properties.Length];
             var argumentsCount = 0;
@@ -75,31 +55,55 @@ namespace Simple1C.Impl
                 var xLambda = Expression.Lambda<Func<object[], object>>(xConvertBody, xParameter);
                 propertyValueGetters[i] = xLambda.Compile();
             }
-            return delegate(object queryResultItem, Projection currentProjection)
+            return delegate(Projection currentProjection)
             {
                 var fieldValues = new object[projection.fields.Length];
-                for (var i = 0; i < fieldValues.Length; i++)
-                {
-                    var field = projection.fields[i];
-                    var fieldValue = field.GetValue(queryResultItem);
-                    fieldValues[i] = comObjectMapper.MapFrom1C(fieldValue, field.Type);
-                }
                 var propertyValues = new object[projection.properties.Length];
                 var propArguments = argumentsCount > 0 ? new object[argumentsCount] : null;
-                for (var i = 0; i < projection.properties.Length; i++)
+                return delegate(object queryResultRow)
                 {
-                    var property = projection.properties[i];
-                    if (propArguments == null || property.items.Length == 1)
-                        propertyValues[i] = currentProjection.GetValue(fieldValues, i, 0);
-                    else
+                    for (var i = 0; i < fieldValues.Length; i++)
                     {
-                        for (var j = 0; j < property.items.Length; j++)
-                            propArguments[j] = currentProjection.GetValue(fieldValues, i, j);
-                        var getter = propertyValueGetters[i];
-                        propertyValues[i] = getter(propArguments);
+                        var field = projection.fields[i];
+                        var fieldValue = field.GetValue(queryResultRow);
+                        fieldValues[i] = comObjectMapper.MapFrom1C(fieldValue, field.Type);
                     }
-                }
-                return propertyValues;
+                    for (var i = 0; i < projection.properties.Length; i++)
+                    {
+                        var property = projection.properties[i];
+                        if (propArguments == null || property.items.Length == 1)
+                            propertyValues[i] = currentProjection.GetValue(fieldValues, i, 0);
+                        else
+                        {
+                            for (var j = 0; j < property.items.Length; j++)
+                                propArguments[j] = currentProjection.GetValue(fieldValues, i, j);
+                            var getter = propertyValueGetters[i];
+                            propertyValues[i] = getter(propArguments);
+                        }
+                    }
+                    return propertyValues;
+                };
+            };
+        }
+
+        private static readonly object[] emptyObjectArray = new object[0];
+
+        private static Func<object[], object> CreateInstanceFactory(Projection projection)
+        {
+            var compiledCtorDelegate = ReflectionHelpers.GetCompiledDelegate(projection.ctor);
+            if (projection.initMembers == null)
+                return arguments => compiledCtorDelegate(null, arguments);
+            if (projection.ctor.GetParameters().Length != 0)
+                throw new InvalidOperationException("assertion exception");
+            var memberAccessors = new MemberAccessor<object>[projection.initMembers.Length];
+            for (var i = 0; i < memberAccessors.Length; i++)
+                memberAccessors[i] = MemberAccessor<object>.Get(projection.initMembers[i]);
+            return delegate(object[] arguments)
+            {
+                var result = compiledCtorDelegate(null, emptyObjectArray);
+                for (var i = 0; i < memberAccessors.Length; i++)
+                    memberAccessors[i].Set(result, arguments[i]);
+                return result;
             };
         }
     }

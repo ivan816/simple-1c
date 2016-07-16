@@ -311,7 +311,7 @@ namespace Simple1C.Impl
                 : projectionMapperFactory.GetMapper(builtQuery.Projection);
             while (selection.Next())
                 if (projection != null)
-                    yield return projection(selection.ComObject, builtQuery.Projection);
+                    yield return projection(selection.ComObject);
                 else
                 {
                     var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
