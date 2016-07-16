@@ -1,8 +1,22 @@
+using System.Runtime.CompilerServices;
+
 namespace Simple1C.Impl.Queriables
 {
-    internal class SelectedPropertyItem
+    internal struct SelectedPropertyItem
     {
-        public object constant;
-        public int queryFieldIndex;
+        public SelectedPropertyItem(object constant, int queryFieldIndex)
+        {
+            this.constant = constant;
+            this.queryFieldIndex = queryFieldIndex;
+        }
+
+        private readonly object constant;
+        private readonly int queryFieldIndex;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public object GetValue(object[] fieldValues)
+        {
+            return queryFieldIndex < 0 ? constant : fieldValues[queryFieldIndex];
+        }
     }
 }

@@ -35,11 +35,7 @@ namespace Simple1C.Impl.Queriables
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            items.Add(new SelectedPropertyItem
-            {
-                queryFieldIndex = -1,
-                constant = node.Value
-            });
+            items.Add(new SelectedPropertyItem(node.Value, -1));
             return node;
         }
 
@@ -60,7 +56,7 @@ namespace Simple1C.Impl.Queriables
                 fields.Add(queryField);
                 fieldIndex = fields.Count - 1;
             }
-            items.Add(new SelectedPropertyItem {queryFieldIndex = fieldIndex});
+            items.Add(new SelectedPropertyItem(null, fieldIndex));
             return node;
         }
     }

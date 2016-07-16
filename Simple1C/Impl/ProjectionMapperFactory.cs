@@ -57,26 +57,26 @@ namespace Simple1C.Impl
             }
             return delegate(Projection currentProjection)
             {
-                var fieldValues = new object[projection.fields.Length];
-                var propertyValues = new object[projection.properties.Length];
+                var fieldValues = new object[currentProjection.fields.Length];
+                var propertyValues = new object[currentProjection.properties.Length];
                 var propArguments = argumentsCount > 0 ? new object[argumentsCount] : null;
                 return delegate(object queryResultRow)
                 {
                     for (var i = 0; i < fieldValues.Length; i++)
                     {
-                        var field = projection.fields[i];
+                        var field = currentProjection.fields[i];
                         var fieldValue = field.GetValue(queryResultRow);
                         fieldValues[i] = comObjectMapper.MapFrom1C(fieldValue, field.Type);
                     }
-                    for (var i = 0; i < projection.properties.Length; i++)
+                    for (var i = 0; i < currentProjection.properties.Length; i++)
                     {
-                        var property = projection.properties[i];
+                        var property = currentProjection.properties[i];
                         if (propArguments == null || property.items.Length == 1)
-                            propertyValues[i] = currentProjection.GetValue(fieldValues, i, 0);
+                            propertyValues[i] = property.items[0].GetValue(fieldValues);
                         else
                         {
                             for (var j = 0; j < property.items.Length; j++)
-                                propArguments[j] = currentProjection.GetValue(fieldValues, i, j);
+                                propArguments[j] = property.items[j].GetValue(fieldValues);
                             var getter = propertyValueGetters[i];
                             propertyValues[i] = getter(propArguments);
                         }
