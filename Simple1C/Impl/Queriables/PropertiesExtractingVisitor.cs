@@ -7,8 +7,10 @@ namespace Simple1C.Impl.Queriables
     internal class PropertiesExtractingVisitor : RelinqExpressionVisitor
     {
         private readonly MemberAccessBuilder memberAccessBuilder;
-        public List<QueryField> fields = new List<QueryField>();
-        public List<SelectedPropertyItem> items = new List<SelectedPropertyItem>();
+        private readonly List<QueryField> fields = new List<QueryField>();
+        private readonly List<SelectedPropertyItem> items = new List<SelectedPropertyItem>();
+        private Expression xRoot;
+        private bool rootIsSingleItem;
 
         public PropertiesExtractingVisitor(MemberAccessBuilder memberAccessBuilder)
         {
@@ -24,17 +26,21 @@ namespace Simple1C.Impl.Queriables
 
         public SelectedProperty GetProperty(Expression expression)
         {
+            xRoot = expression;
+            rootIsSingleItem = false;
             items.Clear();
             Visit(expression);
             return new SelectedProperty
             {
                 expression = expression,
+                needLocalEval = !rootIsSingleItem,
                 items = items.ToArray()
             };
         }
 
         protected override Expression VisitConstant(ConstantExpression node)
         {
+            rootIsSingleItem = ReferenceEquals(node, xRoot);
             items.Add(new SelectedPropertyItem(node.Value, -1));
             return node;
         }
@@ -44,6 +50,7 @@ namespace Simple1C.Impl.Queriables
             var queryField = memberAccessBuilder.GetFieldOrNull(node);
             if (queryField == null)
                 return base.VisitMember(node);
+            rootIsSingleItem = ReferenceEquals(node, xRoot);
             var fieldIndex = -1;
             for (var i = 0; i < fields.Count; i++)
                 if (fields[i].Alias == queryField.Alias)

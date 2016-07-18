@@ -38,14 +38,12 @@ namespace Simple1C.Impl
 
         private Func<Projection, Func<object, object[]>> CreateArgumentsExtractor(Projection projection)
         {
-            var propertyValueGetters = new Func<object[], object>[projection.properties.Length];
             var argumentsCount = 0;
             var parameterizer = new ParameterizingExpressionVisitor();
-            for (var i = 0; i < propertyValueGetters.Length; i++)
+            foreach (var property in projection.properties)
             {
-                var property = projection.properties[i];
                 var expression = property.expression;
-                if (property.items.Length == 1)
+                if (!property.needLocalEval)
                     continue;
                 if (property.items.Length > argumentsCount)
                     argumentsCount = property.items.Length;
@@ -53,7 +51,7 @@ namespace Simple1C.Impl
                 var xBody = parameterizer.Parameterize(expression, xParameter);
                 var xConvertBody = Expression.Convert(xBody, typeof(object));
                 var xLambda = Expression.Lambda<Func<object[], object>>(xConvertBody, xParameter);
-                propertyValueGetters[i] = xLambda.Compile();
+                property.compiledExpression = xLambda.Compile();
             }
             return delegate(Projection currentProjection)
             {
@@ -71,15 +69,14 @@ namespace Simple1C.Impl
                     for (var i = 0; i < currentProjection.properties.Length; i++)
                     {
                         var property = currentProjection.properties[i];
-                        if (propArguments == null || property.items.Length == 1)
-                            propertyValues[i] = property.items[0].GetValue(fieldValues);
-                        else
+                        if (propArguments != null && property.needLocalEval)
                         {
                             for (var j = 0; j < property.items.Length; j++)
                                 propArguments[j] = property.items[j].GetValue(fieldValues);
-                            var getter = propertyValueGetters[i];
-                            propertyValues[i] = getter(propArguments);
+                            propertyValues[i] = projection.properties[i].compiledExpression(propArguments);
                         }
+                        else
+                            propertyValues[i] = property.items[0].GetValue(fieldValues);
                     }
                     return propertyValues;
                 };

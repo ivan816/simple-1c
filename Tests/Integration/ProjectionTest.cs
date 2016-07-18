@@ -111,6 +111,30 @@ namespace Simple1C.Tests.Integration
         }
 
         [Test]
+        public void SingleItemCalculatedExpression()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+            var контрагент2 = dataContext.Select<Контрагенты>()
+                .Where(x => x.ИНН == "test-inn")
+                .Select(x => new
+                {
+                    projectedName = CalculateLocal(x.Наименование)
+                })
+                .Single();
+            Assert.That(контрагент2.projectedName, Is.EqualTo("test contractor name_projected"));
+        }
+
+        private static string CalculateLocal(string name)
+        {
+            return name + "_projected";
+        }
+
+        [Test]
         public void ProjectionToAnonymousTypeWithConstants()
         {
             var контрагент = new Контрагенты
@@ -245,14 +269,14 @@ namespace Simple1C.Tests.Integration
                 Дата = new DateTime(2016, 6, 1),
                 Контрагент = контрагент,
                 СчетЗатрат = счет2001,
-                Материалы = new List<ТребованиеНакладная.ТабличнаяЧастьМатериалы>()
+                Материалы = new List<ТребованиеНакладная.ТабличнаяЧастьМатериалы>
                 {
-                    new ТребованиеНакладная.ТабличнаяЧастьМатериалы()
+                    new ТребованиеНакладная.ТабличнаяЧастьМатериалы
                     {
                         СчетЗатрат = счет26
                     }
                 }
-            }; 
+            };
             dataContext.Save(требованиеНакладная);
 
             var result = dataContext.Select<ТребованиеНакладная>()
