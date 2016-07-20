@@ -14,7 +14,9 @@
   </metadata>
   <files>
     <file src="..\bin\Simple1C.dll" target="lib/net45" />
-    <file src="..\bin\Simple1C.pdb" target="lib/net45" /> 
+    <file src="..\bin\Simple1C.pdb" target="lib/net45" />
+    <file src="..\bin\Simple1C.dll" target="tools" />
+    <file src="..\bin\Simple1C.pdb" target="tools" />
     <file src="..\bin\Generator.exe" target="tools" />
     <file src="..\bin\Generator.pdb" target="tools" />
   </files>
