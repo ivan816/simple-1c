@@ -4,14 +4,16 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 using System;
+using Simple1C.Interface.ObjectModel;
 
 namespace <#=Model.Namespace#>
 {
 	public enum <#=Model.Name#>
 	{<#for(var i = 0; i < Model.Items.Count; i++)
-	{#>
+	{
+		var item = Model.Items[i];#>
 
-		<#=Model.Items[i]#><#if(i != Model.Items.Count - 1){#>,<#}#><#}#>
+		[Synonym("<#=item.Synonym#>")] <#=item.Name#><#if(i != Model.Items.Count - 1){#>,<#}#><#}#>
 
 	}
 }<#+

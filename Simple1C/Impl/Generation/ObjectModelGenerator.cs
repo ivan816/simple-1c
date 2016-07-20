@@ -273,13 +273,14 @@ namespace Simple1C.Impl.Generation
             for (var i = 0; i < count; i++)
             {
                 var value = ComHelpers.Invoke(values, "Получить", i);
-                var name = Convert.ToString(ComHelpers.GetProperty(value, "Имя"));
-                model.Items.Add(name);
+                model.Items.Add(new EnumItemModel
+                {
+                    Name = Convert.ToString(ComHelpers.GetProperty(value, "Имя")),
+                    Synonym = Convert.ToString(ComHelpers.GetProperty(value, "Синоним"))
+                        .Replace("\"", "\\\"")
+                });
             }
-            var enumFileTemplate = new EnumFileTemplate
-            {
-                Model = model
-            };
+            var enumFileTemplate = new EnumFileTemplate {Model = model};
             context.Write(item.Name, enumFileTemplate.TransformText());
         }
 

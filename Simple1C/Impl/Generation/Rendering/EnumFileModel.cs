@@ -6,11 +6,11 @@ namespace Simple1C.Impl.Generation.Rendering
     {
         public EnumFileModel()
         {
-            Items = new List<string>();
+            Items = new List<EnumItemModel>();
         }
 
         public string Namespace { get; set; }
         public string Name { get; set; }
-        public List<string> Items { get; private set; }
+        public List<EnumItemModel> Items { get; private set; }
     }
 }

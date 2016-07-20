@@ -28,50 +28,58 @@ namespace Simple1C.Impl.Generation.Rendering
         /// </summary>
         public virtual string TransformText()
         {
-            this.Write("using System;\r\n\r\nnamespace ");
+            this.Write("using System;\r\nusing Simple1C.Interface.ObjectModel;\r\n\r\nnamespace ");
             
-            #line 8 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(Model.Namespace));
             
             #line default
             #line hidden
             this.Write("\r\n{\r\n\tpublic enum ");
             
-            #line 10 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 11 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(Model.Name));
             
             #line default
             #line hidden
             this.Write("\r\n\t{");
             
-            #line 11 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 12 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
 for(var i = 0; i < Model.Items.Count; i++)
 	{
+		var item = Model.Items[i];
             
             #line default
             #line hidden
-            this.Write("\r\n\t\t");
+            this.Write("\r\n\t\t[Synonym(\"");
             
-            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
-            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Items[i]));
+            #line 16 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Synonym));
+            
+            #line default
+            #line hidden
+            this.Write("\")] ");
+            
+            #line 16 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(item.Name));
             
             #line default
             #line hidden
             
-            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 16 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
 if(i != Model.Items.Count - 1){
             
             #line default
             #line hidden
             this.Write(",");
             
-            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 16 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
 }
             
             #line default
             #line hidden
             
-            #line 14 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+            #line 16 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
 }
             
             #line default
@@ -80,7 +88,7 @@ if(i != Model.Items.Count - 1){
             return this.GenerationEnvironment.ToString();
         }
         
-        #line 17 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
+        #line 19 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\EnumFileTemplate.tt"
 
 public EnumFileModel Model { get; set; }
 
