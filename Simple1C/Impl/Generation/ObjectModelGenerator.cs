@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation.Rendering;
@@ -16,8 +15,8 @@ namespace Simple1C.Impl.Generation
             {"Строка", "string"},
             {"Булево", "bool"},
             {"Дата", "DateTime?"},
-            {"Хранилище значения", null},
-            {"Уникальный идентификатор", "Guid?"}
+            {"Уникальный идентификатор", "Guid?"},
+            {"Хранилище значения", null}
         };
 
         private static readonly string[] standardPropertiesToExclude =

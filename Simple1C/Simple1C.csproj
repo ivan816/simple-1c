@@ -107,7 +107,6 @@
     <Compile Include="Impl\EntityController.cs" />
     <Compile Include="Impl\EnumMapper.cs" />
     <Compile Include="Impl\Generation\ConfigurationItem.cs" />
-    <Compile Include="Impl\Generation\FormatParameters.cs" />
     <Compile Include="Impl\Generation\GenerationContext.cs" />
     <Compile Include="Impl\Generation\ObjectModelGenerator.cs" />
     <Compile Include="Impl\GlobalContext.cs" />
