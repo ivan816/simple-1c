@@ -10,14 +10,14 @@ using Simple1C.Tests.Metadata1C.Справочники;
 
 namespace Simple1C.Tests
 {
-    public class InMemoryDataContextTest: TestBase
+    public class InMemoryDataContextTest : TestBase
     {
         private IDataContext dataContext;
 
         protected override void SetUp()
         {
             base.SetUp();
-            dataContext = DataContextFactory.CreateInMemory(typeof (Контрагенты).Assembly);
+            dataContext = DataContextFactory.CreateInMemory(typeof(Контрагенты).Assembly);
         }
 
         [Test]
@@ -139,11 +139,11 @@ namespace Simple1C.Tests
         [Test]
         public void CanUpdateEntity()
         {
-            var contractor = new Контрагенты{Наименование = "Вася"};
+            var contractor = new Контрагенты { Наименование = "Вася" };
             dataContext.Save(contractor);
-            
+
             contractor.Наименование = "Ваня";
-            Assert.That(dataContext.Select<Контрагенты>().Single().Наименование, 
+            Assert.That(dataContext.Select<Контрагенты>().Single().Наименование,
                 Is.EqualTo("Вася"));
 
             dataContext.Save(contractor);
@@ -177,7 +177,7 @@ namespace Simple1C.Tests
             Assert.That(values.Length, Is.EqualTo(1));
             Assert.That(values[0].Номер, Is.Not.Null);
             Assert.That(values[0].Комментарий, Is.EqualTo("Тестовое наименование"));
-            
+
             values[0].Комментарий = "changed";
             Assert.That(values[0].Комментарий, Is.EqualTo("changed"));
             Assert.That(entity.Комментарий, Is.EqualTo("Тестовое наименование"));
@@ -244,7 +244,7 @@ namespace Simple1C.Tests
             Assert.That(dataContext.Select<ПоступлениеТоваровУслуг>().Single().Услуги[0].Содержание,
                 Is.EqualTo("changed-content"));
         }
-        
+
         [Test]
         public void CanDeleteTableSectionItem()
         {
@@ -351,7 +351,7 @@ namespace Simple1C.Tests
             var array = dataContext.Select<БанковскиеСчета>().ToArray();
             Assert.That(array.Length, Is.EqualTo(1));
             Assert.That(array[0].Владелец, Is.TypeOf<Контрагенты>());
-            Assert.That(((Контрагенты) array[0].Владелец).Наименование,
+            Assert.That(((Контрагенты)array[0].Владелец).Наименование,
                 Is.EqualTo("Тестовый контрагент"));
         }
 
@@ -379,7 +379,7 @@ namespace Simple1C.Tests
                 .Single(x => x.УникальныйИдентификатор == counterparty.УникальныйИдентификатор.Value);
             Assert.That(loadedCounterparty2.Наименование, Is.EqualTo("changed"));
         }
-        
+
         [Test]
         public void UnionTypeWithEnumValue()
         {
@@ -399,7 +399,7 @@ namespace Simple1C.Tests
         {
             var acocunt = new БанковскиеСчета
             {
-                ДатаЗакрытия = new DateTime(2016,6,21)
+                ДатаЗакрытия = new DateTime(2016, 6, 21)
             };
             dataContext.Save(acocunt);
 

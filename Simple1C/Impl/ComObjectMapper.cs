@@ -45,11 +45,7 @@ namespace Simple1C.Impl
                 return dateTime == nullDateTime ? null : source;
             }
             if (type == typeof(Guid))
-            {
-                var stringFunctions = ComHelpers.GetProperty(globalContext.ComObject(), "СтроковыеФункцииКлиентСервер");
-                var guidString = Convert.ToString(ComHelpers.Invoke(stringFunctions, "СтрокаЛатиницей", source));
-                return Guid.Parse(guidString);
-            }
+                return Guid.Parse(globalContext.String(source));
             if (type.IsEnum)
                 return (bool) ComHelpers.Invoke(source, "IsEmpty")
                     ? null

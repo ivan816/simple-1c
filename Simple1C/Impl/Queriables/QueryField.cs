@@ -13,11 +13,12 @@ namespace Simple1C.Impl.Queriables
         {
             Type = type;
             PathItems = pathItems.ToArray();
-            isUniqueIdentifier = PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
+            isUniqueIdentifier = PathItems.Length > 0 &&
+                                 PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
             if (isUniqueIdentifier)
                 PathItems[PathItems.Length - 1] = "—сылка";
-            Expression = sourceName + "." + PathItems.JoinStrings(".");
-            Alias = sourceName.Replace('.', '_') + "_" + PathItems.JoinStrings("_");
+            Expression = sourceName + (PathItems.Length > 0 ? "." + PathItems.JoinStrings(".") : "");
+            Alias = sourceName.Replace('.', '_') + (PathItems.Length > 0 ? "_" + PathItems.JoinStrings("_") : "");
         }
 
         public object GetValue(object queryResultRow)

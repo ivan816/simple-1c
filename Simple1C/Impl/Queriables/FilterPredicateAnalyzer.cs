@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Text;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface.ObjectModel;
@@ -56,6 +57,7 @@ namespace Simple1C.Impl.Queriables
         {
             var isValid = node is MemberExpression ||
                           node is ConstantExpression ||
+                          node is QuerySourceReferenceExpression ||
                           node.NodeType == ExpressionType.Convert ||
                           node.NodeType == ExpressionType.TypeIs ||
                           node.NodeType == ExpressionType.Not ||
@@ -71,6 +73,18 @@ namespace Simple1C.Impl.Queriables
 
         protected override Expression VisitMember(MemberExpression node)
         {
+            EmitField(node);
+            return node;
+        }
+
+        protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression node)
+        {
+            EmitField(node);
+            return node;
+        }
+
+        private void EmitField(Expression node)
+        {
             var queryField = memberAccessBuilder.GetFieldOrNull(node);
             if (queryField == null)
             {
@@ -84,7 +98,6 @@ namespace Simple1C.Impl.Queriables
                                        comparand.Value != null;
             if (needReferenceKeyword)
                 filterBuilder.Append(".Ссылка");
-            return node;
         }
 
         protected override Expression VisitConstant(ConstantExpression node)

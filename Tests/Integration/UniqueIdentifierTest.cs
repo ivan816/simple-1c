@@ -9,6 +9,21 @@ namespace Simple1C.Tests.Integration
     internal class UniqueIdentifierTest : COMDataContextTestBase
     {
         [Test]
+        public void CanSearchByRef()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+
+            var контрагент2 = dataContext.Select<Контрагенты>().Single(x => x == контрагент);
+            Assert.That(контрагент2.Наименование, Is.EqualTo("test contractor name"));
+            Assert.That(контрагент2.ИНН, Is.EqualTo("test-inn"));
+        }
+
+        [Test]
         public void CanSaveUniqueIdentifier()
         {
             var контрагент = new Контрагенты

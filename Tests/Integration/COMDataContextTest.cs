@@ -61,7 +61,7 @@ namespace Simple1C.Tests.Integration
                 Kind = CounterpartContractKind.OutgoingWithAgency
             });
             string counterpartContractCode = counterpartyContractAccessObject.Код;
-            
+
             var contractFromStore = dataContext
                 .Select<ДоговорыКонтрагентов>()
                 .Single(x => x.Код == counterpartContractCode);
@@ -125,7 +125,7 @@ namespace Simple1C.Tests.Integration
                 Kpp = "987654321"
             };
             dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
-            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка, 
+            testObjectsManager.CreateBankAccount(counterpartAccessObject.Ссылка,
                 new BankAccount
                 {
                     Bank = new Bank
