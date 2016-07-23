@@ -50,7 +50,11 @@
     <Compile Include="Integration\SaveTest.cs" />
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
+<<<<<<< HEAD
     <Compile Include="SynonymTest.cs" />
+=======
+    <Compile Include="QueryLanguageFunctionsTest.cs" />
+>>>>>>> Начал делать функцию ПРЕДСТАВЛЕНИЕ
     <Compile Include="TestEntities\AccountingDocument.cs" />
     <Compile Include="TestEntities\AdvanceWay.cs" />
     <Compile Include="TestEntities\Bank.cs" />
