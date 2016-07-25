@@ -12,10 +12,10 @@ namespace Simple1C.Impl.Generation.Rendering
         }
 
         public string Name { get; set; }
-        public string Synonym { get; set; }
         public ConfigurationScope? ConfigurationScope { get; set; }
+        public string Synonym { get; set; }
+        public string ObjectPresentation { get; set; }
         public List<PropertyModel> Properties { get; private set; }
         public List<ClassModel> NestedClasses { get; private set; }
-        public string ObjectPresentation { get; set; }
     }
 }

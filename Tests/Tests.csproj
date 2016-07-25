@@ -45,7 +45,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="CsProjUpdaterTest.cs" />
+    <Compile Include="CsProjectFileUpdaterTest.cs" />
     <Compile Include="Integration\COMDataContextTestBase.cs" />
     <Compile Include="InMemoryDataContextTest.cs" />
     <Compile Include="Integration\InformationRegisterTest.cs" />
