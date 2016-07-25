@@ -1,7 +1,5 @@
 todo
 	* UnionType
-	* сделать параметр генератору: "не создавать то, что уже создано"
-	* научить Generator патчить проектный файл
 	* перевести все Set-property на MemberAccessor
 	* Разрулить следующую ситуацию:
 		КонтрагентВася.ГоловнойКонтрагент = КонтрагентВася;
@@ -10,3 +8,4 @@ todo
 	* создавать DispatchObject-ы через Reflection.Emit
 	* inmemoryDataContext, LoadNewestRevisionWhenAccessPropertyForTheFirstTime: выяснить, какое поведение дожно быть
 	* более интеллектуально генерить ключ для кэширования проекций
+	* научиться работать с константами

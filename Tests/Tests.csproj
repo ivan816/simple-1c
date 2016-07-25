@@ -41,8 +41,11 @@
     <Reference Include="System.Core" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Xml" />
+    <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="CsProjUpdaterTest.cs" />
     <Compile Include="Integration\COMDataContextTestBase.cs" />
     <Compile Include="InMemoryDataContextTest.cs" />
     <Compile Include="Integration\InformationRegisterTest.cs" />
@@ -79,6 +82,10 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Generator\Generator.csproj">
+      <Project>{20486119-897F-44BA-893D-A0E4A0649FD9}</Project>
+      <Name>Generator</Name>
+    </ProjectReference>
     <ProjectReference Include="..\Simple1C\Simple1C.csproj">
       <Project>{bb1a4406-ad17-4089-9d6b-33d4452fde4c}</Project>
       <Name>Simple1C</Name>

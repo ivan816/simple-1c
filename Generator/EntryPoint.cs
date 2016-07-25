@@ -3,6 +3,9 @@ using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Xml;
+using System.Xml.Linq;
+using System.Xml.XPath;
 using Microsoft.CSharp;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
@@ -20,6 +23,7 @@ namespace Generator
             var namespaceRoot = parameters["namespaceRoot"];
             var scanItems = (parameters["scanItems"] ?? "").Split(',');
             var sourcePath = parameters["sourcePath"];
+            var csprojFilePath = parameters["csprojFilePath"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
                 (!string.IsNullOrEmpty(resultAssemblyFullPath) || !string.IsNullOrEmpty(sourcePath)) &&
@@ -29,7 +33,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -connectionString <string> [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>]");
+                    "Usage: Generator.exe -connectionString <string> [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>] [-csprojFilePath]");
                 return -1;
             }
 
@@ -48,6 +52,23 @@ namespace Generator
                         scanItems, namespaceRoot, sourcePath);
                     fileNames = generator.Generate().ToArray();
                 });
+
+            if (!string.IsNullOrEmpty(csprojFilePath))
+            {
+                csprojFilePath = Path.GetFullPath(csprojFilePath);
+                if (!File.Exists(csprojFilePath))
+                {
+                    Console.Out.WriteLine("proj file [{0}] does not exist, create it manually for the first time",
+                        csprojFilePath);
+                    return -1;
+                }
+                ExecuteAction(string.Format("patching proj file [{0}]", csprojFilePath),
+                    () =>
+                    {
+                        var updater = new CsProjectFileUpdater(csprojFilePath, sourcePath);
+                        updater.Update();
+                    });
+            }
 
             if (!string.IsNullOrEmpty(resultAssemblyFullPath))
                 ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", sourcePath, resultAssemblyFullPath),
