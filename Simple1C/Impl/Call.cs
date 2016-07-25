@@ -29,5 +29,15 @@ namespace Simple1C.Impl
         {
             return Convert.ToInt32(ComHelpers.Invoke(comObject, "Количество"));
         }
+
+        public static bool IsEmpty(object comObject)
+        {
+            return (bool) ComHelpers.Invoke(comObject, "IsEmpty");
+        }
+
+        public static object НайтиПоТипу(object metadata, object typeObject)
+        {
+            return ComHelpers.Invoke(metadata, "НайтиПоТипу", typeObject);
+        }
     }
 }

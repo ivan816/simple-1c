@@ -89,7 +89,7 @@ namespace Simple1C.Impl.Generation
 
         private ConfigurationItem FindByType(object typeObject)
         {
-            var comObject = ComHelpers.Invoke(metadata, "НайтиПоТипу", typeObject);
+            var comObject = Call.НайтиПоТипу(metadata, typeObject);
             var fullName = Call.ПолноеИмя(comObject);
             return fullName.StartsWith("Документ") || fullName.StartsWith("Справочник")
                    || fullName.StartsWith("Перечисление") || fullName.StartsWith("ПланСчетов")
