@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Simple1C.Impl.Com
 {
@@ -18,11 +19,29 @@ namespace Simple1C.Impl.Com
             obj.GetType()
                 .InvokeMember(name, BindingFlags.SetProperty, null, obj, new[] {value});
         }
+        
+        public static bool IsPropertyExists(object obj, string name)
+        {
+            IDispatchEx disp = (IDispatchEx) obj;
+            Guid dummy = Guid.Empty;
+            int[] rgDispId = new int[1];
+            disp.GetIDsOfNames(ref dummy, new[] {name}, 1, 0x800, rgDispId);
+            return rgDispId[0] != -1;
+        }
 
         public static object Invoke(object obj, string method, params object[] parameters)
         {
             return obj.GetType()
                 .InvokeMember(method, BindingFlags.InvokeMethod, null, obj, parameters);
+        }
+
+        [ComImport, InterfaceType(ComInterfaceType.InterfaceIsIUnknown), Guid("00020400-0000-0000-C000-000000000046")]
+        private interface IDispatch
+        {
+            int GetTypeInfoCount();
+            [return: MarshalAs(UnmanagedType.Interface)]
+            ITypeInfo GetTypeInfo([In, MarshalAs(UnmanagedType.U4)] int iTInfo, [In, MarshalAs(UnmanagedType.U4)] int lcid);
+            void GetIDsOfNames([In] ref Guid riid, [In, MarshalAs(UnmanagedType.LPArray)] string[] rgszNames, [In, MarshalAs(UnmanagedType.U4)] int cNames, [In, MarshalAs(UnmanagedType.U4)] int lcid, [Out, MarshalAs(UnmanagedType.LPArray)] int[] rgDispId);
         }
 
         public static string DumpObjectType(object obj)

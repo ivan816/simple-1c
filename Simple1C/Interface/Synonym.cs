@@ -19,7 +19,12 @@ namespace Simple1C.Interface
 
         public static string OfClass(object obj)
         {
-            return ClassAttributesCache<SynonymAttribute>.instance.GetAttribute(obj.GetType()).Value;
+            return OfClass(obj.GetType());
+        }
+
+        public static string OfClass(Type objType)
+        {
+            return ClassAttributesCache<SynonymAttribute>.instance.GetAttribute(objType).Value;
         }
     }
 }

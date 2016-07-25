@@ -96,7 +96,11 @@ namespace Simple1C.Interface
             {
                 var scope = ConfigurationName.GetOrNull(type);
                 if (scope != null)
-                    return ObjectPresentation.OfClass(type);
+                {
+                    var presentation = ObjectPresentation.OfClass(type);
+                    if (string.IsNullOrEmpty(presentation))
+                        return Synonym.OfClass(type);
+                }
             }
             if (type == typeof(bool))
                 return "Булево";

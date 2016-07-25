@@ -135,8 +135,12 @@ namespace Simple1C.Impl.Generation
                                     "Хозрасчетный";
             var synonym = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Синоним"));
             classContext.target.Synonym = GenerateHelpers.EscapeString(synonym);
-            var objectPresentation = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "ObjectPresentation"));
-            classContext.target.ObjectPresentation = GenerateHelpers.EscapeString(objectPresentation);
+            if (classContext.target.ConfigurationScope.HasValue
+                && classContext.target.ConfigurationScope.Value != ConfigurationScope.РегистрыСведений)
+            {
+                var presentation = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "ObjectPresentation"));
+                classContext.target.ObjectPresentation = GenerateHelpers.EscapeString(presentation);
+            }
             foreach (var attr in (IEnumerable) standardAttributes)
             {
                 var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
