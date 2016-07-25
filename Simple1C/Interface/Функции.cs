@@ -98,8 +98,9 @@ namespace Simple1C.Interface
                 if (scope != null)
                 {
                     var presentation = ObjectPresentation.OfClass(type);
-                    if (string.IsNullOrEmpty(presentation))
-                        return Synonym.OfClass(type);
+                    return string.IsNullOrEmpty(presentation) 
+                        ? Synonym.OfClass(type) 
+                        : presentation;
                 }
             }
             if (type == typeof(bool))
@@ -123,8 +124,8 @@ namespace Simple1C.Interface
             var underlyingType = Nullable.GetUnderlyingType(type);
             if (underlyingType != null)
                 return GetTypePresentation(underlyingType);
-            const string messageFormat = "can't get ПРЕДСТАВЛЕНИЕ for object [{0}] of type [{1}]";
-            throw new NotSupportedException(string.Format(messageFormat, type, typeof(Type).FormatName()));
+            const string messageFormat = "can't get ПРЕДСТАВЛЕНИЕ for [typeof({0})]";
+            throw new NotSupportedException(string.Format(messageFormat, type.FormatName()));
         }
 
         private static T GetPropertyValue<T>(Type objType, string propertyName, object obj)

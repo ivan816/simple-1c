@@ -223,13 +223,20 @@ namespace Simple1C.Impl
         private void Write(object comObject, ConfigurationName name, bool? posting)
         {
             object argument;
+            string argumentString;
             if (name.Scope == ConfigurationScope.РегистрыСведений)
+            {
                 argument = true;
+                argumentString = argument.ToString();
+            }
             else
             {
-                var writeModeName = posting.HasValue ? (posting.Value ? "Posting" : "UndoPosting") : "Write";
+                var writeModeName = posting.HasValue
+                    ? (posting.Value ? "Проведение" : "ОтменаПроведения")
+                    : "Запись";
                 var writeMode = globalContext.РежимЗаписиДокумента();
                 argument = ComHelpers.GetProperty(writeMode, writeModeName);
+                argumentString = "РежимЗаписиДокумента." + writeModeName;
             }
             try
             {
@@ -238,8 +245,8 @@ namespace Simple1C.Impl
             catch (TargetInvocationException e)
             {
                 const string messageFormat = "error writing document [{0}] with argument [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, name.Fullname, argument),
-                    e.InnerException);
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    name.Fullname, argumentString), e.InnerException);
             }
         }
 
