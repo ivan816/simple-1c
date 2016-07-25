@@ -41,18 +41,18 @@ namespace Simple1C.Impl
             var standardAttributes = ComHelpers.GetProperty(itemMetadata, "СтандартныеРеквизиты");
             foreach (var attr in (IEnumerable) standardAttributes)
             {
-                var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
+                var name = Call.Имя(attr);
                 result.Add(name);
             }
             var descriptor = GetDescriptor(configurationName.Scope);
             foreach (var propertyName in descriptor.AttributePropertyNames)
             {
                 var attributes = ComHelpers.GetProperty(itemMetadata, propertyName);
-                var attributesCount = Convert.ToInt32(ComHelpers.Invoke(attributes, "Количество"));
+                var attributesCount = Call.Количество(attributes);
                 for (var i = 0; i < attributesCount; ++i)
                 {
-                    var attr = ComHelpers.Invoke(attributes, "Получить", i);
-                    var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
+                    var attr = Call.Получить(attributes, i);
+                    var name = Call.Имя(attr);
                     result.Add(name);
                 }
             }

@@ -9,18 +9,15 @@
 // ------------------------------------------------------------------------------
 namespace Simple1C.Impl.Generation.Rendering
 {
-    using System.Linq;
-    using System.Text;
-    using System.Collections.Generic;
     using System;
     
     /// <summary>
     /// Class to produce the template output
     /// </summary>
     
-    #line 1 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
+    #line 1 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    internal partial class ClassFileTemplate : ClassFileTemplateBase
+    internal partial class ConstantFileTemplate : ConstantFileTemplateBase
     {
 #line hidden
         /// <summary>
@@ -28,321 +25,42 @@ namespace Simple1C.Impl.Generation.Rendering
         /// </summary>
         public virtual string TransformText()
         {
-            this.Write("using System;\r\nusing System.Collections.Generic;\r\nusing Simple1C.Interface;\r\nusin" +
-                    "g Simple1C.Interface.ObjectModel;\r\n\r\nnamespace ");
+            this.Write("using System;\r\nusing Simple1C.Interface.ObjectModel;\r\n\r\nnamespace ");
             
-            #line 11 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
+            #line 6 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(Model.Namespace));
             
             #line default
             #line hidden
-            this.Write("\r\n{\r\n");
+            this.Write("\r\n{\r\n\t[Synonym(\"");
             
-            #line 13 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
- 
-	PushIndent("\t"); 
-	RenderClass(Model.MainClass);
-	PopIndent();
-
+            #line 8 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Synonym));
             
             #line default
             #line hidden
-            this.Write("}\r\n");
+            this.Write("\")]\r\n\tpublic class ");
+            
+            #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Name));
+            
+            #line default
+            #line hidden
+            this.Write(" : Constant<");
+            
+            #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.Type));
+            
+            #line default
+            #line hidden
+            this.Write(">\r\n\t{\r\n\t}\r\n}");
             return this.GenerationEnvironment.ToString();
         }
         
-        #line 19 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
+        #line 12 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
 
-public ClassFileModel Model { get; set; }
+public ConstantFileModel Model { get; set; }
 
-private void RenderClass(ClassModel model)
-{
-
-        
-        #line default
-        #line hidden
-        
-        #line 25 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-if(model.ConfigurationScope.HasValue)
-{
-        
-        #line default
-        #line hidden
-        
-        #line 26 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("[ConfigurationScope(ConfigurationScope.");
-
-        
-        #line default
-        #line hidden
-        
-        #line 27 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(model.ConfigurationScope.Value.ToString()));
-
-        
-        #line default
-        #line hidden
-        
-        #line 27 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(")]\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 28 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-}
-        
-        #line default
-        #line hidden
-        
-        #line 29 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-if(model.Synonym != null)
-{
-        
-        #line default
-        #line hidden
-        
-        #line 30 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("[Synonym(\"");
-
-        
-        #line default
-        #line hidden
-        
-        #line 31 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(model.Synonym));
-
-        
-        #line default
-        #line hidden
-        
-        #line 31 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\")]\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 32 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-}
-        
-        #line default
-        #line hidden
-        
-        #line 33 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-if(model.ObjectPresentation != null)
-{
-        
-        #line default
-        #line hidden
-        
-        #line 34 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("[ObjectPresentation(\"");
-
-        
-        #line default
-        #line hidden
-        
-        #line 35 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(model.ObjectPresentation));
-
-        
-        #line default
-        #line hidden
-        
-        #line 35 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\")]\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 36 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-}
-        
-        #line default
-        #line hidden
-        
-        #line 36 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("public partial class ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 37 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(model.Name));
-
-        
-        #line default
-        #line hidden
-        
-        #line 37 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(" : Abstract1CEntity\r\n{\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 39 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-for(var i = 0; i < model.Properties.Count; i++)
-	{
-		var prop = model.Properties[i];
-		if(i != 0)
-			Write("\r\n");
-	
-        
-        #line default
-        #line hidden
-        
-        #line 44 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\tprivate Requisite<");
-
-        
-        #line default
-        #line hidden
-        
-        #line 44 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.Type));
-
-        
-        #line default
-        #line hidden
-        
-        #line 44 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("> ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 44 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.FieldName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 44 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(";\r\n\tpublic ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 45 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.Type));
-
-        
-        #line default
-        #line hidden
-        
-        #line 45 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(" ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 45 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.PropertyName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 45 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\r\n\t{\r\n\t\tget { return Controller.GetValue(ref ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 47 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.FieldName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 47 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(", \"");
-
-        
-        #line default
-        #line hidden
-        
-        #line 47 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.PropertyName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 47 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\"); }\r\n\t\tset { Controller.SetValue(ref ");
-
-        
-        #line default
-        #line hidden
-        
-        #line 48 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.FieldName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 48 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(", \"");
-
-        
-        #line default
-        #line hidden
-        
-        #line 48 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write(this.ToStringHelper.ToStringWithCulture(prop.PropertyName));
-
-        
-        #line default
-        #line hidden
-        
-        #line 48 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("\", value); }\r\n\t}\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 50 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-}
-        
-        #line default
-        #line hidden
-        
-        #line 50 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-if(model.NestedClasses != null)
-		foreach(var nestedClass in model.NestedClasses)
-		{
-			Write("\r\n");
-			PushIndent("\t");
-			RenderClass(nestedClass);
-			PopIndent();
-		}
-        
-        #line default
-        #line hidden
-        
-        #line 57 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-this.Write("}\r\n");
-
-        
-        #line default
-        #line hidden
-        
-        #line 59 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ClassFileTemplate.tt"
-}
         
         #line default
         #line hidden
@@ -355,7 +73,7 @@ this.Write("}\r\n");
     /// Base class for this transformation
     /// </summary>
     [global::System.CodeDom.Compiler.GeneratedCodeAttribute("Microsoft.VisualStudio.TextTemplating", "12.0.0.0")]
-    internal class ClassFileTemplateBase
+    internal class ConstantFileTemplateBase
     {
         #region Fields
         private global::System.Text.StringBuilder generationEnvironmentField;

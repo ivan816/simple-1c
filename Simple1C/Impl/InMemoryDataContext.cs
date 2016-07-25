@@ -46,10 +46,19 @@ namespace Simple1C.Impl
             return result;
         }
 
-        public void Save<T>(T entity) where T : Abstract1CEntity
+        public void Save(object entity)
         {
+            if (entity == null)
+                throw new InvalidOperationException("entity is null");
+            var abstract1CEntity = entity as Abstract1CEntity;
+            if (abstract1CEntity == null)
+            {
+                const string messageFormat = "invalid entity type [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    entity.GetType().FormatName()));
+            }
             var entitiesToSave = new List<Abstract1CEntity>();
-            entity.Controller.PrepareToSave(entity, entitiesToSave);
+            abstract1CEntity.Controller.PrepareToSave(abstract1CEntity, entitiesToSave);
             foreach (var e in entitiesToSave)
                 Save(e, false);
         }
@@ -148,7 +157,7 @@ namespace Simple1C.Impl
             target.Controller.TrackChanges = false;
             try
             {
-                property.SetMethod.Invoke(target, new object[] {value});
+                property.SetMethod.Invoke(target, new[] {value});
             }
             finally
             {

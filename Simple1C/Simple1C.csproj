@@ -42,6 +42,12 @@
     <Compile Include="Impl\ComDataContext.cs" />
     <Compile Include="Impl\EntityHelpers.cs" />
     <Compile Include="Impl\Generation\Rendering\ClassFileModel.cs" />
+    <Compile Include="Impl\Generation\Rendering\ConstantFileModel.cs" />
+    <Compile Include="Impl\Generation\Rendering\ConstantFileTemplate.cs">
+      <DependentUpon>ConstantFileTemplate.tt</DependentUpon>
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+    </Compile>
     <Compile Include="Impl\Generation\Rendering\EnumFileTemplate.cs">
       <DependentUpon>EnumFileTemplate.tt</DependentUpon>
       <AutoGen>True</AutoGen>
@@ -57,6 +63,7 @@
     <Compile Include="Impl\Generation\Rendering\EnumFileModel.cs" />
     <Compile Include="Impl\Generation\Rendering\EnumItemModel.cs" />
     <Compile Include="Impl\Generation\Rendering\GenerateHelpers.cs" />
+    <Compile Include="Impl\Call.cs" />
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\ClassAttributesCache.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
@@ -132,6 +139,7 @@
     <Compile Include="Interface\ObjectModel\ObjectPresentationAttribute.cs" />
     <Compile Include="Interface\ObjectModel\Requisite.cs" />
     <Compile Include="Interface\ObjectModel\SynonymAttribute.cs" />
+    <Compile Include="Interface\ObjectModel\Constant.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
     <Compile Include="Interface\Функции.cs" />
     <Compile Include="Interface\Store1CHelpers.cs" />
@@ -142,6 +150,10 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Impl\Generation\Rendering\ConstantFileTemplate.tt">
+      <Generator>TextTemplatingFilePreprocessor</Generator>
+      <LastGenOutput>ConstantFileTemplate.cs</LastGenOutput>
+    </None>
     <None Include="Impl\Generation\Rendering\EnumFileTemplate.tt">
       <Generator>TextTemplatingFilePreprocessor</Generator>
       <LastGenOutput>EnumFileTemplate.cs</LastGenOutput>

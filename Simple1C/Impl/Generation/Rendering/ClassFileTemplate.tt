@@ -34,7 +34,6 @@ private void RenderClass(ClassModel model)
 {#>
 [ObjectPresentation("<#=model.ObjectPresentation#>")]
 <#+}#>
-
 public partial class <#=model.Name#> : Abstract1CEntity
 {
 <#+for(var i = 0; i < model.Properties.Count; i++)

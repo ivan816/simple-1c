@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queriables;
@@ -44,16 +45,60 @@ namespace Simple1C.Impl
             return new RelinqQueryable<T>(queryProvider, sourceName);
         }
 
-        public void Save<T>(T entity)
-            where T : Abstract1CEntity
+        public void Save(object entity)
         {
+            if (entity == null)
+                throw new InvalidOperationException("entity is null");
+            var constantEntity = entity as Constant;
+            if (constantEntity != null)
+            {
+                var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
+                var constant = ComHelpers.GetProperty(constants, entity.GetType().Name);
+                var value = constantEntity.ЗначениеНетипизированное;
+                if (value != null && value.GetType().IsEnum)
+                    value = enumMapper.MapTo1C(value);
+                ComHelpers.Invoke(constant, "Установить", value);
+                return;
+            }
             var entitiesToSave = new List<Abstract1CEntity>();
-            entity.Controller.PrepareToSave(entity, entitiesToSave);
+            var abstract1CEntity = entity as Abstract1CEntity;
+            if (abstract1CEntity != null)
+            {
+                abstract1CEntity.Controller.PrepareToSave(abstract1CEntity, entitiesToSave);
+                SaveEntities(entitiesToSave);
+                return;
+            }
+            var enumerable = entity as IEnumerable;
+            if (enumerable != null)
+            {
+                foreach (var item in enumerable)
+                {
+                    if (item == null)
+                        throw new InvalidOperationException("some items are null");
+                    abstract1CEntity = item as Abstract1CEntity;
+                    if (abstract1CEntity == null)
+                        throw new InvalidOperationException(FormatInvalidEntityTypeMessage(item));
+                    abstract1CEntity.Controller.PrepareToSave(abstract1CEntity, entitiesToSave);
+                }
+                SaveEntities(entitiesToSave);
+                return;
+            }
+            throw new InvalidOperationException(FormatInvalidEntityTypeMessage(entity));
+        }
+
+        private void SaveEntities(List<Abstract1CEntity> entitiesToSave)
+        {
             if (entitiesToSave.Count == 0)
                 return;
             var pending = new Stack<object>();
             foreach (var e in entitiesToSave)
                 Save(e, null, pending);
+        }
+
+        private static string FormatInvalidEntityTypeMessage(object item)
+        {
+            const string messageFormat = "invalid entity type [{0}]";
+            return string.Format(messageFormat, item.GetType().FormatName());
         }
 
         private void Save(Abstract1CEntity source, object comObject, Stack<object> pending)
@@ -197,8 +242,7 @@ namespace Simple1C.Impl
                         case SyncList.CommandType.Update:
                             var updateCommand = (SyncList.UpdateCommand) cmd;
                             pending.Push(updateCommand.index);
-                            Save(updateCommand.item, ComHelpers.Invoke(tableSection, "Получить", updateCommand.index),
-                                pending);
+                            Save(updateCommand.item, Call.Получить(tableSection, updateCommand.index), pending);
                             pending.Pop();
                             break;
                         default:
@@ -270,7 +314,7 @@ namespace Simple1C.Impl
                 return;
             SetValueWithoutTracking(target, property, ComHelpers.GetProperty(source, propertyName));
         }
-        
+
         private static void SetValueWithoutTracking(Abstract1CEntity target, PropertyInfo property, object value)
         {
             var oldTrackChanges = target.Controller.TrackChanges;
@@ -307,6 +351,15 @@ namespace Simple1C.Impl
 
         private IEnumerable Execute(BuiltQuery builtQuery)
         {
+            if (EntityHelpers.IsConstant(builtQuery.EntityType))
+            {
+                var constantWrap = (Constant)FormatterServices.GetUninitializedObject(builtQuery.EntityType);
+                var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
+                var constant = ComHelpers.GetProperty(constants, builtQuery.EntityType.Name);
+                constantWrap.ЗначениеНетипизированное = ComHelpers.Invoke(constant, "Получить");
+                yield return constantWrap;
+                yield break;
+            }
             var queryText = builtQuery.QueryText;
             var parameters = builtQuery.Parameters;
             parametersConverter.ConvertParametersTo1C(parameters);

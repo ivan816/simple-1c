@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Linq.Expressions;
 using Simple1C.Impl.Helpers;
-using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Interface
 {
@@ -10,7 +9,6 @@ namespace Simple1C.Interface
     {
         public static T Single<T>(this IDataContext dataContextFactory,
             params Expression<Func<T, bool>>[] filters)
-            where T : Abstract1CEntity
         {
             var result = filters
                 .Aggregate(dataContextFactory.Select<T>(), (q, f) => q.Where(f))
@@ -35,7 +33,7 @@ namespace Simple1C.Interface
 
         public static T SingleOrDefault<T>(this IDataContext dataContextFactory,
             params Expression<Func<T, bool>>[] filters)
-            where T : Abstract1CEntity
+            where T: class
         {
             var result = filters
                 .Aggregate(dataContextFactory.Select<T>(), (q, f) => q.Where(f))

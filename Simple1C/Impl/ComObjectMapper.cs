@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
+using Simple1C.Impl.Generation.Rendering;
 using Simple1C.Impl.Helpers;
 using Simple1C.Interface.ObjectModel;
 
@@ -49,7 +50,7 @@ namespace Simple1C.Impl
             if (type == typeof(Type))
             {
                 var metadata = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоТипу", source);
-                var typeName = Convert.ToString(ComHelpers.Invoke(metadata, "ПолноеИмя"));
+                var typeName = Call.ПолноеИмя(metadata);
                 return GetTypeByTypeName(typeName);
             }
             if (typeof (Abstract1CEntity).IsAssignableFrom(type))
@@ -72,7 +73,7 @@ namespace Simple1C.Impl
                 var itemsCount = Convert.ToInt32(ComHelpers.Invoke(source, "Количество"));
                 var list = ListFactory.Create(itemType, null, itemsCount);
                 for (var i = 0; i < itemsCount; ++i)
-                    list.Add(MapFrom1C(ComHelpers.Invoke(source, "Получить", i), itemType));
+                    list.Add(MapFrom1C(Call.Получить(source, i), itemType));
                 return list;
             }
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
@@ -92,8 +93,7 @@ namespace Simple1C.Impl
         private static string GetFullName(object source)
         {
             var metadata = ComHelpers.Invoke(source, "Метаданные");
-            var result = ComHelpers.Invoke(metadata, "ПолноеИмя");
-            return Convert.ToString(result);
+            return Call.ПолноеИмя(metadata);
         }
     }
 }

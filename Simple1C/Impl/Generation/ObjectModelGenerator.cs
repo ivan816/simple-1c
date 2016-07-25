@@ -54,6 +54,7 @@ namespace Simple1C.Impl.Generation
                 var item = FindByFullName(itemName);
                 generationContext.EnqueueIfNeeded(item);
             }
+            EmitConstants(generationContext);
             var processedCount = 0;
             while (generationContext.ItemsToProcess.Count > 0)
             {
@@ -67,7 +68,7 @@ namespace Simple1C.Impl.Generation
                         GenerateClass(item, generationContext);
                         break;
                     case ConfigurationScope.Перечисления:
-                        GenerateEnum(item, generationContext);
+                        EmitEnum(item, generationContext);
                         break;
                     default:
                         const string messageFormat = "unexpected scope for [{0}]";
@@ -89,7 +90,7 @@ namespace Simple1C.Impl.Generation
         private ConfigurationItem FindByType(object typeObject)
         {
             var comObject = ComHelpers.Invoke(metadata, "НайтиПоТипу", typeObject);
-            var fullName = Convert.ToString(ComHelpers.Invoke(comObject, "ПолноеИмя"));
+            var fullName = Call.ПолноеИмя(comObject);
             return fullName.StartsWith("Документ") || fullName.StartsWith("Справочник")
                    || fullName.StartsWith("Перечисление") || fullName.StartsWith("ПланСчетов")
                 ? new ConfigurationItem(fullName, comObject)
@@ -131,19 +132,21 @@ namespace Simple1C.Impl.Generation
         private void EmitClass(ClassGenerationContext classContext)
         {
             var standardAttributes = ComHelpers.GetProperty(classContext.comObject, "СтандартныеРеквизиты");
-            var isChartOfAccounts = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Имя")) ==
-                                    "Хозрасчетный";
-            var synonym = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Синоним"));
-            classContext.target.Synonym = GenerateHelpers.EscapeString(synonym);
-            if (classContext.target.ConfigurationScope.HasValue
-                && classContext.target.ConfigurationScope.Value != ConfigurationScope.РегистрыСведений)
+            var isChartOfAccounts = Call.Имя(classContext.comObject) == "Хозрасчетный";
+            if (classContext.target.ConfigurationScope.HasValue)
             {
-                var presentation = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "ObjectPresentation"));
-                classContext.target.ObjectPresentation = GenerateHelpers.EscapeString(presentation);
+                var synonym = Call.Синоним(classContext.comObject);
+                classContext.target.Synonym = GenerateHelpers.EscapeString(synonym);
+                if (classContext.target.ConfigurationScope.Value != ConfigurationScope.РегистрыСведений)
+                {
+                    var presentation =
+                        Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "ObjectPresentation"));
+                    classContext.target.ObjectPresentation = GenerateHelpers.EscapeString(presentation);
+                }
             }
             foreach (var attr in (IEnumerable) standardAttributes)
             {
-                var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
+                var name = Call.Имя(attr);
                 if (isChartOfAccounts && name != "Код" && name != "Наименование")
                     continue;
                 if (standardPropertiesToExclude.Contains(name))
@@ -153,12 +156,9 @@ namespace Simple1C.Impl.Generation
             foreach (var propertyName in classContext.descriptor.AttributePropertyNames)
             {
                 var attributes = ComHelpers.GetProperty(classContext.comObject, propertyName);
-                var attributesCount = Convert.ToInt32(ComHelpers.Invoke(attributes, "Количество"));
+                var attributesCount = Call.Количество(attributes);
                 for (var i = 0; i < attributesCount; ++i)
-                {
-                    var attr = ComHelpers.Invoke(attributes, "Получить", i);
-                    EmitProperty(attr, classContext);
-                }
+                    EmitProperty(Call.Получить(attributes, i), classContext);
             }
             if (classContext.configurationName.HasValue && classContext.configurationName.Value.HasReference)
                 classContext.EmitProperty(new PropertyModel
@@ -169,14 +169,14 @@ namespace Simple1C.Impl.Generation
             if (classContext.descriptor.HasTableSections)
             {
                 var tableSections = ComHelpers.GetProperty(classContext.comObject, "ТабличныеЧасти");
-                var tableSectionsCount = Convert.ToInt32(ComHelpers.Invoke(tableSections, "Количество"));
+                var tableSectionsCount = Call.Количество(tableSections);
                 for (var i = 0; i < tableSectionsCount; i++)
                 {
-                    var tableSection = ComHelpers.Invoke(tableSections, "Получить", i);
-                    var tableSectionName = Convert.ToString(ComHelpers.GetProperty(tableSection, "Имя"));
+                    var tableSection = Call.Получить(tableSections, i);
+                    var tableSectionName = Call.Имя(tableSection);
                     var nestedClassContext = new ClassGenerationContext
                     {
-                        configurationItemFullName = Convert.ToString(ComHelpers.Invoke(tableSection, "ПолноеИмя")),
+                        configurationItemFullName = Call.ПолноеИмя(tableSection),
                         comObject = tableSection,
                         descriptor = tableSectionDescriptor,
                         generationContext = classContext.generationContext,
@@ -198,69 +198,66 @@ namespace Simple1C.Impl.Generation
 
         private void EmitProperty(object attribute, ClassGenerationContext classContext)
         {
-            var propertyName = Convert.ToString(ComHelpers.GetProperty(attribute, "Имя"));
-            var type = ComHelpers.GetProperty(attribute, "Тип");
+            var propertyName = Call.Имя(attribute);
+            var propertyType = GetDotNetTypeOrNull(attribute,
+                classContext.configurationItemFullName + "." + propertyName,
+                classContext.generationContext);
+            if (propertyType != null)
+                classContext.target.Properties.Add(new PropertyModel
+                {
+                    Type = propertyType,
+                    PropertyName = propertyName
+                });
+        }
+
+        private string GetDotNetTypeOrNull(object metadataItem, string fullname, GenerationContext context)
+        {
+            var type = ComHelpers.GetProperty(metadataItem, "Тип");
             var typesObject = ComHelpers.Invoke(type, "Типы");
-            var typesCount = Convert.ToInt32(ComHelpers.Invoke(typesObject, "Количество"));
+            var typesCount = Call.Количество(typesObject);
             if (typesCount == 0)
             {
-                const string messageFormat = "no types for [{0}.{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, classContext.configurationItemFullName,
-                    propertyName));
+                const string messageFormat = "no types for [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, fullname));
             }
-            var isEnum = false;
-            string propertyType;
+            object typeObject;
+            string stringPresentation;
             if (typesCount > 1)
             {
                 for (var i = 0; i < typesCount; i++)
                 {
-                    var typeObject = ComHelpers.Invoke(typesObject, "Получить", i);
-                    var stringPresentation = globalContext.String(typeObject);
-                    if (!simpleTypesMap.TryGetValue(stringPresentation, out propertyType) &&
-                        stringPresentation != "Число")
+                    typeObject = Call.Получить(typesObject, i);
+                    stringPresentation = globalContext.String(typeObject);
+                    if (stringPresentation != "Число" &&
+                        !simpleTypesMap.ContainsKey(stringPresentation))
                     {
                         var configurationItem = FindByType(typeObject);
                         if (configurationItem != null)
-                            classContext.generationContext.EnqueueIfNeeded(configurationItem);
+                            context.EnqueueIfNeeded(configurationItem);
                     }
                 }
-                propertyType = "object";
+                return "object";
             }
-            else
+            typeObject = Call.Получить(typesObject, 0);
+            stringPresentation = globalContext.String(typeObject);
+            string result;
+            if (simpleTypesMap.TryGetValue(stringPresentation, out result))
+                return result;
+            if (stringPresentation == "Число")
             {
-                var typeObject = ComHelpers.Invoke(typesObject, "Получить", 0);
-                var stringPresentation = globalContext.String(typeObject);
-                if (!simpleTypesMap.TryGetValue(stringPresentation, out propertyType))
-                {
-                    if (stringPresentation == "Число")
-                    {
-                        var квалификаторыЧисла = ComHelpers.GetProperty(type, "КвалификаторыЧисла");
-                        var floatLength =
-                            Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "РазрядностьДробнойЧасти"));
-                        var digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
-                        if (floatLength == 0)
-                            propertyType = digits < 10 ? "int" : "long";
-                        else
-                            propertyType = "decimal";
-                    }
-                    else
-                    {
-                        var propertyItem = FindByType(typeObject);
-                        if (propertyItem != null)
-                        {
-                            propertyType = FormatClassName(propertyItem.Name);
-                            classContext.generationContext.EnqueueIfNeeded(propertyItem);
-                            isEnum = propertyItem.Name.Scope == ConfigurationScope.Перечисления;
-                        }
-                    }
-                }
+                var квалификаторыЧисла = ComHelpers.GetProperty(type, "КвалификаторыЧисла");
+                var floatLength = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "РазрядностьДробнойЧасти"));
+                var digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
+                return floatLength == 0 ? (digits < 10 ? "int" : "long") : "decimal";
             }
-            if (propertyType != null)
-                classContext.target.Properties.Add(new PropertyModel
-                {
-                    Type = propertyType + (isEnum ? "?" : ""),
-                    PropertyName = propertyName
-                });
+            var propertyItem = FindByType(typeObject);
+            if (propertyItem == null)
+                return null;
+            context.EnqueueIfNeeded(propertyItem);
+            result = FormatClassName(propertyItem.Name);
+            if (propertyItem.Name.Scope == ConfigurationScope.Перечисления)
+                result = result + "?";
+            return result;
         }
 
         private string FormatClassName(ConfigurationName name)
@@ -268,7 +265,33 @@ namespace Simple1C.Impl.Generation
             return GetNamespaceName(name.Scope) + "." + name.Name;
         }
 
-        private void GenerateEnum(ConfigurationItem item, GenerationContext context)
+        private void EmitConstants(GenerationContext context)
+        {
+            var constants = ComHelpers.GetProperty(metadata, "Константы");
+            var constantsCount = Call.Количество(constants);
+            for (var i = 0; i < constantsCount; i++)
+            {
+                var constant = Call.Получить(constants, i);
+                var type = GetDotNetTypeOrNull(constant, Call.ПолноеИмя(constant), context);
+                if (type == null)
+                    continue;
+                var configurationName = new ConfigurationName(ConfigurationScope.Константы,
+                    Call.Имя(constant));
+                var template = new ConstantFileTemplate
+                {
+                    Model = new ConstantFileModel
+                    {
+                        Type = type,
+                        Name = configurationName.Name,
+                        Synonym = GenerateHelpers.EscapeString(Call.Синоним(constant)),
+                        Namespace = GetNamespaceName(configurationName.Scope)
+                    }
+                };
+                context.Write(configurationName, template.TransformText());
+            }
+        }
+
+        private void EmitEnum(ConfigurationItem item, GenerationContext context)
         {
             var model = new EnumFileModel
             {
@@ -276,14 +299,14 @@ namespace Simple1C.Impl.Generation
                 Namespace = GetNamespaceName(item.Name.Scope)
             };
             var values = ComHelpers.GetProperty(item.ComObject, "ЗначенияПеречисления");
-            var count = Convert.ToInt32(ComHelpers.Invoke(values, "Количество"));
+            var count = Call.Количество(values);
             for (var i = 0; i < count; i++)
             {
-                var value = ComHelpers.Invoke(values, "Получить", i);
+                var value = Call.Получить(values, i);
                 model.Items.Add(new EnumItemModel
                 {
-                    Name = Convert.ToString(ComHelpers.GetProperty(value, "Имя")),
-                    Synonym = GenerateHelpers.EscapeString(Convert.ToString(ComHelpers.GetProperty(value, "Синоним")))
+                    Name = Call.Имя(value),
+                    Synonym = GenerateHelpers.EscapeString(Call.Синоним(value))
                 });
             }
             var enumFileTemplate = new EnumFileTemplate {Model = model};

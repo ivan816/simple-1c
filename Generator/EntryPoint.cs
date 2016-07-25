@@ -3,9 +3,6 @@ using System.CodeDom.Compiler;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Xml;
-using System.Xml.Linq;
-using System.Xml.XPath;
 using Microsoft.CSharp;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
@@ -42,7 +39,7 @@ namespace Generator
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
 
             sourcePath = sourcePath ?? GetTemporaryDirectoryFullPath();
-            if(Directory.Exists(sourcePath))
+            if (Directory.Exists(sourcePath))
                 Directory.Delete(sourcePath, true);
             string[] fileNames = null;
             ExecuteAction(string.Format("generating code into [{0}]", sourcePath),

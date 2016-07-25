@@ -1,4 +1,5 @@
 ﻿using System;
+using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl
 {
@@ -9,6 +10,13 @@ namespace Simple1C.Impl
         public static bool IsTableSection(Type type)
         {
             return type.Name.StartsWith("ТабличнаяЧасть");
+        }
+
+        public static bool IsConstant(Type type)
+        {
+            return type.BaseType != null &&
+                   type.BaseType.IsGenericType &&
+                   type.BaseType.GetGenericTypeDefinition() == typeof(Constant<>);
         }
     }
 }

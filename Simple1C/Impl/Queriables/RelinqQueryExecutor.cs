@@ -31,9 +31,16 @@ namespace Simple1C.Impl.Queriables
 
         public IEnumerable<T> ExecuteCollection<T>(QueryModel queryModel)
         {
-            var builder = new QueryBuilder(typeRegistry);
-            queryModel.Accept(new QueryModelVisitor(builder));
-            return execute(builder.Build()).Cast<T>();
+            BuiltQuery builtQuery;
+            if (EntityHelpers.IsConstant(typeof(T)))
+                builtQuery = BuiltQuery.Constant(typeof(T));
+            else
+            {
+                var builder = new QueryBuilder(typeRegistry);
+                queryModel.Accept(new QueryModelVisitor(builder));
+                builtQuery = builder.Build();
+            }
+            return execute(builtQuery).Cast<T>();
         }
     }
 }

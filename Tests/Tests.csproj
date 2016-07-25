@@ -48,6 +48,7 @@
     <Compile Include="CsProjectFileUpdaterTest.cs" />
     <Compile Include="Integration\COMDataContextTestBase.cs" />
     <Compile Include="InMemoryDataContextTest.cs" />
+    <Compile Include="Integration\ConstantsTest.cs" />
     <Compile Include="Integration\InformationRegisterTest.cs" />
     <Compile Include="Integration\ProjectionTest.cs" />
     <Compile Include="Integration\SaveTest.cs" />

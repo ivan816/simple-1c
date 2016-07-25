@@ -90,6 +90,8 @@ namespace Simple1C.Impl
                     return "Перечисление";
                 case ConfigurationScope.ПланыСчетов:
                     return "ПланСчетов";
+                case ConfigurationScope.Константы:
+                    return "Константа";
                 default:
                     const string messageFormat = "unexpected scope [{0}]";
                     throw new InvalidOperationException(string.Format(messageFormat, scope));
@@ -108,6 +110,8 @@ namespace Simple1C.Impl
                 return ConfigurationScope.Перечисления;
             if (s == "ПланСчетов")
                 return ConfigurationScope.ПланыСчетов;
+            if (s == "Константа")
+                return ConfigurationScope.Константы;
             const string messageFormat = "unexpected configuration scope name [{0}]";
             throw new InvalidOperationException(string.Format(messageFormat, s));
         }

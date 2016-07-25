@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using NUnit.Framework;
 using Simple1C.Impl.Com;
 using Simple1C.Interface;
@@ -170,6 +171,26 @@ namespace Simple1C.Tests.Integration
             поступлениеТоваровУслуг.Проведен = true;
             dataContext.Save(поступлениеТоваровУслуг);
             Assert.That(GetDocumentByNumber(поступлениеТоваровУслуг.Номер).Проведен);
+        }
+
+        [Test]
+        public void CanSaveMultipleEntitiesAtOnce()
+        {
+            dataContext.Save(new object[]
+            {
+                new Контрагенты {Наименование = "test-contragent"},
+                new СтатьиЗатрат {Наименование = "test-cost-item"}
+            });
+            Assert.That(CountOf<Контрагенты>(x => x.Наименование == "test-contragent"), Is.EqualTo(1));
+            Assert.That(CountOf<СтатьиЗатрат>(x => x.Наименование == "test-cost-item"), Is.EqualTo(1));
+        }
+
+        private int CountOf<T>(Expression<Func<T, bool>> filter )
+        {
+            return dataContext.Select<T>()
+                .Where(filter)
+                .AsEnumerable()
+                .Count();
         }
 
         [Test]
