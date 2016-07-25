@@ -133,6 +133,8 @@ namespace Simple1C.Impl.Generation
             var standardAttributes = ComHelpers.GetProperty(classContext.comObject, "СтандартныеРеквизиты");
             var isChartOfAccounts = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Имя")) ==
                                     "Хозрасчетный";
+            var synonym = Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "Синоним"));
+            classContext.target.Synonym = GenerateHelpers.EscapeString(synonym);
             foreach (var attr in (IEnumerable) standardAttributes)
             {
                 var name = Convert.ToString(ComHelpers.GetProperty(attr, "Имя"));
@@ -275,8 +277,7 @@ namespace Simple1C.Impl.Generation
                 model.Items.Add(new EnumItemModel
                 {
                     Name = Convert.ToString(ComHelpers.GetProperty(value, "Имя")),
-                    Synonym = Convert.ToString(ComHelpers.GetProperty(value, "Синоним"))
-                        .Replace("\"", "\\\"")
+                    Synonym = GenerateHelpers.EscapeString(Convert.ToString(ComHelpers.GetProperty(value, "Синоним")))
                 });
             }
             var enumFileTemplate = new EnumFileTemplate {Model = model};

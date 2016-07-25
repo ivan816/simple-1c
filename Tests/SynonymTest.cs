@@ -10,7 +10,7 @@ namespace Simple1C.Tests
         [Test]
         public void CanReadSynonyms()
         {
-            Assert.That(Synonym.Of(ВидыРасходовНУ.АмортизационнаяПремия), Is.EqualTo("Амортизационная премия"));
+            Assert.That(Synonym.OfEnum(ВидыРасходовНУ.АмортизационнаяПремия), Is.EqualTo("Амортизационная премия"));
         }
     }
 }

@@ -18,7 +18,15 @@ namespace Simple1C.Impl.Queriables
             var b = new StringBuilder();
             foreach (var queryField in fields)
             {
+                var needFunction = !string.IsNullOrEmpty(queryField.FunctionName);
+                if (needFunction)
+                {
+                    b.Append(queryField.FunctionName);
+                    b.Append("(");
+                }
                 b.Append(queryField.Expression);
+                if (needFunction)
+                    b.Append(")");
                 b.Append(" КАК ");
                 b.Append(queryField.Alias);
                 b.Append(',');

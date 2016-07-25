@@ -26,6 +26,10 @@ private void RenderClass(ClassModel model)
 {#>
 [ConfigurationScope(ConfigurationScope.<#=model.ConfigurationScope.Value.ToString()#>)]
 <#+}#>
+<#+if(model.Synonym != null)
+{#>
+[Synonym("<#=model.Synonym#>")]
+<#+}#>
 public partial class <#=model.Name#> : Abstract1CEntity
 {
 <#+for(var i = 0; i < model.Properties.Count; i++)

@@ -33,5 +33,6 @@ namespace Simple1C.Impl.Queriables
         public string Alias { get; private set; }
         public string Expression { get; private set; }
         public Type Type { get; private set; }
+        public string FunctionName { get; set; }
     }
 }

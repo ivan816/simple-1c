@@ -581,6 +581,51 @@ namespace Simple1C.Tests
             }
         }
 
+        public class PresentationInFilterTest : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                ПоступлениеНаРасчетныйСчет value = null;
+                var exception = Assert.Throws<InvalidOperationException>(() => value =
+                    Source<ПоступлениеНаРасчетныйСчет>()
+                        .Single(x => Функции.Представление(x.Наименование) == "."));
+                Assert.That(value, Is.Null);
+                const string expectedMessage = "can't apply 'Where' operator for " +
+                                               "expression [(Представление([x].Наименование) == \".\")]." +
+                                               "Expression must be a chain of member accesses.";
+                Assert.That(exception.Message, Is.EqualTo(expectedMessage));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Документы)]
+            public class ПоступлениеНаРасчетныйСчет
+            {
+                public string Наименование { get; set; }
+                public string Код { get; set; }
+            }
+        }
+
+        public class PresentationTest : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<ПоступлениеНаРасчетныйСчет>().Select(x => new
+                {
+                    x.Код,
+                    Наименование = Функции.Представление(x.Наименование)
+                }),
+                    "ВЫБРАТЬ src.Код КАК src_Код,ПРЕДСТАВЛЕНИЕ(src.Наименование) КАК src_Наименование ИЗ Документ.ПоступлениеНаРасчетныйСчет КАК src");
+            }
+
+            [ConfigurationScope(ConfigurationScope.Документы)]
+            public class ПоступлениеНаРасчетныйСчет
+            {
+                public string Наименование { get; set; }
+                public string Код { get; set; }
+            }
+        }
+
         private BuiltQuery lastQuery;
 
         protected IQueryable<T> Source<T>(string sourceName = null)
