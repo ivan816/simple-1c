@@ -129,7 +129,7 @@
     <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
     <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
     <Compile Include="Impl\Queriables\FilterPredicateAnalyzer.cs" />
-    <Compile Include="Interface\ObjectModel\ObjectPresentation.cs" />
+    <Compile Include="Interface\ObjectModel\ObjectPresentationAttribute.cs" />
     <Compile Include="Interface\ObjectModel\Requisite.cs" />
     <Compile Include="Interface\ObjectModel\SynonymAttribute.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
