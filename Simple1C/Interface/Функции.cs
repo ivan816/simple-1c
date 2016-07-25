@@ -19,9 +19,15 @@ namespace Simple1C.Interface
             if (obj == null)
                 return "";
             var objType = obj.GetType();
+            var underlyingType = Nullable.GetUnderlyingType(objType);
+            if (underlyingType != null)
+                return Представление(GetPropertyValue<object>(objType, "Value", obj));
             var stringObj = obj as string;
             if (stringObj != null)
                 return stringObj;
+            var typeObj = obj as Type;
+            if (typeObj != null)
+                return GetTypePresentation(typeObj);
             if (objType.IsClass)
             {
                 var configurationName = ConfigurationName.Get(objType);
@@ -41,7 +47,7 @@ namespace Simple1C.Interface
                     if (date.HasValue)
                     {
                         builder.Append(" от ");
-                        builder.Append(date.Value.ToString("dd.MM.yyyy HH:mm:ss"));
+                        builder.Append(date.Value.ToString("dd.MM.yyyy H:mm:ss"));
                     }
                     return builder.ToString();
                 }
@@ -58,6 +64,8 @@ namespace Simple1C.Interface
                 return ((decimal)obj).ToString(russianCultureInfo);
             if (obj is bool)
                 return (bool)obj ? "Да" : "Нет";
+            if (obj is DateTime)
+                return ((DateTime) obj).ToString("dd.MM.yyyy H:mm:ss");
             if (obj is Guid)
                 return ((Guid)obj).ToString();
             if (obj is byte)
@@ -80,6 +88,41 @@ namespace Simple1C.Interface
             throw new NotSupportedException(string.Format(messageFormat, obj, objType.FormatName()));
         }
 
+        private static string GetTypePresentation(Type type)
+        {
+            if (type == typeof(string))
+                return "Строка";
+            if (type.IsClass)
+            {
+                var scope = ConfigurationName.GetOrNull(type);
+                if (scope != null)
+                    return ObjectPresentation.OfClass(type);
+            }
+            if (type == typeof(bool))
+                return "Булево";
+            if (type == typeof(DateTime))
+                return "Дата";
+            if (type == typeof(Guid))
+                return "УникальныйИдентификатор";
+            if (type == typeof(int)
+                || type == typeof(long)
+                || type == typeof(decimal)
+                || type == typeof(byte)
+                || type == typeof(sbyte)
+                || type == typeof(short)
+                || type == typeof(ushort)
+                || type == typeof(uint)
+                || type == typeof(ulong)
+                || type == typeof(float)
+                || type == typeof(double))
+                return "Число";
+            var underlyingType = Nullable.GetUnderlyingType(type);
+            if (underlyingType != null)
+                return GetTypePresentation(underlyingType);
+            const string messageFormat = "can't get ПРЕДСТАВЛЕНИЕ for object [{0}] of type [{1}]";
+            throw new NotSupportedException(string.Format(messageFormat, type, typeof(Type).FormatName()));
+        }
+
         private static T GetPropertyValue<T>(Type objType, string propertyName, object obj)
         {
             var key = objType.FullName + "_" + propertyName;
@@ -87,7 +130,7 @@ namespace Simple1C.Interface
             MemberAccessor<T> typedAccessor;
             if (!accessors.TryGetValue(key, out accessor))
             {
-                var property = objType.GetProperty("Дата");
+                var property = objType.GetProperty(propertyName);
                 typedAccessor = property != null ? MemberAccessor<T>.Get(property) : null;
                 accessors.TryAdd(key, typedAccessor);
             }

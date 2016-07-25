@@ -99,6 +99,18 @@ namespace Simple1C.Tests
         }
 
         [Test] 
+        public void DateTimePresentation()
+        {
+            Assert.That(Функции.Представление(new DateTime(2016, 7, 25, 5, 3, 2)), Is.EqualTo("25.07.2016 5:03:02"));
+        }
+
+        [Test] 
+        public void NullableDateTimePresentation()
+        {
+            Assert.That(Функции.Представление((DateTime?)new DateTime(2016, 7, 25, 5, 3, 2)), Is.EqualTo("25.07.2016 5:03:02"));
+        }
+
+        [Test] 
         public void GuidPresentation()
         {
             var guid = Guid.NewGuid();
@@ -146,6 +158,58 @@ namespace Simple1C.Tests
                 Is.EqualTo("76.27.2"));
         }
 
+        [Test]
+        public void NumberTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(int)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(long)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(decimal)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(sbyte)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(byte)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(short)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(ushort)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(uint)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(ulong)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(float)), Is.EqualTo("Число"));
+            Assert.That(Функции.Представление(typeof(double)), Is.EqualTo("Число"));
+        }
+
+        [Test]
+        public void StringTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(string)), Is.EqualTo("Строка"));
+        }
+
+        [Test]
+        public void BoolTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(bool)), Is.EqualTo("Булево"));
+        }
+
+        [Test]
+        public void GuidTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(Guid)), Is.EqualTo("УникальныйИдентификатор"));
+        }
+
+        [Test]
+        public void DateTimeTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(DateTime)), Is.EqualTo("Дата"));
+        }
+
+        [Test]
+        public void NullableTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(DateTime?)), Is.EqualTo("Дата"));
+        }
+
+        [Test]
+        public void CatalogTypePresentation()
+        {
+            Assert.That(Функции.Представление(typeof(TestCatalog)), Is.EqualTo("TestCatalogObjectPresentation"));
+        }
+
         [ConfigurationScope(ConfigurationScope.Перечисления)]
         private enum TestEnumeration
         {
@@ -154,6 +218,7 @@ namespace Simple1C.Tests
         }
 
         [ConfigurationScope(ConfigurationScope.Справочники)]
+        [ObjectPresentation("TestCatalogObjectPresentation")]
         private class TestCatalog
         {
             public string Наименование { get; set; }

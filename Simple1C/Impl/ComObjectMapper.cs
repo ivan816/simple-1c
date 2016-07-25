@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
@@ -29,12 +30,7 @@ namespace Simple1C.Impl
                 if (source is MarshalByRefObject)
                 {
                     var typeName = GetFullName(source);
-                    type = typeRegistry.GetTypeOrNull(typeName);
-                    if (type == null)
-                    {
-                        const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
-                        throw new InvalidOperationException(string.Format(messageFormat, typeName));
-                    }
+                    type = GetTypeByTypeName(typeName);
                 }
                 else
                     type = source.GetType();
@@ -50,6 +46,12 @@ namespace Simple1C.Impl
                 return (bool) ComHelpers.Invoke(source, "IsEmpty")
                     ? null
                     : enumMapper.MapFrom1C(type, source);
+            if (type == typeof(Type))
+            {
+                var metadata = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоТипу", source);
+                var typeName = Convert.ToString(ComHelpers.Invoke(metadata, "ПолноеИмя"));
+                return GetTypeByTypeName(typeName);
+            }
             if (typeof (Abstract1CEntity).IsAssignableFrom(type))
             {
                 var configurationName = ConfigurationName.GetOrNull(type);
@@ -74,6 +76,17 @@ namespace Simple1C.Impl
                 return list;
             }
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
+        }
+
+        private Type GetTypeByTypeName(string typeName)
+        {
+            var type = typeRegistry.GetTypeOrNull(typeName);
+            if (type == null)
+            {
+                const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, typeName));
+            }
+            return type;
         }
 
         private static string GetFullName(object source)

@@ -4,9 +4,9 @@ using System.Linq;
 
 namespace Simple1C.Impl.Helpers
 {
-    internal class ClassAttrinutesCache<TAttribute> where TAttribute : Attribute
+    internal class ClassAttributesCache<TAttribute> where TAttribute : Attribute
     {
-        public static readonly ClassAttrinutesCache<TAttribute> instance = new ClassAttrinutesCache<TAttribute>();
+        public static readonly ClassAttributesCache<TAttribute> instance = new ClassAttributesCache<TAttribute>();
 
         private readonly ConcurrentDictionary<Type, TAttribute> classAttributes =
             new ConcurrentDictionary<Type, TAttribute>();

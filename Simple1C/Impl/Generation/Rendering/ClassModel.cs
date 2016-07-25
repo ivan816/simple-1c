@@ -16,5 +16,6 @@ namespace Simple1C.Impl.Generation.Rendering
         public ConfigurationScope? ConfigurationScope { get; set; }
         public List<PropertyModel> Properties { get; private set; }
         public List<ClassModel> NestedClasses { get; private set; }
+        public string ObjectPresentation { get; set; }
     }
 }

@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
 using Remotion.Linq.Parsing;
@@ -10,7 +11,6 @@ namespace Simple1C.Impl.Queriables
     {
         private readonly MemberAccessBuilder memberAccessBuilder;
         private readonly List<QueryField> fields = new List<QueryField>();
-        private string currentFunctionName;
         private readonly List<SelectedPropertyItem> items = new List<SelectedPropertyItem>();
         private Expression xRoot;
         private bool rootIsSingleItem;
@@ -33,14 +33,6 @@ namespace Simple1C.Impl.Queriables
             xRoot = expression;
             rootIsSingleItem = false;
             items.Clear();
-            var xMethodCall = xRoot as MethodCallExpression;
-            if (xMethodCall != null && xMethodCall.Method == presentationMethodInfo)
-            {
-                currentFunctionName = "ПРЕДСТАВЛЕНИЕ";
-                xRoot = xMethodCall.Arguments[0];
-            }
-            else
-                currentFunctionName = null;
             Visit(xRoot);
             return new SelectedProperty
             {
@@ -57,16 +49,30 @@ namespace Simple1C.Impl.Queriables
             return node;
         }
 
+        protected override Expression VisitMethodCall(MethodCallExpression node)
+        {
+            if (node.Method == presentationMethodInfo)
+                return VisitMember(node, m => Visit(node.Arguments[0]));
+            if (node.Object != null && node.Method.Name == "GetType" && node.Arguments.Count == 0 &&
+                node.Type == typeof(Type))
+                return VisitMember(node, m => Visit(node.Object));
+            return base.VisitMethodCall(node);
+        }
+
         protected override Expression VisitMember(MemberExpression node)
+        {
+            return VisitMember(node, base.VisitMember);
+        }
+
+        private Expression VisitMember<T>(T node, Func<T, Expression> baseCaller) where T:Expression
         {
             var queryField = memberAccessBuilder.GetFieldOrNull(node);
             if (queryField == null)
-                return base.VisitMember(node);
-            queryField.FunctionName = currentFunctionName;
+                return baseCaller(node);
             rootIsSingleItem = ReferenceEquals(node, xRoot);
             var fieldIndex = -1;
             for (var i = 0; i < fields.Count; i++)
-                if (fields[i].Alias == queryField.Alias && fields[i].FunctionName == currentFunctionName)
+                if (fields[i].Alias == queryField.Alias)
                 {
                     fieldIndex = i;
                     break;

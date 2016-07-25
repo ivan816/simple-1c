@@ -30,6 +30,11 @@ private void RenderClass(ClassModel model)
 {#>
 [Synonym("<#=model.Synonym#>")]
 <#+}#>
+<#+if(model.ObjectPresentation != null)
+{#>
+[ObjectPresentation("<#=model.ObjectPresentation#>")]
+<#+}#>
+
 public partial class <#=model.Name#> : Abstract1CEntity
 {
 <#+for(var i = 0; i < model.Properties.Count; i++)

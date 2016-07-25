@@ -1,11 +1,12 @@
-using System;
+п»їusing System;
 using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
-using Simple1C.Tests.Metadata1C.Документы;
-using Simple1C.Tests.Metadata1C.ПланыСчетов;
-using Simple1C.Tests.Metadata1C.Справочники;
+using Simple1C.Tests.Metadata1C.Р”РѕРєСѓРјРµРЅС‚С‹;
+using Simple1C.Tests.Metadata1C.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ;
+using Simple1C.Tests.Metadata1C.РЎРїСЂР°РІРѕС‡РЅРёРєРё;
+using Simple1C.Tests.TestEntities;
 
 namespace Simple1C.Tests.Integration
 {
@@ -13,120 +14,120 @@ namespace Simple1C.Tests.Integration
     {
         public class TestDataContract
         {
-            public DateTime Дата { get; set; }
-            public string Контрагент_Инн { get; set; }
-            public string Контрагент_Наименование { get; set; }
-            public string ДоговорКонтрагента_Наименование { get; set; }
-            public bool ДоговорКонтрагента_Валютный { get; set; }
-            public string Грузополучатель_Наименование { get; set; }
-            public string Грузополучатель_ИНН { get; set; }
+            public DateTime Р”Р°С‚Р° { get; set; }
+            public string РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ { get; set; }
+            public string РљРѕРЅС‚СЂР°РіРµРЅС‚_РќР°РёРјРµРЅРѕРІР°РЅРёРµ { get; set; }
+            public string Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_РќР°РёРјРµРЅРѕРІР°РЅРёРµ { get; set; }
+            public bool Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_Р’Р°Р»СЋС‚РЅС‹Р№ { get; set; }
+            public string Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РќР°РёРјРµРЅРѕРІР°РЅРёРµ { get; set; }
+            public string Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РРќРќ { get; set; }
         }
 
         [Test]
         public void ProjectionToRegularType()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            var акт = new ПоступлениеТоваровУслуг
+            var Р°РєС‚ = new РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі
             {
-                Дата = new DateTime(2016, 6, 1),
-                Контрагент = контрагент,
-                ДоговорКонтрагента = new ДоговорыКонтрагентов
+                Р”Р°С‚Р° = new DateTime(2016, 6, 1),
+                РљРѕРЅС‚СЂР°РіРµРЅС‚ = РєРѕРЅС‚СЂР°РіРµРЅС‚,
+                Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р° = new Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ
                 {
-                    Владелец = контрагент,
-                    Наименование = "test contract",
-                    Валютный = true
+                    Р’Р»Р°РґРµР»РµС† = РєРѕРЅС‚СЂР°РіРµРЅС‚,
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contract",
+                    Р’Р°Р»СЋС‚РЅС‹Р№ = true
                 }
             };
-            dataContext.Save(акт);
+            dataContext.Save(Р°РєС‚);
 
-            var акт2 = dataContext.Select<ПоступлениеТоваровУслуг>()
-                .Where(x => x.Номер == акт.Номер && x.Дата == акт.Дата)
+            var Р°РєС‚2 = dataContext.Select<РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі>()
+                .Where(x => x.РќРѕРјРµСЂ == Р°РєС‚.РќРѕРјРµСЂ && x.Р”Р°С‚Р° == Р°РєС‚.Р”Р°С‚Р°)
                 .Select(x => new TestDataContract
                 {
-                    Дата = x.Дата.GetValueOrDefault(),
-                    Контрагент_Инн = x.Контрагент.ИНН,
-                    Контрагент_Наименование = x.Контрагент.Наименование,
-                    ДоговорКонтрагента_Наименование = x.ДоговорКонтрагента.Наименование,
-                    ДоговорКонтрагента_Валютный = x.ДоговорКонтрагента.Валютный,
-                    Грузополучатель_Наименование = x.Грузополучатель.Наименование,
-                    Грузополучатель_ИНН = x.Грузополучатель.ИНН
+                    Р”Р°С‚Р° = x.Р”Р°С‚Р°.GetValueOrDefault(),
+                    РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ = x.РљРѕРЅС‚СЂР°РіРµРЅС‚.РРќРќ,
+                    РљРѕРЅС‚СЂР°РіРµРЅС‚_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.РљРѕРЅС‚СЂР°РіРµРЅС‚.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_Р’Р°Р»СЋС‚РЅС‹Р№ = x.Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°.Р’Р°Р»СЋС‚РЅС‹Р№,
+                    Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РРќРќ = x.Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ.РРќРќ
                 })
                 .ToArray();
-            Assert.That(акт2.Length, Is.EqualTo(1));
-            Assert.That(акт2[0].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
-            Assert.That(акт2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
-            Assert.That(акт2[0].Контрагент_Наименование, Is.EqualTo("test contractor name"));
-            Assert.That(акт2[0].ДоговорКонтрагента_Наименование, Is.EqualTo("test contract"));
-            Assert.That(акт2[0].ДоговорКонтрагента_Валютный, Is.True);
-            Assert.That(акт2[0].Грузополучатель_Наименование, Is.Null);
-            Assert.That(акт2[0].Грузополучатель_ИНН, Is.Null);
+            Assert.That(Р°РєС‚2.Length, Is.EqualTo(1));
+            Assert.That(Р°РєС‚2[0].Р”Р°С‚Р°, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(Р°РєС‚2[0].РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ, Is.EqualTo("test-inn"));
+            Assert.That(Р°РєС‚2[0].РљРѕРЅС‚СЂР°РіРµРЅС‚_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contractor name"));
+            Assert.That(Р°РєС‚2[0].Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contract"));
+            Assert.That(Р°РєС‚2[0].Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_Р’Р°Р»СЋС‚РЅС‹Р№, Is.True);
+            Assert.That(Р°РєС‚2[0].Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.Null);
+            Assert.That(Р°РєС‚2[0].Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РРќРќ, Is.Null);
         }
 
         [Test]
         public void ProjectionToAnonymousType()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            var акт = new ПоступлениеТоваровУслуг
+            var Р°РєС‚ = new РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі
             {
-                Дата = new DateTime(2016, 6, 1),
-                Контрагент = контрагент,
-                ДоговорКонтрагента = new ДоговорыКонтрагентов
+                Р”Р°С‚Р° = new DateTime(2016, 6, 1),
+                РљРѕРЅС‚СЂР°РіРµРЅС‚ = РєРѕРЅС‚СЂР°РіРµРЅС‚,
+                Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р° = new Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ
                 {
-                    Владелец = контрагент,
-                    Наименование = "test contract",
-                    Валютный = true
+                    Р’Р»Р°РґРµР»РµС† = РєРѕРЅС‚СЂР°РіРµРЅС‚,
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contract",
+                    Р’Р°Р»СЋС‚РЅС‹Р№ = true
                 }
             };
-            dataContext.Save(акт);
+            dataContext.Save(Р°РєС‚);
 
-            var акт2 = dataContext.Select<ПоступлениеТоваровУслуг>()
-                .Where(x => x.Номер == акт.Номер && x.Дата == акт.Дата)
+            var Р°РєС‚2 = dataContext.Select<РџРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі>()
+                .Where(x => x.РќРѕРјРµСЂ == Р°РєС‚.РќРѕРјРµСЂ && x.Р”Р°С‚Р° == Р°РєС‚.Р”Р°С‚Р°)
                 .Select(x => new
                 {
-                    x.Дата,
-                    Контрагент_Инн = x.Контрагент.ИНН,
-                    Контрагент_Наименование = x.Контрагент.Наименование,
-                    ДоговорКонтрагента_Наименование = x.ДоговорКонтрагента.Наименование,
-                    ДоговорКонтрагента_Валютный = x.ДоговорКонтрагента.Валютный,
-                    Грузополучатель_Наименование = x.Грузополучатель.Наименование,
-                    Грузополучатель_ИНН = x.Грузополучатель.ИНН
+                    x.Р”Р°С‚Р°,
+                    РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ = x.РљРѕРЅС‚СЂР°РіРµРЅС‚.РРќРќ,
+                    РљРѕРЅС‚СЂР°РіРµРЅС‚_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.РљРѕРЅС‚СЂР°РіРµРЅС‚.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_Р’Р°Р»СЋС‚РЅС‹Р№ = x.Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°.Р’Р°Р»СЋС‚РЅС‹Р№,
+                    Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РќР°РёРјРµРЅРѕРІР°РЅРёРµ = x.Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РРќРќ = x.Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ.РРќРќ
                 })
                 .ToArray();
-            Assert.That(акт2.Length, Is.EqualTo(1));
-            Assert.That(акт2[0].Дата, Is.EqualTo(new DateTime(2016, 6, 1)));
-            Assert.That(акт2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
-            Assert.That(акт2[0].Контрагент_Наименование, Is.EqualTo("test contractor name"));
-            Assert.That(акт2[0].ДоговорКонтрагента_Наименование, Is.EqualTo("test contract"));
-            Assert.That(акт2[0].ДоговорКонтрагента_Валютный, Is.True);
-            Assert.That(акт2[0].Грузополучатель_Наименование, Is.Null);
-            Assert.That(акт2[0].Грузополучатель_ИНН, Is.Null);
+            Assert.That(Р°РєС‚2.Length, Is.EqualTo(1));
+            Assert.That(Р°РєС‚2[0].Р”Р°С‚Р°, Is.EqualTo(new DateTime(2016, 6, 1)));
+            Assert.That(Р°РєС‚2[0].РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ, Is.EqualTo("test-inn"));
+            Assert.That(Р°РєС‚2[0].РљРѕРЅС‚СЂР°РіРµРЅС‚_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contractor name"));
+            Assert.That(Р°РєС‚2[0].Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contract"));
+            Assert.That(Р°РєС‚2[0].Р”РѕРіРѕРІРѕСЂРљРѕРЅС‚СЂР°РіРµРЅС‚Р°_Р’Р°Р»СЋС‚РЅС‹Р№, Is.True);
+            Assert.That(Р°РєС‚2[0].Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.Null);
+            Assert.That(Р°РєС‚2[0].Р“СЂСѓР·РѕРїРѕР»СѓС‡Р°С‚РµР»СЊ_РРќРќ, Is.Null);
         }
 
         [Test]
         public void SingleItemCalculatedExpression()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            dataContext.Save(контрагент);
-            var контрагент2 = dataContext.Select<Контрагенты>()
-                .Where(x => x.ИНН == "test-inn")
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РРќРќ == "test-inn")
                 .Select(x => new
                 {
-                    projectedName = CalculateLocal(x.Наименование)
+                    projectedName = CalculateLocal(x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ)
                 })
                 .Single();
-            Assert.That(контрагент2.projectedName, Is.EqualTo("test contractor name_projected"));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.projectedName, Is.EqualTo("test contractor name_projected"));
         }
 
         private static string CalculateLocal(string name)
@@ -137,25 +138,25 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void ProjectionToAnonymousTypeWithConstants()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            dataContext.Save(контрагент);
-            var контрагент2 = dataContext.Select<Контрагенты>()
-                .Where(x => x.Наименование == "test contractor name")
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ == "test contractor name")
                 .Select(x => new
                 {
-                    Контрагент_Инн = x.ИНН,
+                    РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ = x.РРќРќ,
                     SomeConstant = GetConstant(),
                     SomeNullContant = (string) null
                 })
                 .ToArray();
-            Assert.That(контрагент2.Length, Is.EqualTo(1));
-            Assert.That(контрагент2[0].Контрагент_Инн, Is.EqualTo("test-inn"));
-            Assert.That(контрагент2[0].SomeConstant, Is.EqualTo("test-constant"));
-            Assert.That(контрагент2[0].SomeNullContant, Is.Null);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.Length, Is.EqualTo(1));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2[0].РљРѕРЅС‚СЂР°РіРµРЅС‚_РРЅРЅ, Is.EqualTo("test-inn"));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2[0].SomeConstant, Is.EqualTo("test-constant"));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2[0].SomeNullContant, Is.Null);
         }
 
         private static string GetConstant()
@@ -166,23 +167,23 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanEvaluateExpressionsLocally()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            dataContext.Save(контрагент);
-            var selectedContractor = dataContext.Select<Контрагенты>()
-                .Where(x => x.Наименование == "test contractor name")
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
+            var selectedContractor = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ == "test contractor name")
                 .Select(x => new
                 {
-                    x.Наименование,
-                    НаименованиеИИнн = x.Наименование + "$$$" + x.ИНН
+                    x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµРРРЅРЅ = x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ + "$$$" + x.РРќРќ
                 })
                 .ToArray()
                 .Single();
-            Assert.That(selectedContractor.Наименование, Is.EqualTo("test contractor name"));
-            Assert.That(selectedContractor.НаименованиеИИнн, Is.EqualTo("test contractor name$$$test-inn"));
+            Assert.That(selectedContractor.РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contractor name"));
+            Assert.That(selectedContractor.РќР°РёРјРµРЅРѕРІР°РЅРёРµРРРЅРЅ, Is.EqualTo("test contractor name$$$test-inn"));
         }
 
         public class NameWithDescription
@@ -194,30 +195,30 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanMapLocalExpresionToNamedType()
         {
-            var контрагент1 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚1 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test-shortname1",
-                ИНН = "test-inn1",
-                КПП = "test-kpp",
-                Комментарий = "test-comment1"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-shortname1",
+                РРќРќ = "test-inn1",
+                РљРџРџ = "test-kpp",
+                РљРѕРјРјРµРЅС‚Р°СЂРёР№ = "test-comment1"
             };
-            var контрагент2 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test-shortname2",
-                НаименованиеПолное = "test-fullname2",
-                ИНН = "test-inn2",
-                КПП = "test-kpp",
-                Комментарий = "test-comment2"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-shortname2",
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ = "test-fullname2",
+                РРќРќ = "test-inn2",
+                РљРџРџ = "test-kpp",
+                РљРѕРјРјРµРЅС‚Р°СЂРёР№ = "test-comment2"
             };
-            dataContext.Save(контрагент1);
-            dataContext.Save(контрагент2);
-            var selectedContractors = dataContext.Select<Контрагенты>()
-                .Where(x => x.КПП == "test-kpp")
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚1);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚2);
+            var selectedContractors = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РљРџРџ == "test-kpp")
                 .Select(x => new NameWithDescription
                 {
-                    Name = x.Наименование,
-                    Description = (string.IsNullOrEmpty(x.НаименованиеПолное) ? x.Наименование : x.НаименованиеПолное)
-                                  + "(" + x.ИНН + ") " + x.Комментарий
+                    Name = x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ,
+                    Description = (string.IsNullOrEmpty(x.РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ) ? x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ : x.РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ)
+                                  + "(" + x.РРќРќ + ") " + x.РљРѕРјРјРµРЅС‚Р°СЂРёР№
                 })
                 .OrderBy(x => x.Name)
                 .ToArray();
@@ -231,18 +232,18 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanUseLocalMethodsInProjection()
         {
-            var контрагент1 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚1 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test-shortname1",
-                КПП = "test-kpp"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-shortname1",
+                РљРџРџ = "test-kpp"
             };
 
-            dataContext.Save(контрагент1);
-            var selectedContractors = dataContext.Select<Контрагенты>()
-                .Where(x => x.КПП == "test-kpp")
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚1);
+            var selectedContractors = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РљРџРџ == "test-kpp")
                 .Select(x => new
                 {
-                    GetWrap(x.Наименование).description
+                    GetWrap(x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ).description
                 })
                 .Single();
             Assert.That(selectedContractors.description, Is.EqualTo("test-shortname1"));
@@ -261,35 +262,79 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanSelectSameFieldWithDifferentAliases()
         {
-            var счет2001 = dataContext.Single<Хозрасчетный>(x => x.Код == "20.01");
-            var счет26 = dataContext.Single<Хозрасчетный>(x => x.Код == "26");
-            var контрагент = new Контрагенты();
-            var требованиеНакладная = new ТребованиеНакладная
+            var СЃС‡РµС‚2001 = dataContext.Single<РҐРѕР·СЂР°СЃС‡РµС‚РЅС‹Р№>(x => x.РљРѕРґ == "20.01");
+            var СЃС‡РµС‚26 = dataContext.Single<РҐРѕР·СЂР°СЃС‡РµС‚РЅС‹Р№>(x => x.РљРѕРґ == "26");
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹();
+            var С‚СЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ = new РўСЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ
             {
-                Дата = new DateTime(2016, 6, 1),
-                Контрагент = контрагент,
-                СчетЗатрат = счет2001,
-                Материалы = new List<ТребованиеНакладная.ТабличнаяЧастьМатериалы>
+                Р”Р°С‚Р° = new DateTime(2016, 6, 1),
+                РљРѕРЅС‚СЂР°РіРµРЅС‚ = РєРѕРЅС‚СЂР°РіРµРЅС‚,
+                РЎС‡РµС‚Р—Р°С‚СЂР°С‚ = СЃС‡РµС‚2001,
+                РњР°С‚РµСЂРёР°Р»С‹ = new List<РўСЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ.РўР°Р±Р»РёС‡РЅР°СЏР§Р°СЃС‚СЊРњР°С‚РµСЂРёР°Р»С‹>
                 {
-                    new ТребованиеНакладная.ТабличнаяЧастьМатериалы
+                    new РўСЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ.РўР°Р±Р»РёС‡РЅР°СЏР§Р°СЃС‚СЊРњР°С‚РµСЂРёР°Р»С‹
                     {
-                        СчетЗатрат = счет26
+                        РЎС‡РµС‚Р—Р°С‚СЂР°С‚ = СЃС‡РµС‚26
                     }
                 }
             };
-            dataContext.Save(требованиеНакладная);
+            dataContext.Save(С‚СЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ);
 
-            var result = dataContext.Select<ТребованиеНакладная>()
-                .Where(x => x.Контрагент == контрагент)
-                .SelectMany(накладная => накладная.Материалы.Select(x =>
+            var result = dataContext.Select<РўСЂРµР±РѕРІР°РЅРёРµРќР°РєР»Р°РґРЅР°СЏ>()
+                .Where(x => x.РљРѕРЅС‚СЂР°РіРµРЅС‚ == РєРѕРЅС‚СЂР°РіРµРЅС‚)
+                .SelectMany(РЅР°РєР»Р°РґРЅР°СЏ => РЅР°РєР»Р°РґРЅР°СЏ.РњР°С‚РµСЂРёР°Р»С‹.Select(x =>
                     new
                     {
-                        ItemCode = x.СчетЗатрат.Код,
-                        DocCode = накладная.СчетЗатрат.Код
+                        ItemCode = x.РЎС‡РµС‚Р—Р°С‚СЂР°С‚.РљРѕРґ,
+                        DocCode = РЅР°РєР»Р°РґРЅР°СЏ.РЎС‡РµС‚Р—Р°С‚СЂР°С‚.РљРѕРґ
                     }))
                 .Single();
             Assert.That(result.DocCode, Is.EqualTo("20.01"));
             Assert.That(result.ItemCode, Is.EqualTo("26"));
+        }
+
+        [Test]
+        public void TypeOfAndPresentation()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            dynamic bankAccountAccessObject = testObjectsManager.CreateBankAccount(counterpartAccessObject.РЎСЃС‹Р»РєР°,
+                new BankAccount
+                {
+                    Bank = new Bank
+                    {
+                        Bik = Banks.AlfaBankBik
+                    },
+                    Number = "40702810001111122222",
+                    CurrencyCode = "643"
+                });
+
+            counterpartAccessObject.РћСЃРЅРѕРІРЅРѕР№Р‘Р°РЅРєРѕРІСЃРєРёР№РЎС‡РµС‚ = bankAccountAccessObject.РЎСЃС‹Р»РєР°;
+            counterpartAccessObject.Write();
+
+            testObjectsManager.CreateCounterpartContract(counterpartAccessObject.РЎСЃС‹Р»РєР°, new CounterpartyContract
+            {
+                CurrencyCode = "643",
+                Name = "Р’Р°Р»СЋС‚Р°",
+                Kind = CounterpartContractKind.OutgoingWithAgency
+            });
+
+            var contractFromStore = dataContext.Select<Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ>()
+                .Where(x => x.Р’Р»Р°РґРµР»РµС†.РћСЃРЅРѕРІРЅРѕР№Р‘Р°РЅРєРѕРІСЃРєРёР№РЎС‡РµС‚.РќРѕРјРµСЂРЎС‡РµС‚Р° == "40702810001111122222")
+                .Select(x => new
+                {
+                    OwnerType = x.Р’Р»Р°РґРµР»РµС†.РћСЃРЅРѕРІРЅРѕР№Р‘Р°РЅРєРѕРІСЃРєРёР№РЎС‡РµС‚.Р’Р»Р°РґРµР»РµС†.GetType(),
+                    OwnerTypePresentation = Р¤СѓРЅРєС†РёРё.РџСЂРµРґСЃС‚Р°РІР»РµРЅРёРµ(x.Р’Р»Р°РґРµР»РµС†.РћСЃРЅРѕРІРЅРѕР№Р‘Р°РЅРєРѕРІСЃРєРёР№РЎС‡РµС‚.Р’Р»Р°РґРµР»РµС†.GetType())
+                })
+                .ToList();
+            Assert.That(contractFromStore.Count, Is.EqualTo(1));
+            Assert.That(contractFromStore[0].OwnerType, Is.EqualTo(typeof(РљРѕРЅС‚СЂР°РіРµРЅС‚С‹)));
+            Assert.That(contractFromStore[0].OwnerTypePresentation, Is.EqualTo("РљРѕРЅС‚СЂР°РіРµРЅС‚"));
         }
     }
 }

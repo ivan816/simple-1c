@@ -20,13 +20,6 @@ namespace Simple1C.Impl.Helpers
             return GetAttributeUnsafe(enumItem);
         }
 
-        public bool HasAttribute<TEnum>(TEnum enumItem)
-            where TEnum : struct
-        {
-            TAttribute result;
-            return GetAllAttributes(enumItem.GetType()).TryGetValue(enumItem.ToString(), out result);
-        }
-
         public TAttribute GetAttributeUnsafe(object enumItem)
         {
             TAttribute result;

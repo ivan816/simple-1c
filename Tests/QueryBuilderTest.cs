@@ -615,7 +615,28 @@ namespace Simple1C.Tests
                     x.Код,
                     Наименование = Функции.Представление(x.Наименование)
                 }),
-                    "ВЫБРАТЬ src.Код КАК src_Код,ПРЕДСТАВЛЕНИЕ(src.Наименование) КАК src_Наименование ИЗ Документ.ПоступлениеНаРасчетныйСчет КАК src");
+                    "ВЫБРАТЬ src.Код КАК src_Код,ПРЕДСТАВЛЕНИЕ(src.Наименование) КАК src_Наименование_ПРЕДСТАВЛЕНИЕ ИЗ Документ.ПоступлениеНаРасчетныйСчет КАК src");
+            }
+
+            [ConfigurationScope(ConfigurationScope.Документы)]
+            public class ПоступлениеНаРасчетныйСчет
+            {
+                public string Наименование { get; set; }
+                public string Код { get; set; }
+            }
+        }
+
+        public class TypeOfProjectionTest : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<ПоступлениеНаРасчетныйСчет>().Select(x => new
+                {
+                    CodeType = x.Код.GetType(),
+                    Наименование = Функции.Представление(x.Наименование.GetType())
+                }),
+                    "ВЫБРАТЬ ТИПЗНАЧЕНИЯ(src.Код) КАК src_Код_ТИПЗНАЧЕНИЯ,ПРЕДСТАВЛЕНИЕ(ТИПЗНАЧЕНИЯ(src.Наименование)) КАК src_Наименование_ТИПЗНАЧЕНИЯ_ПРЕДСТАВЛЕНИЕ ИЗ Документ.ПоступлениеНаРасчетныйСчет КАК src");
             }
 
             [ConfigurationScope(ConfigurationScope.Документы)]
