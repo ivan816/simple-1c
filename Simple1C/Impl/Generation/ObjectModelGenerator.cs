@@ -16,7 +16,8 @@ namespace Simple1C.Impl.Generation
             {"Булево", "bool"},
             {"Дата", "DateTime?"},
             {"Уникальный идентификатор", "Guid?"},
-            {"Хранилище значения", null}
+            {"Хранилище значения", null},
+            {"Описание типов", "Type[]"}
         };
 
         private static readonly string[] standardPropertiesToExclude =
@@ -65,6 +66,7 @@ namespace Simple1C.Impl.Generation
                     case ConfigurationScope.Документы:
                     case ConfigurationScope.РегистрыСведений:
                     case ConfigurationScope.ПланыСчетов:
+                    case ConfigurationScope.ПланыВидовХарактеристик:
                         GenerateClass(item, generationContext);
                         break;
                     case ConfigurationScope.Перечисления:
@@ -84,16 +86,17 @@ namespace Simple1C.Impl.Generation
 
         private ConfigurationItem FindByFullName(string fullname)
         {
-            return new ConfigurationItem(fullname, ComHelpers.Invoke(metadata, "НайтиПоПолномуИмени", fullname));
+            return new ConfigurationItem(ConfigurationName.Parse(fullname),
+                ComHelpers.Invoke(metadata, "НайтиПоПолномуИмени", fullname));
         }
 
         private ConfigurationItem FindByType(object typeObject)
         {
             var comObject = Call.НайтиПоТипу(metadata, typeObject);
             var fullName = Call.ПолноеИмя(comObject);
-            return fullName.StartsWith("Документ") || fullName.StartsWith("Справочник")
-                   || fullName.StartsWith("Перечисление") || fullName.StartsWith("ПланСчетов")
-                ? new ConfigurationItem(fullName, comObject)
+            var name = ConfigurationName.ParseOrNull(fullName);
+            return name.HasValue
+                ? new ConfigurationItem(name.Value, comObject)
                 : null;
         }
 

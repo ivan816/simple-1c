@@ -2,9 +2,9 @@
 {
     internal class ConfigurationItem
     {
-        public ConfigurationItem(string fullname, object comObject)
+        public ConfigurationItem(ConfigurationName name, object comObject)
         {
-            Name = ConfigurationName.Parse(fullname);
+            Name = name;
             ComObject = comObject;
         }
 

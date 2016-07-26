@@ -37,8 +37,10 @@ namespace Simple1C.Impl
                     requisite.value = (T) resultObject;
                 }
                 requisite.revision = revision;
-                var needTrack = typeof (Abstract1CEntity).IsAssignableFrom(typeof (T)) ||
-                                typeof (IList).IsAssignableFrom(typeof (T));
+                var needTrack = typeof(Abstract1CEntity).IsAssignableFrom(typeof(T)) ||
+                                (typeof(T).IsGenericType &&
+                                 typeof(T).GetGenericTypeDefinition() == typeof(List<>) &&
+                                 typeof(Abstract1CEntity).IsAssignableFrom(typeof(T).GetGenericArguments()[0]));
                 if (needTrack)
                 {
                     if (observedValues == null)

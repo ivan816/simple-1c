@@ -100,6 +100,7 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\Connection1CType.cs" />

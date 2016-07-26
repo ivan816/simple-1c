@@ -91,6 +91,14 @@ namespace Simple1C.Impl
                         AttributePropertyNames = new[] {"–еквизиты"},
                         HasTableSections = true
                     }
+                },
+                {
+                    ConfigurationScope.ѕланы¬идов’арактеристик,
+                    new ConfigurationItemDescriptor
+                    {
+                        AttributePropertyNames = new[] {"–еквизиты"},
+                        HasTableSections = true
+                    }
                 }
             };
     }

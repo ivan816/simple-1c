@@ -44,10 +44,18 @@ namespace Simple1C.Impl
             if (type.IsEnum)
                 return Call.IsEmpty(source) ? null : enumMapper.MapFrom1C(type, source);
             if (type == typeof(Type))
+                return ConvertType(source);
+            if (type == typeof(Type[]))
             {
-                var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
-                var typeName = Call.ПолноеИмя(metadata);
-                return GetTypeByTypeName(typeName);
+                var typesObject = ComHelpers.Invoke(source, "Типы");
+                var typesCount = Call.Количество(typesObject);
+                var result = new Type[typesCount];
+                for (var i = 0; i < result.Length; i++)
+                {
+                    var typeObject = Call.Получить(typesObject, i);
+                    result[i] = ConvertType(typeObject);
+                }
+                return result;
             }
             if (typeof(Abstract1CEntity).IsAssignableFrom(type))
             {
@@ -73,6 +81,13 @@ namespace Simple1C.Impl
                 return list;
             }
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
+        }
+
+        private Type ConvertType(object source)
+        {
+            var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
+            var typeName = Call.ПолноеИмя(metadata);
+            return GetTypeByTypeName(typeName);
         }
 
         private Type GetTypeByTypeName(string typeName)

@@ -54,6 +54,7 @@
     <Compile Include="Integration\SaveTest.cs" />
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
+    <Compile Include="Integration\СharacteristicsTest.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />

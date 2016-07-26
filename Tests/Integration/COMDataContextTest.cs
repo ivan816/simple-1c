@@ -6,6 +6,7 @@ using Simple1C.Impl.Com;
 using Simple1C.Interface;
 using Simple1C.Tests.Metadata1C.Документы;
 using Simple1C.Tests.Metadata1C.Перечисления;
+using Simple1C.Tests.Metadata1C.РегистрыСведений;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
 

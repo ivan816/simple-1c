@@ -33,7 +33,8 @@ namespace Simple1C.Impl
             {
                 return scope == ConfigurationScope.Документы ||
                        scope == ConfigurationScope.Справочники ||
-                       scope == ConfigurationScope.ПланыСчетов;
+                       scope == ConfigurationScope.ПланыСчетов ||
+                       scope == ConfigurationScope.ПланыВидовХарактеристик;
             }
         }
 
@@ -62,8 +63,23 @@ namespace Simple1C.Impl
 
         public static ConfigurationName Parse(string s)
         {
+            var result = ParseOrNull(s);
+            if (!result.HasValue)
+            {
+                const string messageFormat = "can't parse [{0}] from [{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    typeof(ConfigurationName).FormatName(), s));
+            }
+            return result.Value;
+        }
+
+        public static ConfigurationName? ParseOrNull(string s)
+        {
             var items = s.Split('.');
-            return new ConfigurationName(ParseScopeName(items[0]), items[1]);
+            var scope = ParseScopeNameOrNull(items[0]);
+            return scope.HasValue
+                ? new ConfigurationName(scope.Value, items[1])
+                : (ConfigurationName?) null;
         }
 
         public string Fullname
@@ -92,13 +108,15 @@ namespace Simple1C.Impl
                     return "ПланСчетов";
                 case ConfigurationScope.Константы:
                     return "Константа";
+                case ConfigurationScope.ПланыВидовХарактеристик:
+                    return "ПланВидовХарактеристик";
                 default:
                     const string messageFormat = "unexpected scope [{0}]";
                     throw new InvalidOperationException(string.Format(messageFormat, scope));
             }
         }
 
-        private static ConfigurationScope ParseScopeName(string s)
+        private static ConfigurationScope? ParseScopeNameOrNull(string s)
         {
             if (s == "Справочник")
                 return ConfigurationScope.Справочники;
@@ -112,8 +130,9 @@ namespace Simple1C.Impl
                 return ConfigurationScope.ПланыСчетов;
             if (s == "Константа")
                 return ConfigurationScope.Константы;
-            const string messageFormat = "unexpected configuration scope name [{0}]";
-            throw new InvalidOperationException(string.Format(messageFormat, s));
+            if (s == "ПланВидовХарактеристик")
+                return ConfigurationScope.ПланыВидовХарактеристик;
+            return null;
         }
 
         public bool Equals(ConfigurationName other)

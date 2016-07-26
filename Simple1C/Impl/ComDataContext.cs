@@ -52,12 +52,7 @@ namespace Simple1C.Impl
             var constantEntity = entity as Constant;
             if (constantEntity != null)
             {
-                var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
-                var constant = ComHelpers.GetProperty(constants, entity.GetType().Name);
-                var value = constantEntity.ЗначениеНетипизированное;
-                if (value != null && value.GetType().IsEnum)
-                    value = enumMapper.MapTo1C(value);
-                ComHelpers.Invoke(constant, "Установить", value);
+                SaveConstant(constantEntity);
                 return;
             }
             var entitiesToSave = new List<Abstract1CEntity>();
@@ -76,14 +71,33 @@ namespace Simple1C.Impl
                     if (item == null)
                         throw new InvalidOperationException("some items are null");
                     abstract1CEntity = item as Abstract1CEntity;
-                    if (abstract1CEntity == null)
-                        throw new InvalidOperationException(FormatInvalidEntityTypeMessage(item));
-                    abstract1CEntity.Controller.PrepareToSave(abstract1CEntity, entitiesToSave);
+                    if (abstract1CEntity != null)
+                    {
+                        abstract1CEntity.Controller.PrepareToSave(abstract1CEntity, entitiesToSave);
+                        continue;
+                    }
+                    constantEntity = item as Constant;
+                    if (constantEntity != null)
+                    {
+                        SaveConstant(constantEntity);
+                        continue;
+                    }
+                    throw new InvalidOperationException(FormatInvalidEntityTypeMessage(item));
                 }
                 SaveEntities(entitiesToSave);
                 return;
             }
             throw new InvalidOperationException(FormatInvalidEntityTypeMessage(entity));
+        }
+
+        private void SaveConstant(Constant constantEntity)
+        {
+            var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
+            var constant = ComHelpers.GetProperty(constants, constantEntity.GetType().Name);
+            var value = constantEntity.ЗначениеНетипизированное;
+            if (value != null && value.GetType().IsEnum)
+                value = enumMapper.MapTo1C(value);
+            ComHelpers.Invoke(constant, "Установить", value);
         }
 
         private void SaveEntities(List<Abstract1CEntity> entitiesToSave)
