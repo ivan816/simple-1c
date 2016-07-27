@@ -8,4 +8,8 @@ todo
 	* создавать DispatchObject-ы через Reflection.Emit
 	* inmemoryDataContext, LoadNewestRevisionWhenAccessPropertyForTheFirstTime: выяснить, какое поведение дожно быть
 	* более интеллектуально генерить ключ для кэширования проекций
-	* научиться работать с константами
+	* научиться так делать
+		return dataContext.Select<ДатыЗапретаИзменения>()
+                	.OrderByDescending(x => x.ДатаЗапрета)
+	                .Select(x => x.ДатаЗапрета)
+        	        .FirstOrDefault();
