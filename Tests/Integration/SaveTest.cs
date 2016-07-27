@@ -239,5 +239,18 @@ namespace Simple1C.Tests.Integration
             var dataVersion = ((dynamic)comObj).DataVersion;
             Assert.That(dataVersion, Is.EqualTo(initialCounterpartyContractVersion));
         }
+
+        [Test]
+        public void GroupsCanSave()
+        {
+            var номенклатура = new Номенклатура
+            {
+                Наименование = "Товары",
+                ЭтоГруппа = true
+            };
+            dataContext.Save(номенклатура);
+            var номенклатуры = dataContext.Single<Номенклатура>(x => x.УникальныйИдентификатор == номенклатура.УникальныйИдентификатор);
+            Assert.That(номенклатуры.ЭтоГруппа);
+        }
     }
 }

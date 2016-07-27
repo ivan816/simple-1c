@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Helpers.MemberAccessor;
 using Simple1C.Impl.Queriables;
 using Simple1C.Interface;
 using Simple1C.Interface.ObjectModel;
@@ -21,6 +23,7 @@ namespace Simple1C.Impl
         private readonly MetadataAccessor metadataAccessor;
         private readonly ProjectionMapperFactory projectionMapperFactory;
         private readonly ParametersConverter parametersConverter;
+        private static readonly ConcurrentDictionary<Type, bool> hasGroups = new ConcurrentDictionary<Type, bool>();
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
@@ -135,7 +138,7 @@ namespace Simple1C.Impl
                         : source.Controller.ValueSource.GetBackingStorage();
                 else
                     comObject = source.Controller.IsNew
-                        ? CreateNewObject(configurationName.Value)
+                        ? CreateNewObject(source, configurationName.Value)
                         : ComHelpers.Invoke(source.Controller.ValueSource.GetBackingStorage(), "ПолучитьОбъект");
             }
             else
@@ -342,13 +345,26 @@ namespace Simple1C.Impl
             return ComHelpers.Invoke(globalContext.GetManager(name), "СоздатьМенеджерЗаписи");
         }
 
-        private object CreateNewObject(ConfigurationName configurationName)
+        private object CreateNewObject(Abstract1CEntity entity, ConfigurationName configurationName)
         {
             var manager = globalContext.GetManager(configurationName);
             switch (configurationName.Scope)
             {
                 case ConfigurationScope.Справочники:
-                    return ComHelpers.Invoke(manager, "CreateItem");
+                    bool hasGroupProperty;
+                    var entityType = entity.GetType();
+                    if (!hasGroups.TryGetValue(entityType, out hasGroupProperty))
+                    {
+                        var propertyInfo = entityType.GetProperty("ЭтоГруппа");
+                        hasGroupProperty = propertyInfo != null && propertyInfo.PropertyType == typeof(bool);
+                        hasGroups.TryAdd(entityType, hasGroupProperty);
+                    }
+                    object isGroup;
+                    return hasGroupProperty
+                           && entity.Controller.Changed.TryGetValue("ЭтоГруппа", out isGroup)
+                           && (bool) isGroup
+                        ? ComHelpers.Invoke(manager, "CreateFolder")
+                        : ComHelpers.Invoke(manager, "CreateItem");
                 case ConfigurationScope.Документы:
                     return ComHelpers.Invoke(manager, "CreateDocument");
                 default:
