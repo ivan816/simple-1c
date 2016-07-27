@@ -13,3 +13,5 @@ todo
                 	.OrderByDescending(x => x.ДатаЗапрета)
 	                .Select(x => x.ДатаЗапрета)
         	        .FirstOrDefault();
+	* убрать лишнюю возню с перестроением QueryField, SelectedProperty, SelectedPropertyItem,
+	если проекцию из кэша можно достать
