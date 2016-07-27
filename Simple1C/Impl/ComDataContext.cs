@@ -15,7 +15,6 @@ namespace Simple1C.Impl
     internal class ComDataContext : IDataContext
     {
         private readonly GlobalContext globalContext;
-        private readonly EnumMapper enumMapper;
         private readonly ComObjectMapper comObjectMapper;
         private readonly IQueryProvider queryProvider;
         private readonly TypeRegistry typeRegistry;
@@ -26,13 +25,12 @@ namespace Simple1C.Impl
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
             this.globalContext = new GlobalContext(globalContext);
-            enumMapper = new EnumMapper(this.globalContext);
             typeRegistry = new TypeRegistry(mappingsAssembly);
-            comObjectMapper = new ComObjectMapper(enumMapper, typeRegistry, this.globalContext);
+            comObjectMapper = new ComObjectMapper(typeRegistry, this.globalContext);
             queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
             metadataAccessor = new MetadataAccessor(this.globalContext);
             projectionMapperFactory = new ProjectionMapperFactory(comObjectMapper);
-            parametersConverter = new ParametersConverter(enumMapper, this.globalContext);
+            parametersConverter = new ParametersConverter(comObjectMapper, this.globalContext);
         }
 
         public Type GetTypeOrNull(string configurationName)
@@ -94,9 +92,7 @@ namespace Simple1C.Impl
         {
             var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
             var constant = ComHelpers.GetProperty(constants, constantEntity.GetType().Name);
-            var value = constantEntity.ЗначениеНетипизированное;
-            if (value != null && value.GetType().IsEnum)
-                value = enumMapper.MapTo1C(value);
+            var value = comObjectMapper.MapTo1C(constantEntity.ЗначениеНетипизированное);
             ComHelpers.Invoke(constant, "Установить", value);
         }
 
@@ -271,10 +267,8 @@ namespace Simple1C.Impl
                 Save(abstractEntity, null, pending);
                 valueToSet = abstractEntity.Controller.ValueSource.GetBackingStorage();
             }
-            else if (value != null && value.GetType().IsEnum)
-                valueToSet = enumMapper.MapTo1C(value);
             else
-                valueToSet = value;
+                valueToSet = comObjectMapper.MapTo1C(value);
             ComHelpers.SetProperty(comObject, name, valueToSet);
         }
 
@@ -367,10 +361,15 @@ namespace Simple1C.Impl
         {
             if (EntityHelpers.IsConstant(builtQuery.EntityType))
             {
-                var constantWrap = (Constant)FormatterServices.GetUninitializedObject(builtQuery.EntityType);
+                var constantWrapType = builtQuery.EntityType.BaseType;
+                if (constantWrapType == null)
+                    throw new InvalidOperationException("assertion failure");
+                var constantWrap = (Constant) FormatterServices.GetUninitializedObject(builtQuery.EntityType);
                 var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
                 var constant = ComHelpers.GetProperty(constants, builtQuery.EntityType.Name);
-                constantWrap.ЗначениеНетипизированное = ComHelpers.Invoke(constant, "Получить");
+                var value = ComHelpers.Invoke(constant, "Получить");
+                constantWrap.ЗначениеНетипизированное = comObjectMapper.MapFrom1C(value,
+                    constantWrapType.GetGenericArguments()[0]);
                 yield return constantWrap;
                 yield break;
             }

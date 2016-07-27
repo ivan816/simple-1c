@@ -115,7 +115,6 @@
     <Compile Include="Interface\ObjectModel\ConfigurationScopeAttribute.cs" />
     <Compile Include="Impl\Com\DispatchObject.cs" />
     <Compile Include="Impl\EntityController.cs" />
-    <Compile Include="Impl\EnumMapper.cs" />
     <Compile Include="Impl\Generation\ConfigurationItem.cs" />
     <Compile Include="Impl\Generation\GenerationContext.cs" />
     <Compile Include="Impl\Generation\ObjectModelGenerator.cs" />

@@ -7,12 +7,13 @@ namespace Simple1C.Impl
 {
     internal class ParametersConverter
     {
-        private readonly EnumMapper enumMapper;
+        private readonly ComObjectMapper comObjectMapper;
         private readonly GlobalContext globalContext;
 
-        public ParametersConverter(EnumMapper enumMapper, GlobalContext globalContext)
+        public ParametersConverter(ComObjectMapper comObjectMapper, 
+            GlobalContext globalContext)
         {
-            this.enumMapper = enumMapper;
+            this.comObjectMapper = comObjectMapper;
             this.globalContext = globalContext;
         }
 
@@ -35,14 +36,13 @@ namespace Simple1C.Impl
         {
             var convertEnum = value as ConvertEnumCmd;
             if (convertEnum != null)
-                return enumMapper.MapTo1C(convertEnum.valueIndex, convertEnum.enumType);
+                return comObjectMapper.MapEnumTo1C(convertEnum.valueIndex, convertEnum.enumType);
             var convertUniqueIdentifier = value as ConvertUniqueIdentifierCmd;
             if (convertUniqueIdentifier != null)
             {
                 var name = ConfigurationName.Get(convertUniqueIdentifier.entityType);
                 var itemManager = globalContext.GetManager(name);
-                var guidComObject = ComHelpers.Invoke(globalContext.ComObject(),
-                    "NewObject", "”никальный»дентификатор", convertUniqueIdentifier.id.ToString());
+                var guidComObject = comObjectMapper.MapGuidTo1C(convertUniqueIdentifier.id);
                 return ComHelpers.Invoke(itemManager, "ѕолучить—сылку", guidComObject);
             }
             throw new InvalidOperationException("assertion failure");

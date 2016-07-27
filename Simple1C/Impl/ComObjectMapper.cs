@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
@@ -9,16 +11,40 @@ namespace Simple1C.Impl
 {
     internal class ComObjectMapper
     {
-        private readonly EnumMapper enumMapper;
         private readonly TypeRegistry typeRegistry;
         private readonly GlobalContext globalContext;
         private static readonly DateTime nullDateTime = new DateTime(100, 1, 1);
+        private static readonly ConcurrentDictionary<Type, EnumMapItem[]> enumMappings =
+            new ConcurrentDictionary<Type, EnumMapItem[]>();
+        private readonly object enumerations;
 
-        public ComObjectMapper(EnumMapper enumMapper, TypeRegistry typeRegistry, GlobalContext globalContext)
+        public ComObjectMapper(TypeRegistry typeRegistry, GlobalContext globalContext)
         {
-            this.enumMapper = enumMapper;
             this.typeRegistry = typeRegistry;
             this.globalContext = globalContext;
+            enumerations = ComHelpers.GetProperty(globalContext.ComObject(), "Перечисления");
+        }
+
+        public object MapTo1C(object value)
+        {
+            if (value == null)
+                return null;
+            if (value.GetType().IsEnum)
+                return MapEnumTo1C(value);
+            if (value is Guid)
+                return MapGuidTo1C((Guid)value);
+            return value;
+        }
+
+        public object MapGuidTo1C(object value)
+        {
+            return value == null ? null : MapGuidTo1C((Guid) value);
+        }
+
+        public object MapGuidTo1C(Guid value)
+        {
+            return ComHelpers.Invoke(globalContext.ComObject(),
+                "NewObject", "УникальныйИдентификатор", value.ToString());
         }
 
         public object MapFrom1C(object source, Type type)
@@ -40,9 +66,12 @@ namespace Simple1C.Impl
                 return dateTime == nullDateTime ? null : source;
             }
             if (type == typeof(Guid))
-                return Guid.Parse(globalContext.String(source));
+            {
+                var guid = Guid.Parse(globalContext.String(source));
+                return guid == Guid.Empty ? (object) null : guid;
+            }
             if (type.IsEnum)
-                return Call.IsEmpty(source) ? null : enumMapper.MapFrom1C(type, source);
+                return Call.IsEmpty(source) ? null : MapEnumFrom1C(type, source);
             if (type == typeof(Type))
                 return ConvertType(source);
             if (type == typeof(Type[]))
@@ -83,6 +112,18 @@ namespace Simple1C.Impl
             return source is IConvertible ? Convert.ChangeType(source, type) : source;
         }
 
+        public object MapEnumTo1C(object value)
+        {
+            var enumeration = ComHelpers.GetProperty(enumerations, value.GetType().Name);
+            return ComHelpers.GetProperty(enumeration, value.ToString());
+        }
+
+        public object MapEnumTo1C(int valueIndex, Type enumType)
+        {
+            var enumValue = Enum.GetValues(enumType).GetValue(valueIndex);
+            return MapTo1C(enumValue);
+        }
+
         private Type ConvertType(object source)
         {
             var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
@@ -105,6 +146,42 @@ namespace Simple1C.Impl
         {
             var metadata = ComHelpers.Invoke(source, "Метаданные");
             return Call.ПолноеИмя(metadata);
+        }
+
+        private object MapEnumFrom1C(Type enumType, object value1C)
+        {
+            var enumeration = ComHelpers.GetProperty(enumerations, enumType.Name);
+            var valueIndex = Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf", value1C));
+            var result = enumMappings.GetOrAdd(enumType, GetMappings)
+                .SingleOrDefault(x => x.index == valueIndex);
+            if (result == null)
+            {
+                const string messageFormat = "can't map value [{0}] to enum [{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    globalContext.String(value1C), enumType.Name));
+            }
+            return result.value;
+        }
+
+        private EnumMapItem[] GetMappings(Type enumType)
+        {
+            var enumeration = ComHelpers.GetProperty(enumerations, enumType.Name);
+            return Enum.GetValues(enumType)
+                .Cast<object>()
+                .Select(v => new EnumMapItem
+                {
+                    value = v,
+                    index =
+                        Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf",
+                            ComHelpers.GetProperty(enumeration, v.ToString())))
+                })
+                .ToArray();
+        }
+
+        private class EnumMapItem
+        {
+            public object value;
+            public int index;
         }
     }
 }
