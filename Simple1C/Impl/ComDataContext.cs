@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
-using Simple1C.Impl.Helpers.MemberAccessor;
 using Simple1C.Impl.Queriables;
 using Simple1C.Interface;
 using Simple1C.Interface.ObjectModel;
@@ -23,7 +21,6 @@ namespace Simple1C.Impl
         private readonly MetadataAccessor metadataAccessor;
         private readonly ProjectionMapperFactory projectionMapperFactory;
         private readonly ParametersConverter parametersConverter;
-        private static readonly ConcurrentDictionary<Type, bool> hasGroups = new ConcurrentDictionary<Type, bool>();
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
@@ -132,14 +129,7 @@ namespace Simple1C.Impl
             if (comObject == null)
             {
                 configurationName = ConfigurationName.Get(source.GetType());
-                if (configurationName.Value.Scope == ConfigurationScope.РегистрыСведений)
-                    comObject = source.Controller.ValueSource == null || !source.Controller.ValueSource.Writable
-                        ? CreateRegisterRecordManager(configurationName.Value)
-                        : source.Controller.ValueSource.GetBackingStorage();
-                else
-                    comObject = source.Controller.IsNew
-                        ? CreateNewObject(source, configurationName.Value)
-                        : ComHelpers.Invoke(source.Controller.ValueSource.GetBackingStorage(), "ПолучитьОбъект");
+                comObject = GetComObjectForEditing(configurationName.Value, source);
             }
             else
                 configurationName = null;
@@ -219,6 +209,41 @@ namespace Simple1C.Impl
             pending.Pop();
         }
 
+        private object GetComObjectForEditing(ConfigurationName name, Abstract1CEntity entity)
+        {
+            var controller = entity.Controller;
+            var valueSource = controller.ValueSource;
+            if (!controller.IsNew && name.HasReference)
+                return ComHelpers.Invoke(valueSource.GetBackingStorage(), "ПолучитьОбъект");
+            switch (name.Scope)
+            {
+                case ConfigurationScope.Справочники:
+                    object isGroup;
+                    var needCreateFolder = controller.Changed != null &&
+                                           controller.Changed.TryGetValue("ЭтоГруппа", out isGroup) &&
+                                           (bool) isGroup;
+                    return needCreateFolder
+                        ? ComHelpers.Invoke(globalContext.GetManager(name), "CreateFolder")
+                        : ComHelpers.Invoke(globalContext.GetManager(name), "CreateItem");
+                case ConfigurationScope.Документы:
+                    return ComHelpers.Invoke(globalContext.GetManager(name), "CreateDocument");
+                case ConfigurationScope.РегистрыСведений:
+                    return valueSource != null && valueSource.Writable
+                        ? valueSource.GetBackingStorage()
+                        : ComHelpers.Invoke(globalContext.GetManager(name), "СоздатьМенеджерЗаписи");
+                case ConfigurationScope.ПланыСчетов:
+                case ConfigurationScope.ПланыВидовХарактеристик:
+                    const string message = "creation of [{0}] is not implemented";
+                    throw new InvalidOperationException(string.Format(message, name.Scope));
+                case ConfigurationScope.Перечисления:
+                case ConfigurationScope.Константы:
+                    throw new InvalidOperationException("assertion failure");
+                default:
+                    const string messageFormat = "invalid scope for [{0}]";
+                    throw new ArgumentOutOfRangeException(string.Format(messageFormat, name));
+            }
+        }
+
         private void SaveProperty(string name, object value, object comObject, Stack<object> pending)
         {
             var list = value as IList;
@@ -286,9 +311,7 @@ namespace Simple1C.Impl
             }
             else
             {
-                var writeModeName = posting.HasValue
-                    ? (posting.Value ? "Проведение" : "ОтменаПроведения")
-                    : "Запись";
+                var writeModeName = posting.HasValue ? (posting.Value ? "Проведение" : "ОтменаПроведения") : "Запись";
                 var writeMode = globalContext.РежимЗаписиДокумента();
                 argument = ComHelpers.GetProperty(writeMode, writeModeName);
                 argumentString = "РежимЗаписиДокумента." + writeModeName;
@@ -300,8 +323,8 @@ namespace Simple1C.Impl
             catch (TargetInvocationException e)
             {
                 const string messageFormat = "error writing document [{0}] with argument [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    name.Fullname, argumentString), e.InnerException);
+                throw new InvalidOperationException(string.Format(messageFormat, name.Fullname, argumentString),
+                    e.InnerException);
             }
         }
 
@@ -337,39 +360,6 @@ namespace Simple1C.Impl
             finally
             {
                 target.Controller.TrackChanges = oldTrackChanges;
-            }
-        }
-
-        private object CreateRegisterRecordManager(ConfigurationName name)
-        {
-            return ComHelpers.Invoke(globalContext.GetManager(name), "СоздатьМенеджерЗаписи");
-        }
-
-        private object CreateNewObject(Abstract1CEntity entity, ConfigurationName configurationName)
-        {
-            var manager = globalContext.GetManager(configurationName);
-            switch (configurationName.Scope)
-            {
-                case ConfigurationScope.Справочники:
-                    bool hasGroupProperty;
-                    var entityType = entity.GetType();
-                    if (!hasGroups.TryGetValue(entityType, out hasGroupProperty))
-                    {
-                        var propertyInfo = entityType.GetProperty("ЭтоГруппа");
-                        hasGroupProperty = propertyInfo != null && propertyInfo.PropertyType == typeof(bool);
-                        hasGroups.TryAdd(entityType, hasGroupProperty);
-                    }
-                    object isGroup;
-                    return hasGroupProperty
-                           && entity.Controller.Changed.TryGetValue("ЭтоГруппа", out isGroup)
-                           && (bool) isGroup
-                        ? ComHelpers.Invoke(manager, "CreateFolder")
-                        : ComHelpers.Invoke(manager, "CreateItem");
-                case ConfigurationScope.Документы:
-                    return ComHelpers.Invoke(manager, "CreateDocument");
-                default:
-                    const string messageFormat = "unexpected entityType [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, configurationName.Name));
             }
         }
 
