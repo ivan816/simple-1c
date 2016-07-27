@@ -37,10 +37,6 @@ namespace Simple1C.Impl.Queriables
                             && xMethodCall.Type == typeof(Type);
             if (isGetType)
                 expression = xMethodCall.Object;
-            var xQuerySourceReference =  expression as QuerySourceReferenceExpression;
-            if (xQuerySourceReference != null)
-                return new QueryField(querySourceMapping[xQuerySourceReference.ReferencedQuerySource],
-                    new List<string> {"Ссылка"}, isPresentation, isGetType, type);
             Visit(expression);
             return isLocal ? null : new QueryField(sourceName, members, isPresentation, isGetType, type);
         }

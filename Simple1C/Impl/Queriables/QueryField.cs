@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
 using Simple1C.Impl.Com;
 
 namespace Simple1C.Impl.Queriables
@@ -12,39 +11,22 @@ namespace Simple1C.Impl.Queriables
         public QueryField(string sourceName, List<string> pathItems, bool needPresentation, bool needType, Type type)
         {
             Type = type;
-            PathItems = pathItems.ToArray();
-            isUniqueIdentifier = PathItems.Length > 0 &&
-                                 PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
+            PathItems = pathItems.Count == 0 ? new[] {"Ссылка"} : pathItems.ToArray();
+            isUniqueIdentifier = PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
             if (isUniqueIdentifier)
                 PathItems[PathItems.Length - 1] = "Ссылка";
-
-            var expressionBuilder = new StringBuilder();
-            var aliasBuilder = new StringBuilder();
-            if (needPresentation)
-                expressionBuilder.Append("ПРЕДСТАВЛЕНИЕ(");
-            if (needType)
-                expressionBuilder.Append("ТИПЗНАЧЕНИЯ(");
-            expressionBuilder.Append(sourceName);
-            aliasBuilder.Append(sourceName);
-            foreach (var item in PathItems)
-            {
-                expressionBuilder.Append(".");
-                expressionBuilder.Append(item);
-                aliasBuilder.Append("_");
-                aliasBuilder.Append(item);
-            }
+            Expression = sourceName + "." + string.Join(".", PathItems);
+            Alias = Expression.Replace('.', '_');
             if (needType)
             {
-                expressionBuilder.Append(")");
-                aliasBuilder.Append("_ТИПЗНАЧЕНИЯ");
+                Expression = "ТИПЗНАЧЕНИЯ(" + Expression + ")";
+                Alias = Alias + "_ТИПЗНАЧЕНИЯ";
             }
             if (needPresentation)
             {
-                expressionBuilder.Append(")");
-                aliasBuilder.Append("_ПРЕДСТАВЛЕНИЕ");
+                Expression = "ПРЕДСТАВЛЕНИЕ(" + Expression + ")";
+                Alias = Alias + "_ПРЕДСТАВЛЕНИЕ";
             }
-            Expression = expressionBuilder.ToString();
-            Alias = aliasBuilder.Replace('.', '_').ToString();
         }
 
         public object GetValue(object queryResultRow)
