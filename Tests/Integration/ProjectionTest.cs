@@ -336,5 +336,53 @@ namespace Simple1C.Tests.Integration
             Assert.That(contractFromStore[0].OwnerType, Is.EqualTo(typeof(Контрагенты)));
             Assert.That(contractFromStore[0].OwnerTypePresentation, Is.EqualTo("Контрагент"));
         }
+
+        [Test]
+        public void RerefenceProjection()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            string code = counterpartAccessObject.Код;
+            var counterparties = dataContext.Select<Контрагенты>()
+                .Where(x => x.Код == code)
+                .Select(x => new
+                {
+                    Ссылка = x
+                })
+                .ToArray();
+
+            Assert.That(counterparties.Length, Is.EqualTo(1));
+            Assert.That(counterparties[0].Ссылка.Наименование, Is.EqualTo("test-counterpart-name"));
+        }
+
+        [Test]
+        public void ComplexRerefenceProjection()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            dynamic counterpartAccessObject = testObjectsManager.CreateCounterparty(counterpart);
+            string code = counterpartAccessObject.Код;
+            var counterparties = dataContext.Select<Контрагенты>()
+                .Where(x => x.Код == code)
+                .Select(x => new
+                {
+                    Ссылка = x,
+                    x.ИНН
+                })
+                .ToArray();
+
+            Assert.That(counterparties.Length, Is.EqualTo(1));
+            Assert.That(counterparties[0].Ссылка.Наименование, Is.EqualTo("test-counterpart-name"));
+            Assert.That(counterparties[0].ИНН, Is.EqualTo("0987654321"));
+        }
     }
 }

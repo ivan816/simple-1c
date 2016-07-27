@@ -13,7 +13,7 @@ namespace Simple1C.Tests.Helpers
             var directoryName = PathHelpers.GetFileName(etalonDatabasePath);
             var localMachineDatabaseCachePath = Path.Combine("c:\\testBases", directoryName);
             var testDatabasePath = Path.GetFullPath(targetFolderName);
-            Robocopy.Execute(etalonDatabasePath, localMachineDatabaseCachePath, true);
+            //Robocopy.Execute(etalonDatabasePath, localMachineDatabaseCachePath, true);
             Robocopy.Execute(localMachineDatabaseCachePath, testDatabasePath, false);
             var connectionStringBuilder = new ConnectionStringBuilder
             {

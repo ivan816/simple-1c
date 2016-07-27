@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Reflection;
+using Remotion.Linq.Clauses.Expressions;
 using Remotion.Linq.Parsing;
 using Simple1C.Interface;
 
@@ -40,6 +41,11 @@ namespace Simple1C.Impl.Queriables
                 needLocalEval = !rootIsSingleItem,
                 items = items.ToArray(),
             };
+        }
+
+        protected override Expression VisitQuerySourceReference(QuerySourceReferenceExpression node)
+        {
+            return VisitMember(node, base.VisitQuerySourceReference);
         }
 
         protected override Expression VisitConstant(ConstantExpression node)
