@@ -15,8 +15,29 @@ namespace Simple1C.Impl.Queriables
             isUniqueIdentifier = PathItems[PathItems.Length - 1] == EntityHelpers.idPropertyName;
             if (isUniqueIdentifier)
                 PathItems[PathItems.Length - 1] = "Ссылка";
+<<<<<<< HEAD
             Expression = sourceName + "." + string.Join(".", PathItems);
             Alias = Expression.Replace('.', '_');
+=======
+
+            var expressionBuilder = new StringBuilder();
+            var aliasBuilder = new StringBuilder();
+            if (needPresentation)
+                expressionBuilder.Append("ПРЕДСТАВЛЕНИЕ(");
+            if (needType)
+                expressionBuilder.Append("ТИПЗНАЧЕНИЯ(");
+            expressionBuilder.Append(sourceName);
+            aliasBuilder.Append(sourceName);
+            foreach (var item in PathItems)
+            {
+                expressionBuilder.Append(".");
+                expressionBuilder.Append(item);
+                aliasBuilder.Append("_");
+                aliasBuilder.Append(item);
+            }
+            if (isUniqueIdentifier)
+                aliasBuilder.Append("_ИД");
+>>>>>>> Починили баг с сылками
             if (needType)
             {
                 Expression = "ТИПЗНАЧЕНИЯ(" + Expression + ")";

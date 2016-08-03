@@ -384,5 +384,28 @@ namespace Simple1C.Tests.Integration
             Assert.That(counterparties[0].Ссылка.Наименование, Is.EqualTo("test-counterpart-name"));
             Assert.That(counterparties[0].ИНН, Is.EqualTo("0987654321"));
         }
+
+        [Test]
+        public void ComplexReferenceObjectProjection()
+        {
+            var counterpart = new Counterpart
+            {
+                Name = "test-counterpart-name",
+                Inn = "0987654321",
+                Kpp = "987654321"
+            };
+            testObjectsManager.CreateCounterparty(counterpart);
+            var counterparties = dataContext.Select<Контрагенты>()
+                .Where(x => !x.ПометкаУдаления)
+                .Where(x => !x.ЭтоГруппа)
+                .Select(x => new
+                {
+                    Id = x.УникальныйИдентификатор,
+                    Reference = x
+                })
+                .ToArray();
+            Assert.That(counterparties.Length, Is.EqualTo(1));
+            Assert.That(counterparties[0].Reference, Is.TypeOf<Контрагенты>());
+        }
     }
 }
