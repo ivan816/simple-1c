@@ -226,7 +226,7 @@ namespace Simple1C.Impl
                         newList.Add(CreateEntity(itemType, l));
                     return newList;
                 }
-                return typeof(Abstract1CEntity).IsAssignableFrom(type)
+                return typeof(Abstract1CEntity).IsAssignableFrom(type) && value != null
                     ? CreateEntity(type, (InMemoryEntity)value)
                     : value;
             }

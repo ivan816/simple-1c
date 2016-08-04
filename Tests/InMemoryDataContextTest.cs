@@ -406,5 +406,21 @@ namespace Simple1C.Tests
             var account = dataContext.Single<БанковскиеСчета>();
             Assert.That(account.ДатаЗакрытия, Is.EqualTo(new DateTime(2016, 6, 21)));
         }
+
+        [Test]
+        public void NestedObjectNullException()
+        {
+            var договор = new ДоговорыКонтрагентов
+            {
+                Владелец = null
+            };
+            dataContext.Save(договор);
+            Assert.That(договор.УникальныйИдентификатор, Is.Not.Null);
+            var договоры = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.УникальныйИдентификатор == договор.УникальныйИдентификатор)
+                .ToArray();
+            Assert.That(договоры.Length, Is.EqualTo(1));
+            Assert.That(договоры[0].Владелец, Is.Null);
+        }
     }
 }
