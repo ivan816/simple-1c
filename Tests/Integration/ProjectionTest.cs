@@ -4,6 +4,7 @@ using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
 using Simple1C.Tests.Metadata1C.Документы;
+using Simple1C.Tests.Metadata1C.Перечисления;
 using Simple1C.Tests.Metadata1C.ПланыСчетов;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
@@ -406,6 +407,35 @@ namespace Simple1C.Tests.Integration
                 .ToArray();
             Assert.That(counterparties.Length, Is.EqualTo(1));
             Assert.That(counterparties[0].Reference, Is.TypeOf<Контрагенты>());
+        }
+
+        [Test]
+        public void DbNullInUniqueIdentifier()
+        {
+            var counterpart = new Контрагенты
+            {
+                Наименование = "test-counterpart-name",
+                ИНН = "0987654321",
+                КПП = "987654321"
+            };
+            dataContext.Save(counterpart);
+            var договор = new ДоговорыКонтрагентов
+            {
+                ВидДоговора = ВидыДоговоровКонтрагентов.Прочее,
+                Владелец = counterpart,
+                Наименование = "Основной договор"
+            };
+            dataContext.Save(договор);
+
+            var counterparties = dataContext.Select<ДоговорыКонтрагентов>()
+                .Where(x => x.УникальныйИдентификатор == договор.УникальныйИдентификатор)
+                .Select(x => new
+                {
+                    Id = x.Организация.УникальныйИдентификатор,
+                })
+                .ToArray();
+            Assert.That(counterparties.Length, Is.EqualTo(1));
+            Assert.That(counterparties[0].Id, Is.Null);
         }
     }
 }

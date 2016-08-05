@@ -49,6 +49,36 @@ namespace Simple1C.Tests
             }
         }
 
+        public class CastInProjection : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<ПоступениеНаРасчетныйСчет>()
+                    .Select(x => new { Наименование = ((ICounterparty)x.Контрагент).Наименование }),
+                    "ВЫБРАТЬ src.Контрагент.Наименование КАК src_Контрагент_Наименование ИЗ Документ.ПоступениеНаРасчетныйСчет КАК src");
+            }
+
+            [ConfigurationScope(ConfigurationScope.Документы)]
+            public class ПоступениеНаРасчетныйСчет
+            {
+                public object Контрагент { get; set; }
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class Контрагенты : ICounterparty
+            {
+                public string Наименование { get; set; }
+                public decimal Сумма { get; set; }
+                public decimal Количество { get; set; }
+            }
+
+            public interface ICounterparty
+            {
+                string Наименование { get; set; }
+            }
+        }
+
         public class CanUseTake : QueryBuilderTest
         {
             [Test]
