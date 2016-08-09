@@ -384,18 +384,23 @@ namespace Simple1C.Impl
             parametersConverter.ConvertParametersTo1C(parameters);
             var hasReference = ConfigurationName.Get(builtQuery.EntityType).HasReference;
             var queryResult = globalContext.Execute(queryText, parameters);
-            var selection = queryResult.Select();
-            var projection = builtQuery.Projection == null
-                ? null
-                : projectionMapperFactory.GetMapper(builtQuery.Projection);
-            while (selection.Next())
-                if (projection != null)
-                    yield return projection(selection.ComObject);
-                else
-                {
-                    var sourceObject = hasReference ? selection["Ссылка"] : selection.ComObject;
-                    yield return comObjectMapper.MapFrom1C(sourceObject, builtQuery.EntityType);
-                }
+            if (hasReference || builtQuery.Projection != null)
+            {
+                var projection = builtQuery.Projection != null
+                    ? projectionMapperFactory.GetMapper(builtQuery.Projection)
+                    : null;
+                var selection = queryResult.Select();
+                while (selection.Next())
+                    yield return projection != null
+                        ? projection(selection.ComObject)
+                        : comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
+            }
+            else
+            {
+                var valueTable = queryResult.Unload();
+                foreach (var r in valueTable)
+                    yield return comObjectMapper.MapFrom1C(r.ComObject(), builtQuery.EntityType);
+            }
         }
     }
 }

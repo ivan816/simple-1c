@@ -2,8 +2,8 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
-using Simple1C.Tests.Metadata1C.РегистрыСведений;
-using Simple1C.Tests.Metadata1C.Справочники;
+using Simple1C.Tests.Metadata1C.Р РµРіРёСЃС‚СЂС‹РЎРІРµРґРµРЅРёР№;
+using Simple1C.Tests.Metadata1C.РЎРїСЂР°РІРѕС‡РЅРёРєРё;
 
 namespace Simple1C.Tests.Integration
 {
@@ -12,58 +12,103 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanWritePreviouslyReadInformationRegister()
         {
-            var период = new DateTime(2025, 7, 17);
-            var курс = new КурсыВалют
+            var РїРµСЂРёРѕРґ = new DateTime(2025, 7, 17);
+            var РєСѓСЂСЃ = new РљСѓСЂСЃС‹Р’Р°Р»СЋС‚
             {
-                Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),
-                Кратность = 42,
-                Курс = 12,
-                Период = период
+                Р’Р°Р»СЋС‚Р° = dataContext.Single<Р’Р°Р»СЋС‚С‹>(x => x.РљРѕРґ == "643"),
+                РљСЂР°С‚РЅРѕСЃС‚СЊ = 42,
+                РљСѓСЂСЃ = 12,
+                РџРµСЂРёРѕРґ = РїРµСЂРёРѕРґ
             };
-            dataContext.Save(курс);
+            dataContext.Save(РєСѓСЂСЃ);
 
-            var курс2 = dataContext.Single<КурсыВалют>(x => x.Период == период);
-            курс2.Кратность = 43;
-            dataContext.Save(курс2);
+            var РєСѓСЂСЃ2 = dataContext.Single<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>(x => x.РџРµСЂРёРѕРґ == РїРµСЂРёРѕРґ);
+            РєСѓСЂСЃ2.РљСЂР°С‚РЅРѕСЃС‚СЊ = 43;
+            dataContext.Save(РєСѓСЂСЃ2);
 
-            var курс3 = dataContext.Single<КурсыВалют>(x => x.Период == период);
-            Assert.That(курс3.Валюта.Код, Is.EqualTo("643"));
-            Assert.That(курс3.Кратность, Is.EqualTo(43));
-            Assert.That(курс3.Курс, Is.EqualTo(12));
-            Assert.That(курс3.Период, Is.EqualTo(период));
+            var РєСѓСЂСЃ3 = dataContext.Single<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>(x => x.РџРµСЂРёРѕРґ == РїРµСЂРёРѕРґ);
+            Assert.That(РєСѓСЂСЃ3.Р’Р°Р»СЋС‚Р°.РљРѕРґ, Is.EqualTo("643"));
+            Assert.That(РєСѓСЂСЃ3.РљСЂР°С‚РЅРѕСЃС‚СЊ, Is.EqualTo(43));
+            Assert.That(РєСѓСЂСЃ3.РљСѓСЂСЃ, Is.EqualTo(12));
+            Assert.That(РєСѓСЂСЃ3.РџРµСЂРёРѕРґ, Is.EqualTo(РїРµСЂРёРѕРґ));
+        }
+
+        [Test]
+        public void CanQueryCanUpdateManyItems()
+        {
+            var РІР°Р»СЋС‚Р° = dataContext.Single<Р’Р°Р»СЋС‚С‹>(x => x.РљРѕРґ == "643");
+            dataContext.Save(new РљСѓСЂСЃС‹Р’Р°Р»СЋС‚
+            {
+                Р’Р°Р»СЋС‚Р° = РІР°Р»СЋС‚Р°,
+                РљСЂР°С‚РЅРѕСЃС‚СЊ = 42,
+                РљСѓСЂСЃ = 12,
+                РџРµСЂРёРѕРґ = new DateTime(2025, 7, 18)
+            }, new РљСѓСЂСЃС‹Р’Р°Р»СЋС‚
+            {
+                Р’Р°Р»СЋС‚Р° = РІР°Р»СЋС‚Р°,
+                РљСЂР°С‚РЅРѕСЃС‚СЊ = 42,
+                РљСѓСЂСЃ = 13,
+                РџРµСЂРёРѕРґ = new DateTime(2025, 7, 19)
+            }, new РљСѓСЂСЃС‹Р’Р°Р»СЋС‚
+            {
+                Р’Р°Р»СЋС‚Р° = РІР°Р»СЋС‚Р°,
+                РљСЂР°С‚РЅРѕСЃС‚СЊ = 42,
+                РљСѓСЂСЃ = 14,
+                РџРµСЂРёРѕРґ = new DateTime(2025, 7, 20)
+            });
+
+            var РєСѓСЂСЃС‹Р’Р°Р»СЋС‚ = dataContext.Select<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>()
+                .Where(x => x.РџРµСЂРёРѕРґ > new DateTime(2025, 7, 1))
+                .OrderBy(x => x.РџРµСЂРёРѕРґ)
+                .ToArray();
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[0].РљСѓСЂСЃ, Is.EqualTo(12));
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[1].РљСѓСЂСЃ, Is.EqualTo(13));
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[2].РљСѓСЂСЃ, Is.EqualTo(14));
+
+            РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[0].РљСѓСЂСЃ = 120;
+            РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[1].РљСѓСЂСЃ = 130;
+            РєСѓСЂСЃС‹Р’Р°Р»СЋС‚[2].РљСѓСЂСЃ = 140;
+            dataContext.Save(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚);
+            var РєСѓСЂСЃС‹Р’Р°Р»СЋС‚2 = dataContext.Select<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>()
+                .Where(x => x.РџРµСЂРёРѕРґ > new DateTime(2025, 7, 1))
+                .OrderBy(x => x.РџРµСЂРёРѕРґ)
+                .ToArray();
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚2[0].РљСѓСЂСЃ, Is.EqualTo(120));
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚2[1].РљСѓСЂСЃ, Is.EqualTo(130));
+            Assert.That(РєСѓСЂСЃС‹Р’Р°Р»СЋС‚2[2].РљСѓСЂСЃ, Is.EqualTo(140));
         }
 
         [Test]
         public void CanReadWriteInformationRegister()
         {
-            var период = new DateTime(2025, 7, 18);
-            var курс = new КурсыВалют
+            var РїРµСЂРёРѕРґ = new DateTime(2025, 7, 18);
+            var РєСѓСЂСЃ = new РљСѓСЂСЃС‹Р’Р°Р»СЋС‚
             {
-                Валюта = dataContext.Single<Валюты>(x => x.Код == "643"),
-                Кратность = 42,
-                Курс = 12,
-                Период = период
+                Р’Р°Р»СЋС‚Р° = dataContext.Single<Р’Р°Р»СЋС‚С‹>(x => x.РљРѕРґ == "643"),
+                РљСЂР°С‚РЅРѕСЃС‚СЊ = 42,
+                РљСѓСЂСЃ = 12,
+                РџРµСЂРёРѕРґ = РїРµСЂРёРѕРґ
             };
-            dataContext.Save(курс);
+            dataContext.Save(РєСѓСЂСЃ);
 
-            var курс2 = dataContext.Select<КурсыВалют>()
-                .OrderByDescending(x => x.Период)
+            var РєСѓСЂСЃ2 = dataContext.Select<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>()
+                .OrderByDescending(x => x.РџРµСЂРёРѕРґ)
                 .First();
-            Assert.That(курс2.Валюта.Код, Is.EqualTo("643"));
-            Assert.That(курс2.Кратность, Is.EqualTo(42));
-            Assert.That(курс2.Курс, Is.EqualTo(12));
-            Assert.That(курс2.Период, Is.EqualTo(период));
+            Assert.That(РєСѓСЂСЃ2.Р’Р°Р»СЋС‚Р°.РљРѕРґ, Is.EqualTo("643"));
+            Assert.That(РєСѓСЂСЃ2.РљСЂР°С‚РЅРѕСЃС‚СЊ, Is.EqualTo(42));
+            Assert.That(РєСѓСЂСЃ2.РљСѓСЂСЃ, Is.EqualTo(12));
+            Assert.That(РєСѓСЂСЃ2.РџРµСЂРёРѕРґ, Is.EqualTo(РїРµСЂРёРѕРґ));
 
-            курс.Кратность = 43;
-            dataContext.Save(курс);
+            РєСѓСЂСЃ.РљСЂР°С‚РЅРѕСЃС‚СЊ = 43;
+            dataContext.Save(РєСѓСЂСЃ);
 
-            var курс3 = dataContext.Select<КурсыВалют>()
-                .OrderByDescending(x => x.Период)
+            var РєСѓСЂСЃ3 = dataContext.Select<РљСѓСЂСЃС‹Р’Р°Р»СЋС‚>()
+                .OrderByDescending(x => x.РџРµСЂРёРѕРґ)
                 .First();
-            Assert.That(курс3.Валюта.Код, Is.EqualTo("643"));
-            Assert.That(курс3.Кратность, Is.EqualTo(43));
-            Assert.That(курс3.Курс, Is.EqualTo(12));
-            Assert.That(курс3.Период, Is.EqualTo(период));
+            Assert.That(РєСѓСЂСЃ3.Р’Р°Р»СЋС‚Р°.РљРѕРґ, Is.EqualTo("643"));
+            Assert.That(РєСѓСЂСЃ3.РљСЂР°С‚РЅРѕСЃС‚СЊ, Is.EqualTo(43));
+            Assert.That(РєСѓСЂСЃ3.РљСѓСЂСЃ, Is.EqualTo(12));
+            Assert.That(РєСѓСЂСЃ3.РџРµСЂРёРѕРґ, Is.EqualTo(РїРµСЂРёРѕРґ));
         }
     }
 }

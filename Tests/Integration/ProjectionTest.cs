@@ -399,6 +399,7 @@ namespace Simple1C.Tests.Integration
             var counterparties = dataContext.Select<Контрагенты>()
                 .Where(x => !x.ПометкаУдаления)
                 .Where(x => !x.ЭтоГруппа)
+                .Where(x => x.Наименование == "test-counterpart-name")
                 .Select(x => new
                 {
                     Id = x.УникальныйИдентификатор,

@@ -27,5 +27,10 @@ namespace Simple1C.Impl.Queries
         {
             return Invoke("Get", i);
         }
+
+        public new object ComObject()
+        {
+            return base.ComObject();
+        }
     }
 }
