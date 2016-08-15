@@ -9,12 +9,12 @@ namespace Simple1C.Interface
         public static string OfEnum<T>(T enumValue)
             where T : struct
         {
-            return EnumAttributesCache<SynonymAttribute>.instance.GetAttribute(enumValue).Value;
+            return EnumAttributesCache<SynonymAttribute>.GetAttribute(enumValue).Value;
         }
 
         public static string OfEnumUnsafe(object enumValue)
         {
-            return EnumAttributesCache<SynonymAttribute>.instance.GetAttributeUnsafe(enumValue).Value;
+            return EnumAttributesCache<SynonymAttribute>.GetAttributeUnsafe(enumValue).Value;
         }
 
         public static string OfClass(object obj)
@@ -24,7 +24,7 @@ namespace Simple1C.Interface
 
         public static string OfClass(Type objType)
         {
-            return ClassAttributesCache<SynonymAttribute>.instance.GetAttribute(objType).Value;
+            return AttributesCache.GetCustomAttribute<SynonymAttribute>(objType, true).Value;
         }
     }
 }

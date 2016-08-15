@@ -80,7 +80,9 @@
     <Compile Include="Impl\Helpers\MemberAccessor\UntypedMemberAccessor.cs" />
     <Compile Include="Impl\Helpers\NameValueCollectionHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
+    <Compile Include="Impl\Metadata.cs" />
     <Compile Include="Impl\MetadataAccessor.cs" />
+    <Compile Include="Impl\MetadataRequisite.cs" />
     <Compile Include="Impl\Queriables\ParameterizingExpressionVisitor.cs" />
     <Compile Include="Impl\ParametersConverter.cs" />
     <Compile Include="Impl\ProjectionMapperFactory.cs" />
@@ -136,6 +138,7 @@
     <Compile Include="Impl\Queriables\RelinqQueryExecutor.cs" />
     <Compile Include="Impl\Queriables\RelinqQueryProvider.cs" />
     <Compile Include="Impl\Queriables\FilterPredicateAnalyzer.cs" />
+    <Compile Include="Interface\ObjectModel\MaxLengthAttribute.cs" />
     <Compile Include="Interface\ObjectModel\ObjectPresentationAttribute.cs" />
     <Compile Include="Interface\ObjectModel\Requisite.cs" />
     <Compile Include="Interface\ObjectModel\SynonymAttribute.cs" />

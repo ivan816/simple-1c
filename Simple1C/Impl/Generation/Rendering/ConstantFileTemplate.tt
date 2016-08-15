@@ -6,7 +6,8 @@ using Simple1C.Interface.ObjectModel;
 namespace <#=Model.Namespace#>
 {
 	[Synonym("<#=Model.Synonym#>")]
-	public class <#=Model.Name#> : Constant<<#=Model.Type#>>
+<#if(Model.MaxLength.HasValue) {#>	[MaxLength(<#=Model.MaxLength.Value#>)]
+<#}#>	public class <#=Model.Name#> : Constant<<#=Model.Type#>>
 	{
 	}
 }<#+

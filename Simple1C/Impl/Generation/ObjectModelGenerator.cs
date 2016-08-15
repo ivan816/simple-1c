@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
+using System.Diagnostics;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation.Rendering;
 using Simple1C.Interface;
@@ -20,19 +19,12 @@ namespace Simple1C.Impl.Generation
             {"Описание типов", "Type[]"}
         };
 
-        private static readonly string[] standardPropertiesToExclude =
-        {
-            "ИмяПредопределенныхДанных",
-            "Ссылка"
-        };
-
         private static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
         {
             AttributePropertyNames = new[] {"Реквизиты"}
         };
 
         private readonly GlobalContext globalContext;
-        private readonly object metadata;
         private readonly IEnumerable<string> itemNames;
         private readonly string namespaceRoot;
         private readonly string targetDirectory;
@@ -41,7 +33,6 @@ namespace Simple1C.Impl.Generation
             string namespaceRoot, string targetDirectory)
         {
             this.globalContext = new GlobalContext(globalContext);
-            metadata = this.globalContext.Metadata;
             this.itemNames = itemNames;
             this.namespaceRoot = namespaceRoot;
             this.targetDirectory = targetDirectory;
@@ -86,13 +77,12 @@ namespace Simple1C.Impl.Generation
 
         private ConfigurationItem FindByFullName(string fullname)
         {
-            return new ConfigurationItem(ConfigurationName.Parse(fullname),
-                ComHelpers.Invoke(metadata, "НайтиПоПолномуИмени", fullname));
+            return globalContext.FindByName(ConfigurationName.Parse(fullname));
         }
 
         private ConfigurationItem FindByType(object typeObject)
         {
-            var comObject = Call.НайтиПоТипу(metadata, typeObject);
+            var comObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
             var fullName = Call.ПолноеИмя(comObject);
             var name = ConfigurationName.ParseOrNull(fullName);
             return name.HasValue
@@ -134,36 +124,35 @@ namespace Simple1C.Impl.Generation
 
         private void EmitClass(ClassGenerationContext classContext)
         {
-            var standardAttributes = ComHelpers.GetProperty(classContext.comObject, "СтандартныеРеквизиты");
-            var isChartOfAccounts = Call.Имя(classContext.comObject) == "Хозрасчетный";
             if (classContext.target.ConfigurationScope.HasValue)
             {
                 var synonym = Call.Синоним(classContext.comObject);
                 classContext.target.Synonym = GenerateHelpers.EscapeString(synonym);
                 if (classContext.target.ConfigurationScope.Value != ConfigurationScope.РегистрыСведений)
                 {
-                    var presentation =
-                        Convert.ToString(ComHelpers.GetProperty(classContext.comObject, "ObjectPresentation"));
+                    var presentation = Call.StringProp(classContext.comObject, "ObjectPresentation");
                     classContext.target.ObjectPresentation = GenerateHelpers.EscapeString(presentation);
                 }
             }
-            foreach (var attr in (IEnumerable) standardAttributes)
+            var name = classContext.configurationName;
+            var attributes = MetadataAccessor.GetAttributes(classContext.comObject, classContext.descriptor);
+            foreach (var attr in attributes)
             {
-                var name = Call.Имя(attr);
-                if (isChartOfAccounts && name != "Код" && name != "Наименование")
+                var propertyName = Call.Имя(attr);
+                var propertyTypeDescriptor = GetTypeDescriptor(attr,
+                    classContext.configurationItemFullName + "." + propertyName,
+                    classContext.generationContext);
+                if (!propertyTypeDescriptor.HasValue)
                     continue;
-                if (standardPropertiesToExclude.Contains(name))
-                    continue;
-                EmitProperty(attr, classContext);
+                var propertyModel = new PropertyModel
+                {
+                    Type = propertyTypeDescriptor.Value.dotnetType,
+                    PropertyName = propertyName,
+                    MaxLength = propertyTypeDescriptor.Value.maxLength
+                };
+                classContext.target.Properties.Add(propertyModel);
             }
-            foreach (var propertyName in classContext.descriptor.AttributePropertyNames)
-            {
-                var attributes = ComHelpers.GetProperty(classContext.comObject, propertyName);
-                var attributesCount = Call.Количество(attributes);
-                for (var i = 0; i < attributesCount; ++i)
-                    EmitProperty(Call.Получить(attributes, i), classContext);
-            }
-            if (classContext.configurationName.HasValue && classContext.configurationName.Value.HasReference)
+            if (name.HasValue && name.Value.HasReference)
                 classContext.EmitProperty(new PropertyModel
                 {
                     Type = "Guid?",
@@ -199,21 +188,7 @@ namespace Simple1C.Impl.Generation
             }
         }
 
-        private void EmitProperty(object attribute, ClassGenerationContext classContext)
-        {
-            var propertyName = Call.Имя(attribute);
-            var propertyType = GetDotNetTypeOrNull(attribute,
-                classContext.configurationItemFullName + "." + propertyName,
-                classContext.generationContext);
-            if (propertyType != null)
-                classContext.target.Properties.Add(new PropertyModel
-                {
-                    Type = propertyType,
-                    PropertyName = propertyName
-                });
-        }
-
-        private string GetDotNetTypeOrNull(object metadataItem, string fullname, GenerationContext context)
+        private TypeDescriptor? GetTypeDescriptor(object metadataItem, string fullname, GenerationContext context)
         {
             var type = ComHelpers.GetProperty(metadataItem, "Тип");
             var typesObject = ComHelpers.Invoke(type, "Типы");
@@ -239,28 +214,45 @@ namespace Simple1C.Impl.Generation
                             context.EnqueueIfNeeded(configurationItem);
                     }
                 }
-                return "object";
+                return new TypeDescriptor {dotnetType = "object"};
             }
             typeObject = Call.Получить(typesObject, 0);
             stringPresentation = globalContext.String(typeObject);
-            string result;
-            if (simpleTypesMap.TryGetValue(stringPresentation, out result))
-                return result;
+            string typeName;
+            if (simpleTypesMap.TryGetValue(stringPresentation, out typeName))
+            {
+                if (typeName == null)
+                    return null;
+                int? maxLength;
+                if (typeName == "string")
+                {
+                    var квалификаторыСтроки = ComHelpers.GetProperty(type, "КвалификаторыСтроки");
+                    maxLength = Call.IntProp(квалификаторыСтроки, "Длина");
+                    if (maxLength == 0)
+                        maxLength = null;
+                }
+                else
+                    maxLength = null;
+                return new TypeDescriptor {dotnetType = typeName, maxLength = maxLength};
+            }
             if (stringPresentation == "Число")
             {
                 var квалификаторыЧисла = ComHelpers.GetProperty(type, "КвалификаторыЧисла");
                 var floatLength = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "РазрядностьДробнойЧасти"));
                 var digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
-                return floatLength == 0 ? (digits < 10 ? "int" : "long") : "decimal";
+                return new TypeDescriptor
+                {
+                    dotnetType = floatLength == 0 ? (digits < 10 ? "int" : "long") : "decimal"
+                };
             }
             var propertyItem = FindByType(typeObject);
             if (propertyItem == null)
                 return null;
             context.EnqueueIfNeeded(propertyItem);
-            result = FormatClassName(propertyItem.Name);
+            typeName = FormatClassName(propertyItem.Name);
             if (propertyItem.Name.Scope == ConfigurationScope.Перечисления)
-                result = result + "?";
-            return result;
+                typeName = typeName + "?";
+            return new TypeDescriptor {dotnetType = typeName};
         }
 
         private string FormatClassName(ConfigurationName name)
@@ -270,13 +262,13 @@ namespace Simple1C.Impl.Generation
 
         private void EmitConstants(GenerationContext context)
         {
-            var constants = ComHelpers.GetProperty(metadata, "Константы");
+            var constants = ComHelpers.GetProperty(globalContext.Metadata, "Константы");
             var constantsCount = Call.Количество(constants);
             for (var i = 0; i < constantsCount; i++)
             {
                 var constant = Call.Получить(constants, i);
-                var type = GetDotNetTypeOrNull(constant, Call.ПолноеИмя(constant), context);
-                if (type == null)
+                var typeDescriptor = GetTypeDescriptor(constant, Call.ПолноеИмя(constant), context);
+                if (!typeDescriptor.HasValue)
                     continue;
                 var configurationName = new ConfigurationName(ConfigurationScope.Константы,
                     Call.Имя(constant));
@@ -284,10 +276,11 @@ namespace Simple1C.Impl.Generation
                 {
                     Model = new ConstantFileModel
                     {
-                        Type = type,
+                        Type = typeDescriptor.Value.dotnetType,
                         Name = configurationName.Name,
                         Synonym = GenerateHelpers.EscapeString(Call.Синоним(constant)),
-                        Namespace = GetNamespaceName(configurationName.Scope)
+                        Namespace = GetNamespaceName(configurationName.Scope),
+                        MaxLength = typeDescriptor.Value.maxLength
                     }
                 };
                 context.Write(configurationName, template.TransformText());
@@ -334,6 +327,12 @@ namespace Simple1C.Impl.Generation
             {
                 target.NestedClasses.Add(classModel);
             }
+        }
+
+        private struct TypeDescriptor
+        {
+            public string dotnetType;
+            public int? maxLength;
         }
     }
 }

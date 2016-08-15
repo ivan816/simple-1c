@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
 using Simple1C.Impl.Helpers;
 
@@ -8,24 +7,32 @@ namespace Simple1C.Impl
 {
     internal class TypeRegistry
     {
-        private readonly Dictionary<string, Type> typeMapping;
+        private static readonly Dictionary<string, Type> typeMapping = new Dictionary<string, Type>();
+        private static readonly object lockObject = new object();
+        private static readonly HashSet<Assembly> processedAssemblies = new HashSet<Assembly>();
 
         public TypeRegistry(Assembly assembly)
         {
-            typeMapping = assembly.GetTypes()
-                .Where(x => x.IsClass || x.IsEnum)
-                .Select(x => new
+            lock (lockObject)
+            {
+                if (!processedAssemblies.Add(assembly))
+                    return;
+                foreach (var x in assembly.GetTypes())
                 {
-                    typeName1C = ConfigurationName.GetOrNull(x),
-                    type = x
-                })
-                .Where(x => x.typeName1C.HasValue)
-                .ToDictionary(x => x.typeName1C.Value.Fullname, x => x.type);
+                    if (!x.IsClass && !x.IsEnum)
+                        continue;
+                    var name = ConfigurationName.GetOrNull(x);
+                    if (!name.HasValue)
+                        continue;
+                    typeMapping.Add(name.Value.Fullname, x);
+                }
+            }
         }
 
         public Type GetTypeOrNull(string configurationName)
         {
-            return typeMapping.GetOrDefault(configurationName);
+            lock (lockObject)
+                return typeMapping.GetOrDefault(configurationName);
         }
     }
 }

@@ -52,6 +52,7 @@
     <Compile Include="Integration\InformationRegisterTest.cs" />
     <Compile Include="Integration\ProjectionTest.cs" />
     <Compile Include="Integration\SaveTest.cs" />
+    <Compile Include="Integration\SaveValidationsIntegrationTest.cs" />
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="Integration\СharacteristicsTest.cs" />

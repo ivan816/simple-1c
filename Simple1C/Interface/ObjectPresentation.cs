@@ -9,11 +9,12 @@ namespace Simple1C.Interface
         public static string OfClass(object obj)
         {
             return OfClass(obj.GetType());
-        }    
+        }
 
         public static string OfClass(Type objectType)
         {
-            return ClassAttributesCache<ObjectPresentationAttribute>.instance.GetAttribute(objectType).Value;
-        }    
+            var attribute = AttributesCache.GetCustomAttribute<ObjectPresentationAttribute>(objectType, true);
+            return attribute.Value;
+        }
     }
 }

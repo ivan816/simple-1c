@@ -12,12 +12,12 @@ namespace Simple1C.Impl
 
         public static string Имя(object comObject)
         {
-            return Convert.ToString(ComHelpers.GetProperty(comObject, "Имя"));
+            return StringProp(comObject, "Имя");
         }
 
         public static string Синоним(object comObject)
         {
-            return Convert.ToString(ComHelpers.GetProperty(comObject, "Синоним"));
+            return StringProp(comObject, "Синоним");
         }
 
         public static object Получить(object comObject, int index)
@@ -28,6 +28,16 @@ namespace Simple1C.Impl
         public static int Количество(object comObject)
         {
             return Convert.ToInt32(ComHelpers.Invoke(comObject, "Количество"));
+        }
+
+        public static int IntProp(object comObject, string name)
+        {
+            return Convert.ToInt32(ComHelpers.GetProperty(comObject, name));
+        }
+        
+        public static string StringProp(object comObject, string name)
+        {
+            return Convert.ToString(ComHelpers.GetProperty(comObject, name));
         }
 
         public static bool IsEmpty(object comObject)

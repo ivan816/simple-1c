@@ -6,5 +6,6 @@ namespace Simple1C.Impl.Generation.Rendering
         public string Name { get; set; }
         public string Synonym { get; set; }
         public string Type { get; set; }
+        public int? MaxLength { get; set; }
     }
 }

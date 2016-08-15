@@ -39,16 +39,37 @@ namespace Simple1C.Impl.Generation.Rendering
             
             #line default
             #line hidden
-            this.Write("\")]\r\n\tpublic class ");
+            this.Write("\")]\r\n");
             
             #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+if(Model.MaxLength.HasValue) {
+            
+            #line default
+            #line hidden
+            this.Write("\t[MaxLength(");
+            
+            #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+            this.Write(this.ToStringHelper.ToStringWithCulture(Model.MaxLength.Value));
+            
+            #line default
+            #line hidden
+            this.Write(")]\r\n");
+            
+            #line 10 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+}
+            
+            #line default
+            #line hidden
+            this.Write("\tpublic class ");
+            
+            #line 10 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(Model.Name));
             
             #line default
             #line hidden
             this.Write(" : Constant<");
             
-            #line 9 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+            #line 10 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
             this.Write(this.ToStringHelper.ToStringWithCulture(Model.Type));
             
             #line default
@@ -57,7 +78,7 @@ namespace Simple1C.Impl.Generation.Rendering
             return this.GenerationEnvironment.ToString();
         }
         
-        #line 12 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
+        #line 13 "C:\sources\Simple1C\Simple1C\Impl\Generation\Rendering\ConstantFileTemplate.tt"
 
 public ConstantFileModel Model { get; set; }
 

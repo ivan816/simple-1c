@@ -9,18 +9,16 @@ namespace Simple1C.Impl.Helpers
     internal class EnumAttributesCache<TAttribute>
         where TAttribute : Attribute
     {
-        public static readonly EnumAttributesCache<TAttribute> instance = new EnumAttributesCache<TAttribute>();
-
-        private readonly ConcurrentDictionary<Type, IDictionary<string, TAttribute>> enumToItems =
+        private static readonly ConcurrentDictionary<Type, IDictionary<string, TAttribute>> enumToItems =
             new ConcurrentDictionary<Type, IDictionary<string, TAttribute>>();
 
-        public TAttribute GetAttribute<TEnum>(TEnum enumItem)
+        public static TAttribute GetAttribute<TEnum>(TEnum enumItem)
             where TEnum : struct
         {
             return GetAttributeUnsafe(enumItem);
         }
 
-        public TAttribute GetAttributeUnsafe(object enumItem)
+        public static TAttribute GetAttributeUnsafe(object enumItem)
         {
             TAttribute result;
             if (!GetAllAttributes(enumItem.GetType())
@@ -31,7 +29,7 @@ namespace Simple1C.Impl.Helpers
             return result;
         }
 
-        public IDictionary<string, TAttribute> GetAllAttributes(Type enumType)
+        public static IDictionary<string, TAttribute> GetAllAttributes(Type enumType)
         {
             return enumToItems.GetOrAdd(enumType, GetEnumItems);
         }

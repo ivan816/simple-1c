@@ -3,6 +3,7 @@
     internal class PropertyModel
     {
         public string PropertyName { get; set; }
+        public int? MaxLength { get; set; }
 
         public string FieldName
         {

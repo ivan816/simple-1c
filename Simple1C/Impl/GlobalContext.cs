@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Com;
+using Simple1C.Impl.Generation;
 using Simple1C.Impl.Queries;
 
 namespace Simple1C.Impl
 {
     internal class GlobalContext : DispatchObject
     {
+        private object metadata;
+
         internal GlobalContext(object comObject) : base(comObject)
         {
         }
@@ -23,7 +26,13 @@ namespace Simple1C.Impl
 
         public object Metadata
         {
-            get { return Get("Метаданные"); }
+            get { return metadata ?? (metadata = Get("Метаданные")); }
+        }
+
+        public ConfigurationItem FindByName(ConfigurationName fullname)
+        {
+            var itemMetadata = ComHelpers.Invoke(Metadata, "НайтиПоПолномуИмени", fullname.Fullname);
+            return new ConfigurationItem(fullname, itemMetadata);
         }
 
         public T NewObject<T>(string typeName) where T : DispatchObject

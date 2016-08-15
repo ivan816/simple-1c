@@ -90,9 +90,13 @@ namespace Simple1C.Impl
 
         private void SaveConstant(Constant constantEntity)
         {
-            var constants = ComHelpers.GetProperty(globalContext.ComObject(), "Константы");
-            var constant = ComHelpers.GetProperty(constants, constantEntity.GetType().Name);
-            var value = comObjectMapper.MapTo1C(constantEntity.ЗначениеНетипизированное);
+            var configurationName = new ConfigurationName(ConfigurationScope.Константы,
+                constantEntity.GetType().Name);
+            var metadata = metadataAccessor.GetMetadata(configurationName);
+            var valueToSave = constantEntity.ЗначениеНетипизированное;
+            metadata.Validate(null, valueToSave);
+            var constant = globalContext.GetManager(configurationName);
+            var value = comObjectMapper.MapTo1C(valueToSave);
             ComHelpers.Invoke(constant, "Установить", value);
         }
 
@@ -125,14 +129,19 @@ namespace Simple1C.Impl
                         .JoinStrings("->")));
             }
             pending.Push(source);
+            Metadata metadata;
             ConfigurationName? configurationName;
             if (comObject == null)
             {
                 configurationName = ConfigurationName.Get(source.GetType());
+                metadata = metadataAccessor.GetMetadata(configurationName.Value);
                 comObject = GetComObjectForEditing(configurationName.Value, source);
             }
             else
+            {
+                metadata = null;
                 configurationName = null;
+            }
             bool? newPostingValue = null;
             var changeLog = source.Controller.Changed;
             if (changeLog != null)
@@ -146,7 +155,7 @@ namespace Simple1C.Impl
                         continue;
                     }
                     pending.Push(p.Key);
-                    SaveProperty(p.Key, p.Value, comObject, pending);
+                    SaveProperty(p.Key, p.Value, comObject, pending, metadata);
                     pending.Pop();
                 }
             var needPatchWithOriginalValues = configurationName.HasValue &&
@@ -156,14 +165,13 @@ namespace Simple1C.Impl
                                               changeLog != null;
             if (needPatchWithOriginalValues)
             {
-                var requisiteNames = metadataAccessor.GetRequisiteNames(configurationName.Value);
                 var backingStorage = source.Controller.ValueSource.GetBackingStorage();
-                foreach (var requisiteName in requisiteNames)
-                    if (!changeLog.ContainsKey(requisiteName))
+                foreach (var r in metadata.Requisites)
+                    if (!changeLog.ContainsKey(r.Name))
                     {
-                        pending.Push(requisiteName);
-                        var value = ComHelpers.GetProperty(backingStorage, requisiteName);
-                        SaveProperty(requisiteName, value, comObject, pending);
+                        pending.Push(r);
+                        var value = ComHelpers.GetProperty(backingStorage, r.Name);
+                        SaveProperty(r.Name, value, comObject, pending, metadata);
                         pending.Pop();
                     }
             }
@@ -244,7 +252,7 @@ namespace Simple1C.Impl
             }
         }
 
-        private void SaveProperty(string name, object value, object comObject, Stack<object> pending)
+        private void SaveProperty(string name, object value, object comObject, Stack<object> pending, Metadata metadata)
         {
             var list = value as IList;
             if (list != null)
@@ -296,7 +304,11 @@ namespace Simple1C.Impl
                 valueToSet = abstractEntity.Controller.ValueSource.GetBackingStorage();
             }
             else
+            {
+                if (metadata != null && value != null)
+                    metadata.Validate(name, value);
                 valueToSet = comObjectMapper.MapTo1C(value);
+            }
             ComHelpers.SetProperty(comObject, name, valueToSet);
         }
 

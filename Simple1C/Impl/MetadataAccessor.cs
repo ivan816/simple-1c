@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Interface;
@@ -12,18 +13,18 @@ namespace Simple1C.Impl
     {
         private readonly GlobalContext globalContext;
 
-        private readonly ConcurrentDictionary<ConfigurationName, string[]> requisiteNames =
-            new ConcurrentDictionary<ConfigurationName, string[]>();
+        private static readonly ConcurrentDictionary<ConfigurationName, Metadata> requisiteNames =
+            new ConcurrentDictionary<ConfigurationName, Metadata>();
 
-        private readonly Func<ConfigurationName, string[]> createRequisiteNames;
+        private readonly Func<ConfigurationName, Metadata> createRequisiteNames;
 
         public MetadataAccessor(GlobalContext globalContext)
         {
             this.globalContext = globalContext;
-            createRequisiteNames = CreateRequisiteNames;
+            createRequisiteNames = CreateMetadataProperties;
         }
 
-        public string[] GetRequisiteNames(ConfigurationName configurationName)
+        public Metadata GetMetadata(ConfigurationName configurationName)
         {
             return requisiteNames.GetOrAdd(configurationName, createRequisiteNames);
         }
@@ -33,70 +34,113 @@ namespace Simple1C.Impl
             return descriptors[scope];
         }
 
-        private string[] CreateRequisiteNames(ConfigurationName configurationName)
+        private Metadata CreateMetadataProperties(ConfigurationName name)
         {
-            var metadata = globalContext.Metadata;
-            var itemMetadata = ComHelpers.Invoke(metadata, "НайтиПоПолномуИмени", configurationName.Fullname);
-            var result = new List<string>();
-            var standardAttributes = ComHelpers.GetProperty(itemMetadata, "СтандартныеРеквизиты");
+            var metadata = globalContext.FindByName(name);
+            if (name.Scope == ConfigurationScope.РљРѕРЅСЃС‚Р°РЅС‚С‹)
+                return new Metadata(name.Fullname, new[]
+                {
+                    new MetadataRequisite {MaxLength = GetMaxLength(metadata.ComObject)}
+                });
+            var descriptor = GetDescriptor(name.Scope);
+            var attributes = GetAttributes(metadata.ComObject, descriptor).ToArray();
+            var result = new MetadataRequisite[attributes.Length];
+            for (var i = 0; i < attributes.Length; i++)
+            {
+                var attr = attributes[i];
+                result[i] = new MetadataRequisite
+                {
+                    Name = Call.РРјСЏ(attr),
+                    MaxLength = GetMaxLength(attr)
+                };
+            }
+            return new Metadata(name.Fullname, result);
+        }
+
+        private int? GetMaxLength(object attribute)
+        {
+            var type = ComHelpers.GetProperty(attribute, "РўРёРї");
+            var typesObject = ComHelpers.Invoke(type, "РўРёРїС‹");
+            var typesCount = Call.РљРѕР»РёС‡РµСЃС‚РІРѕ(typesObject);
+            if (typesCount != 1)
+                return null;
+            var typeObject = Call.РџРѕР»СѓС‡РёС‚СЊ(typesObject, 0);
+            var stringPresentation = globalContext.String(typeObject);
+            if (stringPresentation != "РЎС‚СЂРѕРєР°")
+                return null;
+            var РєРІР°Р»РёС„РёРєР°С‚РѕСЂС‹РЎС‚СЂРѕРєРё = ComHelpers.GetProperty(type, "РљРІР°Р»РёС„РёРєР°С‚РѕСЂС‹РЎС‚СЂРѕРєРё");
+            var result = Call.IntProp(РєРІР°Р»РёС„РёРєР°С‚РѕСЂС‹РЎС‚СЂРѕРєРё, "Р”Р»РёРЅР°");
+            if (result == 0)
+                return null;
+            return result;
+        }
+
+        private static readonly string[] standardPropertiesToExclude =
+        {
+            "РРјСЏРџСЂРµРґРѕРїСЂРµРґРµР»РµРЅРЅС‹С…Р”Р°РЅРЅС‹С…",
+            "РЎСЃС‹Р»РєР°"
+        };
+
+        public static IEnumerable<object> GetAttributes(object comObject, ConfigurationItemDescriptor descriptor)
+        {
+            var standardAttributes = ComHelpers.GetProperty(comObject, "РЎС‚Р°РЅРґР°СЂС‚РЅС‹РµР РµРєРІРёР·РёС‚С‹");
+            var isChartOfAccounts = Call.РРјСЏ(comObject) == "РҐРѕР·СЂР°СЃС‡РµС‚РЅС‹Р№";
             foreach (var attr in (IEnumerable) standardAttributes)
             {
-                var name = Call.Имя(attr);
-                result.Add(name);
+                var name = Call.РРјСЏ(attr);
+                if (isChartOfAccounts && name != "РљРѕРґ" && name != "РќР°РёРјРµРЅРѕРІР°РЅРёРµ")
+                    continue;
+                if (standardPropertiesToExclude.Contains(name))
+                    continue;
+                yield return attr;
             }
-            var descriptor = GetDescriptor(configurationName.Scope);
             foreach (var propertyName in descriptor.AttributePropertyNames)
             {
-                var attributes = ComHelpers.GetProperty(itemMetadata, propertyName);
-                var attributesCount = Call.Количество(attributes);
+                var attributes = ComHelpers.GetProperty(comObject, propertyName);
+                var attributesCount = Call.РљРѕР»РёС‡РµСЃС‚РІРѕ(attributes);
                 for (var i = 0; i < attributesCount; ++i)
-                {
-                    var attr = Call.Получить(attributes, i);
-                    var name = Call.Имя(attr);
-                    result.Add(name);
-                }
+                    yield return Call.РџРѕР»СѓС‡РёС‚СЊ(attributes, i);
             }
-            return result.ToArray();
         }
 
         private static readonly Dictionary<ConfigurationScope, ConfigurationItemDescriptor> descriptors =
             new Dictionary<ConfigurationScope, ConfigurationItemDescriptor>
             {
                 {
-                    ConfigurationScope.Справочники, new ConfigurationItemDescriptor
+                    ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё, new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.Документы,
+                    ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.РегистрыСведений,
+                    ConfigurationScope.Р РµРіРёСЃС‚СЂС‹РЎРІРµРґРµРЅРёР№,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты", "Измерения", "Ресурсы"}
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹", "РР·РјРµСЂРµРЅРёСЏ", "Р РµСЃСѓСЂСЃС‹"}
                     }
                 },
                 {
-                    ConfigurationScope.ПланыСчетов,
+                    ConfigurationScope.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.ПланыВидовХарактеристик,
+                    ConfigurationScope.РџР»Р°РЅС‹Р’РёРґРѕРІРҐР°СЂР°РєС‚РµСЂРёСЃС‚РёРє,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 }

@@ -42,7 +42,8 @@ public partial class <#=model.Name#> : Abstract1CEntity
 		if(i != 0)
 			Write("\r\n");
 	#>	private Requisite<<#=prop.Type#>> <#=prop.FieldName#>;
-	public <#=prop.Type#> <#=prop.PropertyName#>
+<#+if(prop.MaxLength.HasValue) {#>	[MaxLength(<#=prop.MaxLength.Value#>)]
+<#+}#>	public <#=prop.Type#> <#=prop.PropertyName#>
 	{
 		get { return Controller.GetValue(ref <#=prop.FieldName#>, "<#=prop.PropertyName#>"); }
 		set { Controller.SetValue(ref <#=prop.FieldName#>, "<#=prop.PropertyName#>", value); }

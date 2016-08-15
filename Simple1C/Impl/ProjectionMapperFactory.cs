@@ -11,7 +11,7 @@ namespace Simple1C.Impl
     {
         private readonly ComObjectMapper comObjectMapper;
 
-        private readonly ConcurrentDictionary<string, Func<Projection, Func<object, object>>> mappers =
+        private static readonly ConcurrentDictionary<string, Func<Projection, Func<object, object>>> mappers =
             new ConcurrentDictionary<string, Func<Projection, Func<object, object>>>();
 
         public ProjectionMapperFactory(ComObjectMapper comObjectMapper)

@@ -16,3 +16,4 @@ todo
 	* убрать лишнюю возню с перестроением QueryField, SelectedProperty, SelectedPropertyItem,
 	если проекцию из кэша можно достать
 	* сделать так, чтоб это работало в select-ах:  Paid = оплаченные.Contains(x.”никальный»дентификатор.GetValueOrDefault())
+   	* объединить логику получени€ метаданных в генераторе и в MetadataAccessor-е
