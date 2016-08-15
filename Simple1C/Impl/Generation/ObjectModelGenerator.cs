@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation.Rendering;
 using Simple1C.Interface;

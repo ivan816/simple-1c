@@ -18,14 +18,9 @@ namespace Simple1C.Impl
         public string Fullname { get; private set; }
         public MetadataRequisite[] Requisites { get; private set; }
 
-        public MetadataRequisite GetByName(string name)
-        {
-            return requisiteByName[name ?? ""];
-        }
-
         public void Validate(string name, object value)
         {
-            var requisite = GetByName(name);
+            var requisite = requisiteByName[name ?? ""];
             if (!requisite.MaxLength.HasValue)
                 return;
             var stringValue = value as string;
