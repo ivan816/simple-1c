@@ -65,7 +65,7 @@
     <Compile Include="Impl\Generation\Rendering\GenerateHelpers.cs" />
     <Compile Include="Impl\Call.cs" />
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
-    <Compile Include="Impl\Helpers\ClassAttributesCache.cs" />
+    <Compile Include="Impl\Helpers\AttributesCache.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\FieldAccessorFactory.cs" />
