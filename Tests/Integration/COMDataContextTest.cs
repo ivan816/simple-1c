@@ -6,7 +6,6 @@ using Simple1C.Impl.Com;
 using Simple1C.Interface;
 using Simple1C.Tests.Metadata1C.Документы;
 using Simple1C.Tests.Metadata1C.Перечисления;
-using Simple1C.Tests.Metadata1C.РегистрыСведений;
 using Simple1C.Tests.Metadata1C.Справочники;
 using Simple1C.Tests.TestEntities;
 
@@ -55,12 +54,13 @@ namespace Simple1C.Tests.Integration
             counterpartAccessObject.ОсновнойБанковскийСчет = bankAccountAccessObject.Ссылка;
             counterpartAccessObject.Write();
 
-            var counterpartyContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
-            {
-                CurrencyCode = "643",
-                Name = "Валюта",
-                Kind = CounterpartContractKind.OutgoingWithAgency
-            });
+            var counterpartyContractAccessObject =
+                testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка, new CounterpartyContract
+                {
+                    CurrencyCode = "643",
+                    Name = "Валюта",
+                    Kind = CounterpartContractKind.OutgoingWithAgency
+                });
             string counterpartContractCode = counterpartyContractAccessObject.Код;
 
             var contractFromStore = dataContext
@@ -71,11 +71,11 @@ namespace Simple1C.Tests.Integration
             Assert.That(contractFromStore.Владелец.КПП, Is.EqualTo("987654321"));
             Assert.That(contractFromStore.Владелец.Наименование, Is.EqualTo("test-counterpart-name"));
             Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.НомерСчета,
-                        Is.EqualTo("40702810001111122222"));
+                Is.EqualTo("40702810001111122222"));
             Assert.That(contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец,
-                        Is.TypeOf<Контрагенты>());
-            Assert.That(((Контрагенты)contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец)
-                    .ИНН,
+                Is.TypeOf<Контрагенты>());
+            Assert.That(((Контрагенты) contractFromStore.Владелец.ОсновнойБанковскийСчет.Владелец)
+                .ИНН,
                 Is.EqualTo("0987654321"));
             Assert.That(contractFromStore.ВидДоговора, Is.EqualTo(ВидыДоговоровКонтрагентов.СКомиссионеромНаЗакупку));
         }
@@ -141,8 +141,8 @@ namespace Simple1C.Tests.Integration
                 .Single(x => x.Владелец is Контрагенты);
             Assert.That(account.ВалютаДенежныхСредств.Код, Is.EqualTo("643"));
             Assert.That(account.Владелец, Is.TypeOf<Контрагенты>());
-            Assert.That(((Контрагенты)account.Владелец).ИНН, Is.EqualTo("0987654321"));
-            Assert.That(((Контрагенты)account.Владелец).КПП, Is.EqualTo("987654321"));
+            Assert.That(((Контрагенты) account.Владелец).ИНН, Is.EqualTo("0987654321"));
+            Assert.That(((Контрагенты) account.Владелец).КПП, Is.EqualTo("987654321"));
         }
 
         [Test]
@@ -219,12 +219,13 @@ namespace Simple1C.Tests.Integration
         public void CanFilterForEmptyReference()
         {
             dynamic counterpartAccessObject = CreateTestCounterpart();
-            var counterpartyContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка,
-                new CounterpartyContract
-                {
-                    Name = "test-description",
-                    Kind = CounterpartContractKind.Others
-                });
+            var counterpartyContractAccessObject =
+                testObjectsManager.CreateCounterpartContract(counterpartAccessObject.Ссылка,
+                    new CounterpartyContract
+                    {
+                        Name = "test-description",
+                        Kind = CounterpartContractKind.Others
+                    });
             string counterpartyContractCode = counterpartyContractAccessObject.Код;
 
             var contracts = dataContext.Select<ДоговорыКонтрагентов>()
@@ -263,10 +264,10 @@ namespace Simple1C.Tests.Integration
             Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
 
             var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
-                    new Dictionary<string, object>
-                    {
-                        {"Code", counterparty.Код}
-                    }).Unload();
+                new Dictionary<string, object>
+                {
+                    {"Code", counterparty.Код}
+                }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
@@ -292,10 +293,12 @@ namespace Simple1C.Tests.Integration
             dataContext.Save(counterparty);
             Assert.That(string.IsNullOrEmpty(counterparty.Код), Is.False);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
-            {
-                {"Code", counterparty.Код}
-            }).Unload();
+            var valueTable =
+                globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
+                    new Dictionary<string, object>
+                    {
+                        {"Code", counterparty.Код}
+                    }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("ИНН"), Is.EqualTo("1234567890"));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test-counterparty"));
@@ -325,17 +328,21 @@ namespace Simple1C.Tests.Integration
             dataContext.Save(counterpartyContract);
             Assert.That(string.IsNullOrEmpty(counterpartyContract.Код), Is.False);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code", new Dictionary<string, object>
-            {
-                {"Code", counterpartyContract.Код}
-            }).Unload();
+            var valueTable =
+                globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code",
+                    new Dictionary<string, object>
+                    {
+                        {"Code", counterpartyContract.Код}
+                    }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
             Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test name"));
-            Assert.That(((dynamic)valueTable[0]["Владелец"]).Код, Is.EqualTo(counterparty.Код));
-            valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new Dictionary<string, object>
-            {
-                {"Code", counterparty.Код}
-            }).Unload();
+            Assert.That(((dynamic) valueTable[0]["Владелец"]).Код, Is.EqualTo(counterparty.Код));
+            valueTable =
+                globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
+                    new Dictionary<string, object>
+                    {
+                        {"Code", counterparty.Код}
+                    }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
         }
 
