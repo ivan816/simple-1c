@@ -17,25 +17,23 @@ namespace Simple1C.Impl
         private readonly GlobalContext globalContext;
         private readonly ComObjectMapper comObjectMapper;
         private readonly IQueryProvider queryProvider;
-        private readonly TypeRegistry typeRegistry;
-        private readonly MetadataAccessor metadataAccessor;
-        private readonly ProjectionMapperFactory projectionMapperFactory;
         private readonly ParametersConverter parametersConverter;
+        private readonly MappingSource mappingSource;
+        private readonly MetadataAccessor metadataAccessor;
 
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
             this.globalContext = new GlobalContext(globalContext);
-            typeRegistry = new TypeRegistry(mappingsAssembly);
-            comObjectMapper = new ComObjectMapper(typeRegistry, this.globalContext);
-            queryProvider = RelinqHelpers.CreateQueryProvider(typeRegistry, Execute);
-            metadataAccessor = new MetadataAccessor(this.globalContext);
-            projectionMapperFactory = new ProjectionMapperFactory(comObjectMapper);
+            mappingSource = MappingSource.Get(this.globalContext, mappingsAssembly);
+            comObjectMapper = new ComObjectMapper(mappingSource, this.globalContext);
+            queryProvider = RelinqHelpers.CreateQueryProvider(mappingSource.TypeRegistry, Execute);
             parametersConverter = new ParametersConverter(comObjectMapper, this.globalContext);
+            metadataAccessor = new MetadataAccessor(mappingSource, this.globalContext);
         }
 
         public Type GetTypeOrNull(string configurationName)
         {
-            return typeRegistry.GetTypeOrNull(configurationName);
+            return mappingSource.TypeRegistry.GetTypeOrNull(configurationName);
         }
 
         public IQueryable<T> Select<T>(string sourceName = null)
@@ -399,7 +397,7 @@ namespace Simple1C.Impl
             if (hasReference || builtQuery.Projection != null)
             {
                 var projection = builtQuery.Projection != null
-                    ? projectionMapperFactory.GetMapper(builtQuery.Projection)
+                    ? ProjectionMapperFactory.GetMapper(builtQuery.Projection, comObjectMapper)
                     : null;
                 var selection = queryResult.Select();
                 while (selection.Next())

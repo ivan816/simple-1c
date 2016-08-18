@@ -7,36 +7,31 @@ using Simple1C.Impl.Queriables;
 
 namespace Simple1C.Impl
 {
-    internal class ProjectionMapperFactory
+    internal static class ProjectionMapperFactory
     {
-        private readonly ComObjectMapper comObjectMapper;
+        private static readonly ConcurrentDictionary<string, Func<Projection, ComObjectMapper, Func<object, object>>>
+            mappers =
+                new ConcurrentDictionary<string, Func<Projection, ComObjectMapper, Func<object, object>>>();
 
-        private static readonly ConcurrentDictionary<string, Func<Projection, Func<object, object>>> mappers =
-            new ConcurrentDictionary<string, Func<Projection, Func<object, object>>>();
-
-        public ProjectionMapperFactory(ComObjectMapper comObjectMapper)
-        {
-            this.comObjectMapper = comObjectMapper;
-        }
-
-        public Func<object, object> GetMapper(Projection projection)
+        public static Func<object, object> GetMapper(Projection projection, ComObjectMapper mapper)
         {
             var cacheKey = projection.GetCacheKey();
-            Func<Projection, Func<object, object>> result;
+            Func<Projection, ComObjectMapper, Func<object, object>> result;
             if (!mappers.TryGetValue(cacheKey, out result))
             {
                 var argumentsExtractor = CreateArgumentsExtractor(projection);
                 var instanceFactory = CreateInstanceFactory(projection);
-                mappers.TryAdd(cacheKey, result = delegate(Projection currentProjection)
+                mappers.TryAdd(cacheKey, result = delegate(Projection currentProjection, ComObjectMapper currentMapper)
                 {
-                    var arguments = argumentsExtractor(currentProjection);
+                    var arguments = argumentsExtractor(currentProjection, mapper);
                     return queryResultRow => instanceFactory(arguments(queryResultRow));
                 });
             }
-            return result(projection);
+            return result(projection, mapper);
         }
 
-        private Func<Projection, Func<object, object[]>> CreateArgumentsExtractor(Projection projection)
+        private static Func<Projection, ComObjectMapper, Func<object, object[]>> CreateArgumentsExtractor(
+            Projection projection)
         {
             var argumentsCount = 0;
             var parameterizer = new ParameterizingExpressionVisitor();
@@ -53,7 +48,7 @@ namespace Simple1C.Impl
                 var xLambda = Expression.Lambda<Func<object[], object>>(xConvertBody, xParameter);
                 property.compiledExpression = xLambda.Compile();
             }
-            return delegate(Projection currentProjection)
+            return delegate(Projection currentProjection, ComObjectMapper currentMapper)
             {
                 var fieldValues = new object[currentProjection.fields.Length];
                 var propertyValues = new object[currentProjection.properties.Length];
@@ -64,7 +59,7 @@ namespace Simple1C.Impl
                     {
                         var field = currentProjection.fields[i];
                         var fieldValue = field.GetValue(queryResultRow);
-                        fieldValues[i] = comObjectMapper.MapFrom1C(fieldValue, field.Type);
+                        fieldValues[i] = currentMapper.MapFrom1C(fieldValue, field.Type);
                     }
                     for (var i = 0; i < currentProjection.properties.Length; i++)
                     {
