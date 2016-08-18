@@ -102,6 +102,10 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\Sql\ColumnMapping.cs" />
+    <Compile Include="Impl\Sql\MappingSchema.cs" />
+    <Compile Include="Impl\Sql\SqlTranslator.cs" />
+    <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />

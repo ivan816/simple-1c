@@ -1,11 +1,14 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.CSharp;
+using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Queries;
 using Simple1C.Interface;
 
 namespace Generator
@@ -15,6 +18,18 @@ namespace Generator
         public static int Main(string[] args)
         {
             var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
+            var cmd = parameters["cmd"];
+            if (cmd == "gen-sql-meta")
+                return GenSqlMeta(parameters);
+            if (cmd == "get-cs-meta")
+                return GenCsMeta(parameters);
+            Console.Out.WriteLine("Invalid arguments");
+            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-sql-meta|gen-cs-meta]");
+            return -1;
+        }
+
+        private static int GenCsMeta(NameValueCollection parameters)
+        {
             var connectionString = parameters["connectionString"];
             var resultAssemblyFullPath = parameters["resultAssemblyFullPath"];
             var namespaceRoot = parameters["namespaceRoot"];
@@ -30,10 +45,9 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -connectionString <string> [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>] [-csprojFilePath]");
+                    "Usage: Generator.exe -cmd gen-cs-meta -connectionString <string> -target cs [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>] [-csprojFilePath]");
                 return -1;
             }
-
             object globalContext = null;
             ExecuteAction(string.Format("connecting to [{0}]", connectionString),
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
@@ -92,6 +106,62 @@ namespace Generator
                             }
                         }
                     });
+            return 0;
+        }
+
+        private static int GenSqlMeta(NameValueCollection parameters)
+        {
+            var connectionString = parameters["connectionString"];
+            var resultSchemaFileName = parameters["resultSchemaFileName"];
+            var parametersAreValid =
+                !string.IsNullOrEmpty(connectionString) &&
+                !string.IsNullOrEmpty(resultSchemaFileName);
+            if (!parametersAreValid)
+            {
+                Console.Out.WriteLine("Invalid arguments");
+                Console.Out.WriteLine(
+                    "Usage: Generator.exe -cmd gen-sql-meta -connectionString <string> -resultSchemaFileName <file full path>");
+                return -1;
+            }
+            object globalContext = null;
+            ExecuteAction(string.Format("connecting to [{0}]", connectionString),
+                () => globalContext = new GlobalContextFactory().Create(connectionString));
+
+            object comTable = null;
+            ExecuteAction("loading schema info",
+                () => comTable = ComHelpers.Invoke(globalContext, "ПолучитьСтруктуруХраненияБазыДанных"));
+
+            ExecuteAction(string.Format("dumping schema into [{0}]", resultSchemaFileName),
+                () =>
+                {
+                    var tableMappings = new ValueTable(comTable);
+                    using (var writer = new StreamWriter(resultSchemaFileName))
+                    {
+                        writer.WriteLine(connectionString);
+                        foreach (var tableMapping in tableMappings)
+                        {
+                            var queryTableName = tableMapping.GetString("ИмяТаблицы");
+                            if (string.IsNullOrEmpty(queryTableName))
+                                continue;
+                            var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
+                            if (string.IsNullOrEmpty(dbTableName))
+                                continue;
+                            writer.WriteLine("{0} {1}", queryTableName, dbTableName);
+                            var colunMappings = new ValueTable(tableMapping["Поля"]);
+                            for (var i = 0; i < colunMappings.Count; i++)
+                            {
+                                var columnMapping = colunMappings.Get(i);
+                                var queryColumnName = columnMapping.GetString("ИмяПоля");
+                                if (string.IsNullOrEmpty(queryColumnName))
+                                    continue;
+                                var dbColumnName = columnMapping.GetString("ИмяПоляХранения");
+                                if (string.IsNullOrEmpty(dbColumnName))
+                                    continue;
+                                writer.WriteLine("\t{0} {1}", queryColumnName, dbColumnName);
+                            }
+                        }
+                    }
+                });
             return 0;
         }
 
