@@ -148,7 +148,6 @@
     <Compile Include="Interface\ObjectModel\Constant.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
     <Compile Include="Interface\Функции.cs" />
-    <Compile Include="Interface\Store1CHelpers.cs" />
     <Compile Include="DataContextFactory.cs" />
     <Compile Include="Impl\SyncList.cs" />
     <Compile Include="Impl\ObservedValue.cs" />
