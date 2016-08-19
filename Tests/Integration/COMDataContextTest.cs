@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reflection;
 using NUnit.Framework;
 using Simple1C.Impl.Com;
 using Simple1C.Interface;
@@ -13,6 +14,18 @@ namespace Simple1C.Tests.Integration
 {
     internal class COMDataContextTest : COMDataContextTestBase
     {
+        [Test]
+        public void CheckAmbigousAssembly()
+        {
+            var exception =
+                Assert.Throws<InvalidOperationException>(
+                    () => DataContextFactory.CreateCOM(globalContext.ComObject(), Assembly.GetExecutingAssembly()));
+            const string expectedMessageFormat =
+                "can't map [{0}] to [Simple1C.Tests] because it's already mapped to [Metadata1C]";
+            Assert.That(exception.Message,
+                Is.EqualTo(string.Format(expectedMessageFormat, globalContext.GetConnectionString())));
+        }
+
         [Test]
         public void Simple()
         {

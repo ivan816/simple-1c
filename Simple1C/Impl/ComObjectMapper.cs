@@ -52,7 +52,7 @@ namespace Simple1C.Impl
                 if (source is MarshalByRefObject)
                 {
                     var typeName = GetFullName(source);
-                    type = GetTypeByTypeName(typeName);
+                    type = mappingSource.TypeRegistry.GetType(typeName);
                 }
                 else
                     type = source.GetType();
@@ -125,18 +125,7 @@ namespace Simple1C.Impl
         {
             var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
             var typeName = Call.ПолноеИмя(metadata);
-            return GetTypeByTypeName(typeName);
-        }
-
-        private Type GetTypeByTypeName(string typeName)
-        {
-            var type = mappingSource.TypeRegistry.GetTypeOrNull(typeName);
-            if (type == null)
-            {
-                const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
-                throw new InvalidOperationException(string.Format(messageFormat, typeName));
-            }
-            return type;
+            return mappingSource.TypeRegistry.GetType(typeName);
         }
 
         private static string GetFullName(object source)
@@ -168,9 +157,8 @@ namespace Simple1C.Impl
                 .Select(v => new EnumMapItem
                 {
                     value = v,
-                    index =
-                        Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf",
-                            ComHelpers.GetProperty(enumeration, v.ToString())))
+                    index = Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf",
+                        ComHelpers.GetProperty(enumeration, v.ToString())))
                 })
                 .ToArray();
         }

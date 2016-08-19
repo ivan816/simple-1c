@@ -24,7 +24,7 @@ namespace Simple1C.Impl
         public ComDataContext(object globalContext, Assembly mappingsAssembly)
         {
             this.globalContext = new GlobalContext(globalContext);
-            mappingSource = MappingSource.Get(this.globalContext, mappingsAssembly);
+            mappingSource = MappingSource.Map(this.globalContext, mappingsAssembly);
             comObjectMapper = new ComObjectMapper(mappingSource, this.globalContext);
             queryProvider = RelinqHelpers.CreateQueryProvider(mappingSource.TypeRegistry, Execute);
             parametersConverter = new ParametersConverter(comObjectMapper, this.globalContext);
