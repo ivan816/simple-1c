@@ -432,7 +432,7 @@ namespace Simple1C.Tests.Integration
                 .Where(x => x.УникальныйИдентификатор == договор.УникальныйИдентификатор)
                 .Select(x => new
                 {
-                    Id = x.Организация.УникальныйИдентификатор,
+                    Id = x.Организация.УникальныйИдентификатор
                 })
                 .ToArray();
             Assert.That(counterparties.Length, Is.EqualTo(1));

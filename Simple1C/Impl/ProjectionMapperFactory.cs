@@ -23,7 +23,7 @@ namespace Simple1C.Impl
                 var instanceFactory = CreateInstanceFactory(projection);
                 mappers.TryAdd(cacheKey, result = delegate(Projection currentProjection, ComObjectMapper currentMapper)
                 {
-                    var arguments = argumentsExtractor(currentProjection, mapper);
+                    var arguments = argumentsExtractor(currentProjection, currentMapper);
                     return queryResultRow => instanceFactory(arguments(queryResultRow));
                 });
             }

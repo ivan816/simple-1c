@@ -1,4 +1,4 @@
-using System.Collections;
+п»їusing System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Com;
@@ -11,8 +11,8 @@ namespace Simple1C.Impl
     {
         private static readonly string[] standardPropertiesToExclude =
         {
-            "ИмяПредопределенныхДанных",
-            "Ссылка"
+            "РРјСЏРџСЂРµРґРѕРїСЂРµРґРµР»РµРЅРЅС‹С…Р”Р°РЅРЅС‹С…",
+            "РЎСЃС‹Р»РєР°"
         };
 
         public static ConfigurationItemDescriptor GetDescriptor(ConfigurationScope scope)
@@ -22,12 +22,12 @@ namespace Simple1C.Impl
 
         public static IEnumerable<object> GetAttributes(object comObject, ConfigurationItemDescriptor descriptor)
         {
-            var standardAttributes = ComHelpers.GetProperty(comObject, "СтандартныеРеквизиты");
-            var isChartOfAccounts = Call.Имя(comObject) == "Хозрасчетный";
+            var standardAttributes = ComHelpers.GetProperty(comObject, "РЎС‚Р°РЅРґР°СЂС‚РЅС‹РµР РµРєРІРёР·РёС‚С‹");
+            var isChartOfAccounts = Call.РРјСЏ(comObject) == "РҐРѕР·СЂР°СЃС‡РµС‚РЅС‹Р№";
             foreach (var attr in (IEnumerable)standardAttributes)
             {
-                var name = Call.Имя(attr);
-                if (isChartOfAccounts && name != "Код" && name != "Наименование")
+                var name = Call.РРјСЏ(attr);
+                if (isChartOfAccounts && name != "РљРѕРґ" && name != "РќР°РёРјРµРЅРѕРІР°РЅРёРµ")
                     continue;
                 if (standardPropertiesToExclude.Contains(name))
                     continue;
@@ -36,9 +36,9 @@ namespace Simple1C.Impl
             foreach (var propertyName in descriptor.AttributePropertyNames)
             {
                 var attributes = ComHelpers.GetProperty(comObject, propertyName);
-                var attributesCount = Call.Количество(attributes);
+                var attributesCount = Call.РљРѕР»РёС‡РµСЃС‚РІРѕ(attributes);
                 for (var i = 0; i < attributesCount; ++i)
-                    yield return Call.Получить(attributes, i);
+                    yield return Call.РџРѕР»СѓС‡РёС‚СЊ(attributes, i);
             }
         }
 
@@ -46,40 +46,40 @@ namespace Simple1C.Impl
             new Dictionary<ConfigurationScope, ConfigurationItemDescriptor>
             {
                 {
-                    ConfigurationScope.Справочники, new ConfigurationItemDescriptor
+                    ConfigurationScope.РЎРїСЂР°РІРѕС‡РЅРёРєРё, new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.Документы,
+                    ConfigurationScope.Р”РѕРєСѓРјРµРЅС‚С‹,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.РегистрыСведений,
+                    ConfigurationScope.Р РµРіРёСЃС‚СЂС‹РЎРІРµРґРµРЅРёР№,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты", "Измерения", "Ресурсы"}
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹", "РР·РјРµСЂРµРЅРёСЏ", "Р РµСЃСѓСЂСЃС‹"}
                     }
                 },
                 {
-                    ConfigurationScope.ПланыСчетов,
+                    ConfigurationScope.РџР»Р°РЅС‹РЎС‡РµС‚РѕРІ,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 },
                 {
-                    ConfigurationScope.ПланыВидовХарактеристик,
+                    ConfigurationScope.РџР»Р°РЅС‹Р’РёРґРѕРІРҐР°СЂР°РєС‚РµСЂРёСЃС‚РёРє,
                     new ConfigurationItemDescriptor
                     {
-                        AttributePropertyNames = new[] {"Реквизиты"},
+                        AttributePropertyNames = new[] {"Р РµРєРІРёР·РёС‚С‹"},
                         HasTableSections = true
                     }
                 }

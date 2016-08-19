@@ -6,7 +6,7 @@ using Simple1C.Impl.Queries;
 
 namespace Simple1C.Impl
 {
-    internal class GlobalContext : DispatchObject
+    internal class GlobalContext : DispatchObject, IDisposable
     {
         private object metadata;
 
@@ -80,6 +80,11 @@ namespace Simple1C.Impl
         public new object ComObject()
         {
             return base.ComObject();
+        }
+
+        public new void Dispose()
+        {
+            base.Dispose();
         }
 
         private class Query : DispatchObject
