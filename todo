@@ -8,12 +8,6 @@ todo
 	* создавать DispatchObject-ы через Reflection.Emit
 	* inmemoryDataContext, LoadNewestRevisionWhenAccessPropertyForTheFirstTime: выяснить, какое поведение дожно быть
 	* более интеллектуально генерить ключ для кэширования проекций
-	* научиться так делать
-		return dataContext.Select<ДатыЗапретаИзменения>()
-                	.OrderByDescending(x => x.ДатаЗапрета)
-	                .Select(x => x.ДатаЗапрета)
-        	        .FirstOrDefault();
 	* убрать лишнюю возню с перестроением QueryField, SelectedProperty, SelectedPropertyItem,
 	если проекцию из кэша можно достать
-	* сделать так, чтоб это работало в select-ах:  Paid = оплаченные.Contains(x.УникальныйИдентификатор.GetValueOrDefault())
    	* объединить логику получения метаданных в генераторе и в MetadataAccessor-е

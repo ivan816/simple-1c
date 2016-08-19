@@ -82,6 +82,8 @@ namespace Simple1C.Impl
 
         private static Func<object[], object> CreateInstanceFactory(Projection projection)
         {
+            if (projection.ctor == null)
+                return a => a[0];
             var compiledCtorDelegate = ReflectionHelpers.GetCompiledDelegate(projection.ctor);
             if (projection.initMembers == null)
                 return arguments => compiledCtorDelegate(null, arguments);

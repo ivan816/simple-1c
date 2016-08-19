@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Simple1C.Impl;
 using Simple1C.Interface;
 
@@ -12,6 +13,17 @@ namespace Simple1C.Tests.Helpers
         private static readonly string tempDatabaseFullPath = Path.GetFullPath("temp-base");
         private const string etalonDatabaseFullPath = @"\\host\dev\testBases\houseStark";
         private const string etalonDatabaseLocalCacheFullPath = @"c:\testBases\houseStark";
+
+        static Testing1CConnector()
+        {
+            AppDomain.CurrentDomain.DomainUnload += delegate
+            {
+                if (globalContext != null)
+                    globalContext.Dispose();
+                if (tempGlobalContext != null)
+                    tempGlobalContext.Dispose();
+            };
+        }
 
         public static GlobalContext GetDefaultGlobalContext()
         {
@@ -41,6 +53,7 @@ namespace Simple1C.Tests.Helpers
 
         private static GlobalContext OpenContext(string databaseFullPath)
         {
+            ProcessesHelpers.KillOwnProcessesByName("1cv8.exe");
             var connectionStringBuilder = new ConnectionStringBuilder
             {
                 Type = Connection1CType.File,
@@ -55,7 +68,6 @@ namespace Simple1C.Tests.Helpers
 
         private static void SyncDbDataWithEtalon(string databaseFullPath)
         {
-            ProcessesHelpers.KillOwnProcessesByName("1cv8.exe");
             Robocopy.Execute(etalonDatabaseFullPath, etalonDatabaseLocalCacheFullPath, true);
             Robocopy.Execute(etalonDatabaseLocalCacheFullPath, databaseFullPath, false);
         }

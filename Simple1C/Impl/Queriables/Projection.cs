@@ -30,7 +30,8 @@ namespace Simple1C.Impl.Queriables
         public string GetCacheKey()
         {
             var b = new StringBuilder();
-            b.Append(resultType.FormatName());
+            if (resultType != null)
+                b.Append(resultType.FormatName());
             b.Append('-');
             foreach (var t in fields)
             {

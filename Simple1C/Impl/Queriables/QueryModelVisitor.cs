@@ -56,22 +56,22 @@ namespace Simple1C.Impl.Queriables
             else
             {
                 xNew = xSelector as NewExpression;
-                if (xNew == null)
-                {
-                    const string messageFormat = "selector [{0}] is not supported";
-                    throw new InvalidOperationException(string.Format(messageFormat, selectClause.Selector));
-                }
-                properties = new SelectedProperty[xNew.Arguments.Count];
                 members = null;
-                for (var i = 0; i < properties.Length; i++)
-                    properties[i] = propertiesExtractor.GetProperty(xNew.Arguments[i]);
+                if (xNew != null)
+                {
+                    properties = new SelectedProperty[xNew.Arguments.Count];
+                    for (var i = 0; i < properties.Length; i++)
+                        properties[i] = propertiesExtractor.GetProperty(xNew.Arguments[i]);
+                }
+                else
+                    properties = new[] {propertiesExtractor.GetProperty(xSelector)};
             }
             queryBuilder.SetProjection(new Projection
             {
                 fields = propertiesExtractor.GetFields(),
                 properties = properties,
-                resultType = xNew.Type,
-                ctor = xNew.Constructor,
+                resultType = xNew == null ? null : xNew.Type,
+                ctor = xNew == null ? null : xNew.Constructor,
                 initMembers = members
             });
         }
