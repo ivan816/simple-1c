@@ -1,10 +1,12 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.CSharp;
+using Simple1C.Impl;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
@@ -123,13 +125,13 @@ namespace Generator
                     "Usage: Generator.exe -cmd gen-sql-meta -connectionString <string> -resultSchemaFileName <file full path>");
                 return -1;
             }
-            object globalContext = null;
+            GlobalContext globalContext = null;
             ExecuteAction(string.Format("connecting to [{0}]", connectionString),
-                () => globalContext = new GlobalContextFactory().Create(connectionString));
+                () => globalContext = new GlobalContext(new GlobalContextFactory().Create(connectionString)));
 
             object comTable = null;
             ExecuteAction("loading schema info",
-                () => comTable = ComHelpers.Invoke(globalContext, "ПолучитьСтруктуруХраненияБазыДанных"));
+                () => comTable = ComHelpers.Invoke(globalContext.ComObject(), "ПолучитьСтруктуруХраненияБазыДанных"));
 
             ExecuteAction(string.Format("dumping schema into [{0}]", resultSchemaFileName),
                 () =>
@@ -138,31 +140,54 @@ namespace Generator
                     using (var writer = new StreamWriter(resultSchemaFileName))
                     {
                         writer.WriteLine(connectionString);
-                        foreach (var tableMapping in tableMappings)
+                        for (var i = 0; i < tableMappings.Count; i++)
                         {
+                            var tableMapping = tableMappings[i];
                             var queryTableName = tableMapping.GetString("ИмяТаблицы");
                             if (string.IsNullOrEmpty(queryTableName))
                                 continue;
+                            var configurationName = ConfigurationName.ParseOrNull(queryTableName);
+                            if (configurationName != null)
+                            {
+                                var configurationItem = globalContext.FindByName(configurationName.Value);
+                                var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
+                                var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
+                            }
+
                             var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
                             if (string.IsNullOrEmpty(dbTableName))
                                 continue;
                             writer.WriteLine("{0} {1}", queryTableName, dbTableName);
                             var colunMappings = new ValueTable(tableMapping["Поля"]);
-                            for (var i = 0; i < colunMappings.Count; i++)
+                            for (var j = 0; j < colunMappings.Count; j++)
                             {
-                                var columnMapping = colunMappings.Get(i);
+                                var columnMapping = colunMappings.Get(j);
                                 var queryColumnName = columnMapping.GetString("ИмяПоля");
                                 if (string.IsNullOrEmpty(queryColumnName))
                                     continue;
                                 var dbColumnName = columnMapping.GetString("ИмяПоляХранения");
                                 if (string.IsNullOrEmpty(dbColumnName))
                                     continue;
-                                writer.WriteLine("\t{0} {1}", queryColumnName, dbColumnName);
+                                writer.WriteLine("\t{0} {1} {2}", queryColumnName, dbColumnName);
                             }
+                            if ((i + 1)%50 == 0)
+                                Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
+                                    i + 1, tableMappings.Count, (double) (i + 1)/tableMappings.Count*100);
                         }
                     }
                 });
             return 0;
+        }
+
+        private static Dictionary<string, object> GetAttributes(GlobalContext globalContext, string fullname)
+        {
+            var configurationName = ConfigurationName.ParseOrNull(fullname);
+            if (configurationName == null)
+                return null;
+            var configurationItem = globalContext.FindByName(configurationName.Value);
+            var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
+            var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
+            return attributes.ToDictionary(Call.Имя);
         }
 
         public static string GetTemporaryDirectoryFullPath()

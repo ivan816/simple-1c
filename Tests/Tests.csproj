@@ -60,6 +60,7 @@
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="Integration\СharacteristicsTest.cs" />
+    <Compile Include="Sql\MappingSchemaParsingTest.cs" />
     <Compile Include="Sql\SqlTranslatorTest.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />
