@@ -106,7 +106,7 @@ namespace Simple1C.Impl.Generation
                 },
                 comObject = item.ComObject,
                 generationContext = context,
-                descriptor = MetadataAccessor.GetDescriptor(item.Name.Scope),
+                descriptor = MetadataHelpers.GetDescriptor(item.Name.Scope),
                 configurationItemFullName = item.Name.Fullname
             };
             EmitClass(classContext);
@@ -134,7 +134,7 @@ namespace Simple1C.Impl.Generation
                 }
             }
             var name = classContext.configurationName;
-            var attributes = MetadataAccessor.GetAttributes(classContext.comObject, classContext.descriptor);
+            var attributes = MetadataHelpers.GetAttributes(classContext.comObject, classContext.descriptor);
             foreach (var attr in attributes)
             {
                 var propertyName = Call.Имя(attr);

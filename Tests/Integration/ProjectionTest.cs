@@ -411,6 +411,44 @@ namespace Simple1C.Tests.Integration
         }
 
         [Test]
+        public void CanUseContainsMethod()
+        {
+            var contractor1 = new Контрагенты
+            {
+                Наименование = "test-name",
+                ИНН = "inn1",
+                КПП = "kpp1"
+            };
+            dataContext.Save(contractor1);
+
+            var contractor2 = new Контрагенты
+            {
+                Наименование = "test-name",
+                ИНН = "inn2",
+                КПП = "kpp2"
+            };
+            dataContext.Save(contractor2);
+            var contractorIdSet = new HashSet<Guid>
+            {
+                contractor2.УникальныйИдентификатор.GetValueOrDefault()
+            };
+
+            var contractors = dataContext.Select<Контрагенты>()
+                .Where(x => x.Наименование == "test-name")
+                .Select(x => new
+                {
+                    inn = x.ИНН,
+                    isInSet = contractorIdSet.Contains(x.УникальныйИдентификатор.GetValueOrDefault())
+                })
+                .ToArray();
+            Assert.That(contractors.Length, Is.EqualTo(2));
+            Assert.That(contractors[0].inn, Is.EqualTo("inn1"));
+            Assert.That(contractors[0].isInSet, Is.False);
+            Assert.That(contractors[1].inn, Is.EqualTo("inn2"));
+            Assert.That(contractors[1].isInSet, Is.True);
+        }
+
+        [Test]
         public void DbNullInUniqueIdentifier()
         {
             var counterpart = new Контрагенты
@@ -432,11 +470,29 @@ namespace Simple1C.Tests.Integration
                 .Where(x => x.УникальныйИдентификатор == договор.УникальныйИдентификатор)
                 .Select(x => new
                 {
-                    Id = x.Организация.УникальныйИдентификатор,
+                    Id = x.Организация.УникальныйИдентификатор
                 })
                 .ToArray();
             Assert.That(counterparties.Length, Is.EqualTo(1));
             Assert.That(counterparties[0].Id, Is.Null);
+        }
+
+        [Test]
+        public void SinglePropertyProjection()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+
+            var инн = dataContext
+                .Select<Контрагенты>()
+                .Where(x => x.Наименование == "test contractor name")
+                .Select(x => x.ИНН)
+                .FirstOrDefault();
+            Assert.That(инн, Is.EqualTo("test-inn"));
         }
     }
 }

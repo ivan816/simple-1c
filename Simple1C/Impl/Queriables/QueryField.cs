@@ -35,7 +35,7 @@ namespace Simple1C.Impl.Queriables
         {
             var result = ComHelpers.GetProperty(queryResultRow, Alias);
             if (isUniqueIdentifier)
-                result = (result == null || result == DBNull.Value)
+                result = result == null || result == DBNull.Value
                     ? null
                     : ComHelpers.Invoke(result, EntityHelpers.idPropertyName);
             return result;

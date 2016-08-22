@@ -6,7 +6,7 @@ using Simple1C.Impl.Queries;
 
 namespace Simple1C.Impl
 {
-    internal class GlobalContext : DispatchObject
+    internal class GlobalContext : DispatchObject, IDisposable
     {
         private object metadata;
 
@@ -29,6 +29,11 @@ namespace Simple1C.Impl
             get { return metadata ?? (metadata = Get("Метаданные")); }
         }
 
+        public string GetConnectionString()
+        {
+            return Convert.ToString(Invoke("СтрокаСоединенияИнформационнойБазы"));
+        }
+
         public ConfigurationItem FindByName(ConfigurationName fullname)
         {
             var itemMetadata = ComHelpers.Invoke(Metadata, "НайтиПоПолномуИмени", fullname.Fullname);
@@ -37,12 +42,12 @@ namespace Simple1C.Impl
 
         public T NewObject<T>(string typeName) where T : DispatchObject
         {
-            return (T) NewObject(typeof (T), typeName);
+            return (T) NewObject(typeof(T), typeName);
         }
 
         public object NewObject(Type type, string typeName)
         {
-            if (!typeof (DispatchObject).IsAssignableFrom(type))
+            if (!typeof(DispatchObject).IsAssignableFrom(type))
                 throw new Exception(string.Format("Type {0} must be inherited from DispatchObject", type));
             return Activator.CreateInstance(type, Invoke("NewObject", typeName));
         }
@@ -75,6 +80,11 @@ namespace Simple1C.Impl
         public new object ComObject()
         {
             return base.ComObject();
+        }
+
+        public new void Dispose()
+        {
+            base.Dispose();
         }
 
         private class Query : DispatchObject

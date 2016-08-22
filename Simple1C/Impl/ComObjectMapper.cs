@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.Serialization;
@@ -11,16 +10,14 @@ namespace Simple1C.Impl
 {
     internal class ComObjectMapper
     {
-        private readonly TypeRegistry typeRegistry;
-        private readonly GlobalContext globalContext;
         private static readonly DateTime nullDateTime = new DateTime(100, 1, 1);
-        private static readonly ConcurrentDictionary<Type, EnumMapItem[]> enumMappings =
-            new ConcurrentDictionary<Type, EnumMapItem[]>();
+        private readonly MappingSource mappingSource;
+        private readonly GlobalContext globalContext;
         private readonly object enumerations;
 
-        public ComObjectMapper(TypeRegistry typeRegistry, GlobalContext globalContext)
+        public ComObjectMapper(MappingSource mappingSource, GlobalContext globalContext)
         {
-            this.typeRegistry = typeRegistry;
+            this.mappingSource = mappingSource;
             this.globalContext = globalContext;
             enumerations = ComHelpers.GetProperty(globalContext.ComObject(), "Перечисления");
         }
@@ -32,7 +29,7 @@ namespace Simple1C.Impl
             if (value.GetType().IsEnum)
                 return MapEnumTo1C(value);
             if (value is Guid)
-                return MapGuidTo1C((Guid)value);
+                return MapGuidTo1C((Guid) value);
             return value;
         }
 
@@ -55,7 +52,7 @@ namespace Simple1C.Impl
                 if (source is MarshalByRefObject)
                 {
                     var typeName = GetFullName(source);
-                    type = GetTypeByTypeName(typeName);
+                    type = mappingSource.TypeRegistry.GetType(typeName);
                 }
                 else
                     type = source.GetType();
@@ -128,18 +125,7 @@ namespace Simple1C.Impl
         {
             var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
             var typeName = Call.ПолноеИмя(metadata);
-            return GetTypeByTypeName(typeName);
-        }
-
-        private Type GetTypeByTypeName(string typeName)
-        {
-            var type = typeRegistry.GetTypeOrNull(typeName);
-            if (type == null)
-            {
-                const string messageFormat = "can't resolve .NET type by 1c type [{0}]";
-                throw new InvalidOperationException(string.Format(messageFormat, typeName));
-            }
-            return type;
+            return mappingSource.TypeRegistry.GetType(typeName);
         }
 
         private static string GetFullName(object source)
@@ -152,7 +138,7 @@ namespace Simple1C.Impl
         {
             var enumeration = ComHelpers.GetProperty(enumerations, enumType.Name);
             var valueIndex = Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf", value1C));
-            var result = enumMappings.GetOrAdd(enumType, GetMappings)
+            var result = mappingSource.EnumMappingsCache.GetOrAdd(enumType, GetMappings)
                 .SingleOrDefault(x => x.index == valueIndex);
             if (result == null)
             {
@@ -171,17 +157,10 @@ namespace Simple1C.Impl
                 .Select(v => new EnumMapItem
                 {
                     value = v,
-                    index =
-                        Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf",
-                            ComHelpers.GetProperty(enumeration, v.ToString())))
+                    index = Convert.ToInt32(ComHelpers.Invoke(enumeration, "IndexOf",
+                        ComHelpers.GetProperty(enumeration, v.ToString())))
                 })
                 .ToArray();
-        }
-
-        private class EnumMapItem
-        {
-            public object value;
-            public int index;
         }
     }
 }
