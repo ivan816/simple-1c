@@ -72,6 +72,7 @@ namespace Simple1C.Impl
                     new ConfigurationItemDescriptor
                     {
                         AttributePropertyNames = new[] {"Реквизиты"},
+                        HasStandardTableSections = true,
                         HasTableSections = true
                     }
                 },
