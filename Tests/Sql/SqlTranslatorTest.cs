@@ -10,11 +10,11 @@ namespace Simple1C.Tests.Sql
         public void Simple()
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
-                from Справочник.Контрагенты as contractors";
+    from Справочник.Контрагенты as contractors";
             var mappings = @"Справочник.Контрагенты t1
     ИНН c1".Replace("    ", "\t");
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
-                from t1 as contractors";
+    from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -47,18 +47,22 @@ left outer join t1 as otherContracts";
         [Test]
         public void Nested()
         {
-            const string sourceSql = @"select contracts.владелец.ИНН as ContractorInn
+            const string sourceSql = @"select contracts.наименование, contracts.владелец.ИНН as ContractorInn
 from справочник.ДоговорыКонтрагентов as contracts";
 
             var mappings = @"Справочник.ДоговорыКонтрагентов t1
     владелец f1 Справочник.Контрагенты
+    наименование f4
 Справочник.Контрагенты t2
     ССылка f2
     ИНН f3".Replace("    ", "\t");
 
-            const string expectedResult = @"select __j_gen_0.f3 as ContractorInn
-from t1 as contracts
-left join t2 as __j_gen_0 on contracts.f1 = __j_gen_0.f2";
+            const string expectedResult = @"select contracts.f4, contracts.__nested_field0 as ContractorInn
+from (select
+    __nested_main_table1.f4,
+    __nested_table2.f3 as __nested_field0
+from t1 as __nested_main_table1
+left join t2 as __nested_table2 on __nested_main_table1.f1 = __nested_table2.f2) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -68,7 +72,12 @@ left join t2 as __j_gen_0 on contracts.f1 = __j_gen_0.f2";
             var mappingSchema = MappingSchema.Parse(mappings);
             var sqlTranslator = new SqlTranslator();
             var actualTranslated = sqlTranslator.Translate(mappingSchema, sql);
-            Assert.That(actualTranslated, Is.EqualTo(expectedTranslated));
+            Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
+        }
+
+        private static string SpacesToTabs(string s)
+        {
+            return s.Replace("    ", "\t");
         }
     }
 }

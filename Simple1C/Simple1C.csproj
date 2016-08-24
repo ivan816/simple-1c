@@ -107,6 +107,10 @@
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
     <Compile Include="Impl\Sql\MappingSchema.cs" />
+    <Compile Include="Impl\Sql\SqlBuilders\SelectClause.cs" />
+    <Compile Include="Impl\Sql\SqlBuilders\JoinClause.cs" />
+    <Compile Include="Impl\Sql\SqlBuilders\SelectField.cs" />
+    <Compile Include="Impl\Sql\SqlBuilders\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />

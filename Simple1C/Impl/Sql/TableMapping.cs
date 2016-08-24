@@ -10,20 +10,20 @@ namespace Simple1C.Impl.Sql
         public string QueryName { get; private set; }
         public string DbName { get; private set; }
         public PropertyMapping[] Properties { get; private set; }
-        private readonly Dictionary<string, PropertyMapping> byQueryName;
+        private readonly Dictionary<string, PropertyMapping> byPropertyName;
 
         public TableMapping(string queryName, string dbName, PropertyMapping[] properties)
         {
             QueryName = queryName;
             DbName = dbName;
             Properties = properties;
-            byQueryName = Properties.ToDictionary(x => x.PropertyName, StringComparer.OrdinalIgnoreCase);
+            byPropertyName = Properties.ToDictionary(x => x.PropertyName, StringComparer.OrdinalIgnoreCase);
         }
 
-        public PropertyMapping GetByQueryName(string queryName)
+        public PropertyMapping GetByPropertyName(string queryName)
         {
             PropertyMapping result;
-            if (!byQueryName.TryGetValue(queryName, out result))
+            if (!byPropertyName.TryGetValue(queryName, out result))
             {
                 const string messagFormat = "can't find field [{0}] for table [{1}]";
                 throw new InvalidComObjectException(string.Format(messagFormat, queryName, QueryName));

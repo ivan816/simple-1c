@@ -12,6 +12,10 @@ namespace Simple1C.Impl.Sql
         {
             Tables = tables.ToArray();
             tableByQueryName = Tables.ToDictionary(x => x.QueryName, StringComparer.OrdinalIgnoreCase);
+            foreach (var t in Tables)
+                foreach (var p in t.Properties)
+                    if (!string.IsNullOrEmpty(p.NestedTableName))
+                        p.NestedTableMapping = GetByQueryName(p.NestedTableName);
         }
 
         public TableMapping[] Tables { get; private set; }
@@ -42,7 +46,7 @@ namespace Simple1C.Impl.Sql
                     {
                         PropertyName = columnDesc[0],
                         FieldName = columnDesc[1],
-                        TypeName = columnDesc.Length == 3 ? columnDesc[2] : null
+                        NestedTableName = columnDesc.Length == 3 ? columnDesc[2] : null
                     });
                 }
                 else

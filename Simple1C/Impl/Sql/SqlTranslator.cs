@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Simple1C.Impl.Sql.SqlBuilders;
 
 namespace Simple1C.Impl.Sql
 {
@@ -10,7 +10,7 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex fieldsRegex = new Regex(@"([a-zA-Z]+\.[\S]+)",
+        private static readonly Regex fieldsRegex = new Regex(@"([a-zA-Z]+\.[^\,\s]+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
         public string Translate(MappingSchema mappingSchema, string source)
@@ -39,22 +39,9 @@ namespace Simple1C.Impl.Sql
                     const string message = "only single level nesting supported, field [{0}]";
                     throw new InvalidOperationException(string.Format(message, m.Value));
                 }
-                var fieldTableAlias = fieldDesc[0];
-                var tableMarker = GetTableMarker(tableNameMarkers, fieldTableAlias);
-                var fieldMapping = tableMarker.Mapping.GetByQueryName(fieldDesc[1]);
-                if (fieldDesc.Length == 3)
-                {
-                    if (string.IsNullOrEmpty(fieldMapping.TypeName))
-                    {
-                        const string messageFormat = "can't detect column type for [{0}] in [{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat, fieldDesc[1], m.Value));
-                    }
-                    var nestedTableMapping = mappingSchema.GetByQueryName(fieldMapping.TypeName);
-                    var nestedPropertyMapping = tableMarker.GetNestedTableMapping(fieldMapping, nestedTableMapping, fieldDesc[2]);
-                    return joinColumnMapping.GetDbFieldRef(nestedPropertyMapping);
-                }
-                tableMarker.AddReferencedField(fieldMapping.FieldName);
-                return fieldMapping.GetDbFieldRef(fieldTableAlias);
+                var tableAlias = fieldDesc[0];
+                var fieldName = GetTableMarker(tableNameMarkers, tableAlias).GetFieldName(fieldDesc);
+                return tableAlias + "." + fieldName;
             });
             result = tableNameRegex.Replace(result,
                 m => m.Groups[1].Value + " " +
@@ -76,64 +63,99 @@ namespace Simple1C.Impl.Sql
         private class TableNameMarker
         {
             private readonly string alias;
-            private readonly List<NestedTable> nestedTables = new List<NestedTable>();
-            private readonly List<string> referencedFieldsDbNames = new List<string>();
-            private static int genJoinNumber;
+            private readonly TableMapping mapping;
+            private readonly List<NestedTableFieldReference> nestedReferences = new List<NestedTableFieldReference>();
+            private readonly List<string> references = new List<string>();
+            private static int genNumber;
 
             public TableNameMarker(string alias, TableMapping mapping)
             {
                 this.alias = alias;
-                Mapping = mapping;
+                this.mapping = mapping;
             }
 
-            public void AddReferencedField(string fieldName)
+            public string GetFieldName(string[] properties)
             {
-                referencedFieldsDbNames.Add(fieldName);
+                var mainProperty = mapping.GetByPropertyName(properties[1]);
+                if (properties.Length == 2)
+                {
+                    if (mainProperty.NestedTableMapping != null)
+                        throw new InvalidOperationException("assertion failure");
+                    references.Add(mainProperty.FieldName);
+                    return mainProperty.FieldName;
+                }
+                if(properties.Length != 3)
+                    throw new InvalidOperationException("assertion failure");
+                if (mainProperty.NestedTableMapping == null)
+                    throw new InvalidOperationException("assertion failure");
+                var nestedProperty = mainProperty.NestedTableMapping.GetByPropertyName(properties[2]);
+                NestedTableFieldReference nestedReference = null;
+                foreach (var r in nestedReferences)
+                    if (r.mainProperty == mainProperty && r.nestedProperty == nestedProperty)
+                    {
+                        nestedReference = r;
+                        break;
+                    }
+                if (nestedReference == null)
+                    nestedReferences.Add(nestedReference = new NestedTableFieldReference
+                    {
+                        alias = "__nested_field" + genNumber++,
+                        mainProperty = mainProperty,
+                        nestedProperty = nestedProperty
+                    });
+                return nestedReference.alias;
             }
-
-            public TableMapping Mapping { get; private set; }
 
             public string GetSql()
             {
-                var result = Mapping.DbName + " as " + alias;
-                foreach (var nestingJoin in nestedTables)
+                if (nestedReferences.Count == 0)
+                    return mapping.DbName + " as " + alias;
+                var selectClause = new SelectClause
                 {
-                    var joinCondition = nestingJoin.property.GetDbFieldRef(alias) + " = "
-                                        + nestingJoin.table.GetByQueryName("Ссылка").GetDbFieldRef(nestingJoin.alias);
-                    result += "\r\nleft join " + nestingJoin.table.DbName +
-                              " as " + nestingJoin.alias +
-                              " on " + joinCondition;
-                }
-                return result;
-            }
-
-            public PropertyMapping GetNestedTableMapping(PropertyMapping joinProperty, TableMapping nestedTableMapping, string nestedPropertyName)
-            {
-                var nestedTable = GetNestedTable(joinProperty, nestedTableMapping);
-                return nestedTable;
-            }
-
-            private NestedTable GetNestedTable(PropertyMapping joinProperty, TableMapping nestedTableMapping)
-            {
-                foreach (var n in nestedTables)
-                    if (n.property == joinProperty && n.table == nestedTableMapping)
-                        return n;
-                var result = new NestedTable
-                {
-                    alias = "__j_gen_" + genJoinNumber++,
-                    table = nestedTableMapping,
-                    property = joinProperty
+                    TableName = mapping.DbName,
+                    TableAlias = "__nested_main_table" + genNumber++,
+                    JoinClauses = new List<JoinClause>(),
+                    Fields = new List<SelectField>()
                 };
-                nestedTables.Add(result);
-                return result;
+                var propertyToJoinClause = new Dictionary<PropertyMapping, JoinClause>();
+                foreach (var r in nestedReferences)
+                    if (!propertyToJoinClause.ContainsKey(r.mainProperty))
+                    {
+                        var tableAlias = "__nested_table" + genNumber++;
+                        var joinClause = new JoinClause
+                        {
+                            TableName = r.mainProperty.NestedTableMapping.DbName,
+                            TableAlias = tableAlias,
+                            LeftFieldName = r.mainProperty.FieldName,
+                            LeftFieldTableName = selectClause.TableAlias,
+                            RightFieldName = r.mainProperty.NestedTableMapping.GetByPropertyName("Ссылка").FieldName,
+                            RightFieldTableName = tableAlias,
+                            JoinKind = "left"
+                        };
+                        selectClause.JoinClauses.Add(joinClause);
+                        propertyToJoinClause.Add(r.mainProperty, joinClause);
+                    }
+                foreach (var r in references)
+                    selectClause.Fields.Add(new SelectField
+                    {
+                        Name = r,
+                        TableName = selectClause.TableAlias
+                    });
+                foreach (var r in nestedReferences)
+                    selectClause.Fields.Add(new SelectField
+                    {
+                        Name = r.nestedProperty.FieldName,
+                        TableName = propertyToJoinClause[r.mainProperty].TableAlias,
+                        Alias = r.alias
+                    });
+                return "(" + selectClause.GetSql() + ") as " + alias;
             }
 
-            private class NestedTable
+            private class NestedTableFieldReference
             {
                 public string alias;
-                public PropertyMapping property;
-                public TableMapping table;
-                public List<string> referencedFieldsDbNames = new List<string>();
+                public PropertyMapping mainProperty;
+                public PropertyMapping nestedProperty;
             }
         }
     }
