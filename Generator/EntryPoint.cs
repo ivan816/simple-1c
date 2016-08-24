@@ -22,14 +22,14 @@ namespace Generator
         {
             var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
             var cmd = parameters["cmd"];
-            if (cmd == "gen-sql-meta")
-                return GenSqlMeta(parameters);
             if (cmd == "get-cs-meta")
                 return GenCsMeta(parameters);
+            if (cmd == "gen-sql-meta")
+                return GenSqlMeta(parameters);
             if (cmd == "run-sql")
                 return RunSql(parameters);
             Console.Out.WriteLine("Invalid arguments");
-            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-sql-meta|gen-cs-meta]");
+            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-cs-meta|gen-sql-meta|run-sql]");
             return -1;
         }
 
