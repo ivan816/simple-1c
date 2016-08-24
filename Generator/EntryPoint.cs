@@ -22,7 +22,7 @@ namespace Generator
         {
             var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
             var cmd = parameters["cmd"];
-            if (cmd == "get-cs-meta")
+            if (cmd == "gen-cs-meta")
                 return GenCsMeta(parameters);
             if (cmd == "gen-sql-meta")
                 return GenSqlMeta(parameters);
@@ -50,7 +50,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd gen-cs-meta -connection-string <string> -target cs [-result-assembly-full-path <path>] -namespace-root <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-source-path <sourcePath>] [-csproj-file-path]");
+                    "Usage: Generator.exe -cmd gen-cs-meta -connection-string <string> [-result-assembly-full-path <path>] -namespace-root <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-source-path <sourcePath>] [-csproj-file-path]");
                 return -1;
             }
             object globalContext = null;
