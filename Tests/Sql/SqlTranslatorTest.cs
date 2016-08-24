@@ -74,10 +74,33 @@ from справочник.ДоговорыКонтрагентов as contracts"
 
             const string expectedResult = @"select contracts._f4, contracts.__nested_field0 as ContractorInn
 from (select
-    __nested_main_table1._f4,
-    __nested_table2._f3 as __nested_field0
-from _t1 as __nested_main_table1
-left join _t2 as __nested_table2 on __nested_main_table1._f1rref = __nested_table2._f2) as contracts";
+    __nested_main_table0._f4,
+    __nested_table0._f3 as __nested_field0
+from _t1 as __nested_main_table0
+left join _t2 as __nested_table0 on __nested_main_table0._f1rref = __nested_table0._f2) as contracts";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void ManyNestedProperties()
+        {
+            const string sourceSql = @"select contracts.владелец.ИНН as ContractorInn,contracts.владелец.Наименование as ContractorName
+from справочник.ДоговорыКонтрагентов as contracts";
+
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    владелец f1 Справочник.Контрагенты
+Справочник.Контрагенты t2
+    ССылка f2
+    ИНН f3
+    Наименование f4";
+
+            const string expectedResult = @"select contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as ContractorName
+from (select
+    __nested_table0._f3 as __nested_field0,
+    __nested_table0._f4 as __nested_field1
+from _t1 as __nested_main_table0
+left join _t2 as __nested_table0 on __nested_main_table0._f1rref = __nested_table0._f2) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }

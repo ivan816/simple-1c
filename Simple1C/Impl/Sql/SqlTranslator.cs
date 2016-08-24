@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlBuilders;
 
 namespace Simple1C.Impl.Sql
@@ -10,44 +12,66 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex fieldsRegex = new Regex(@"([a-zA-Z]+\.[^\,\s]+)",
+        private static readonly Regex fieldsRegex = new Regex(CreateFieldsRegex(),
             RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static string CreateFieldsRegex()
+        {
+            const string fieldNameRegex = @"[a-zA-Z]+\.[^\,\s]+";
+            return string.Format(@"((ПРЕДСТАВЛЕНИЕ)\({0}\)|{0})", fieldNameRegex);
+        }
 
         public string Translate(MappingSchema mappingSchema, string source)
         {
             source = source.Replace('"', '\'');
             var match = tableNameRegex.Match(source);
             var tableNameMarkers = new Dictionary<string, TableNameMarker>();
+            var nameGenerator = new NameGenerator();
             while (match.Success)
             {
                 var queryName = match.Groups[2].Value;
                 var alias = match.Groups[3].Value;
                 var tableNameMarker = new TableNameMarker(alias,
-                    mappingSchema.GetByQueryName(queryName));
+                    mappingSchema.GetByQueryName(queryName), nameGenerator);
                 tableNameMarkers.Add(alias, tableNameMarker);
                 match = match.NextMatch();
             }
             var result = fieldsRegex.Replace(source, delegate(Match m)
             {
-                var fieldDesc = m.Groups[1].Value.Split('.');
-                if (fieldDesc.Length < 2)
+                var properyPath = m.Groups[1].Value;
+                var properties = properyPath.Split('.');
+                if (properties.Length < 2)
                 {
-                    const string messageFormat = "invalid field spec [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, m.Value));
+                    const string messageFormat = "invalid propery [{0}], alias must be specified";
+                    throw new InvalidOperationException(string.Format(messageFormat, properyPath));
                 }
-                if (fieldDesc.Length > 3)
+                var tableAlias = properties[0];
+                FunctionName? functionName = null;
+                if (m.Groups[2].Success)
                 {
-                    const string message = "only single level nesting supported, field [{0}]";
-                    throw new InvalidOperationException(string.Format(message, m.Value));
+                    var functionNameString = m.Groups[2].Value;
+                    if (functionNameString == "ПРЕДСТАВЛЕНИЕ")
+                        functionName = FunctionName.Representation;
+                    else
+                    {
+                        const string messageFormat = "unexpected function [{0}] for [{1}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            functionNameString, properyPath));
+                    }
                 }
-                var tableAlias = fieldDesc[0];
-                var fieldName = GetTableMarker(tableNameMarkers, tableAlias).GetFieldName(fieldDesc);
+                var fieldName = GetTableMarker(tableNameMarkers, tableAlias)
+                    .GetFieldName(properties, functionName);
                 return tableAlias + "." + fieldName;
             });
             result = tableNameRegex.Replace(result,
                 m => m.Groups[1].Value + " " +
                      GetTableMarker(tableNameMarkers, m.Groups[3].Value).GetSql());
             return result;
+        }
+
+        private enum FunctionName
+        {
+            Representation
         }
 
         private static TableNameMarker GetTableMarker(Dictionary<string, TableNameMarker> markers, string alias)
@@ -63,100 +87,197 @@ namespace Simple1C.Impl.Sql
 
         private class TableNameMarker
         {
-            private readonly string alias;
+            private readonly string outerAlias;
+            private string mainTableInnerAlias;
             private readonly TableMapping mapping;
-            private readonly List<NestedTableFieldReference> nestedReferences = new List<NestedTableFieldReference>();
-            private readonly List<string> references = new List<string>();
-            private static int genNumber;
+            private readonly NameGenerator nameGenerator;
 
-            public TableNameMarker(string alias, TableMapping mapping)
+            private readonly Dictionary<PropertyMapping, JoinTable> joinTables =
+                new Dictionary<PropertyMapping, JoinTable>();
+
+            private readonly List<string> mainTableFields = new List<string>();
+
+            public TableNameMarker(string outerAlias, TableMapping mapping, NameGenerator nameGenerator)
             {
-                this.alias = alias;
+                this.outerAlias = outerAlias;
                 this.mapping = mapping;
+                this.nameGenerator = nameGenerator;
             }
 
-            public string GetFieldName(string[] properties)
+            public string GetFieldName(string[] properties, FunctionName? functionName)
             {
-                var mainProperty = mapping.GetByPropertyName(properties[1]);
-                if (properties.Length == 2)
+                JoinTable joinTable = null;
+                string referencingTableAlias = null;
+                var referencingTableMapping = mapping;
+                for (var i = 1; i < properties.Length - 1; i++)
                 {
-                    if (mainProperty.NestedTableMapping != null)
-                        throw new InvalidOperationException("assertion failure");
-                    references.Add(mainProperty.FieldName);
-                    return mainProperty.FieldName;
-                }
-                if (properties.Length != 3)
-                    throw new InvalidOperationException("assertion failure");
-                if (mainProperty.NestedTableMapping == null)
-                    throw new InvalidOperationException("assertion failure");
-                var nestedProperty = mainProperty.NestedTableMapping.GetByPropertyName(properties[2]);
-                NestedTableFieldReference nestedReference = null;
-                foreach (var r in nestedReferences)
-                    if (r.mainProperty == mainProperty && r.nestedProperty == nestedProperty)
+                    var propertyName = properties[i];
+                    var referencingProperty = referencingTableMapping.GetByPropertyName(propertyName);
+                    if (referencingProperty.NestedTableMapping == null)
                     {
-                        nestedReference = r;
-                        break;
+                        const string messageFormat = "no table maping for [{0}] in [{1}]";
+                        throw new InvalidComObjectException(string.Format(messageFormat,
+                            propertyName, properties.JoinStrings(".")));
                     }
-                if (nestedReference == null)
-                    nestedReferences.Add(nestedReference = new NestedTableFieldReference
+                    joinTable = GetJoinTable(referencingTableAlias, referencingProperty);
+                    referencingTableAlias = joinTable.Alias;
+                    referencingTableMapping = referencingProperty.NestedTableMapping;
+                }
+                var lastPropertyName = properties[properties.Length - 1];
+                var lastProperty = referencingTableMapping.GetByPropertyName(lastPropertyName);
+                if (lastProperty.NestedTableMapping != null)
+                {
+                    if (!lastProperty.NestedTableMapping.IsEnum())
                     {
-                        alias = "__nested_field" + genNumber++,
-                        mainProperty = mainProperty,
-                        nestedProperty = nestedProperty
-                    });
-                return nestedReference.alias;
+                        const string messageFormat = "unexpected mapping found for [{0}] in [{1}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            lastPropertyName, properties));
+                    }
+                    if (functionName == FunctionName.Representation)
+                    {
+                        joinTable = GetJoinTable(referencingTableAlias, lastProperty);
+                        return GetEnumTextJoinTable(joinTable.Alias, lastProperty.NestedTableMapping)
+                            .GetProperty("enumValueName", nameGenerator)
+                            .alias;
+                    }
+                }
+                if (joinTable != null)
+                    return joinTable.GetProperty(lastPropertyName, nameGenerator).alias;
+                mainTableFields.Add(lastProperty.FieldName);
+                return lastProperty.FieldName;
+            }
+
+            private JoinTable GetJoinTable(string referencingTableAlias, PropertyMapping property)
+            {
+                JoinTable result;
+                if (!joinTables.TryGetValue(property, out result))
+                {
+                    if (referencingTableAlias == null)
+                        referencingTableAlias = mainTableInnerAlias = nameGenerator.Generate("__nested_main_table");
+                    joinTables.Add(property, result = new JoinTable(new JoinClause
+                    {
+                        TableName = property.NestedTableMapping.DbTableName,
+                        TableAlias = nameGenerator.Generate("__nested_table"),
+                        JoinKind = "left",
+                        EqConditions = new[]
+                        {
+                            new JoinEqCondition
+                            {
+                                FieldName = property.NestedTableMapping.GetByPropertyName("Ссылка").FieldName,
+                                ComparandTableName = referencingTableAlias,
+                                ComparandFieldName = property.FieldName
+                            }
+                        }
+                    }));
+                }
+                return result;
+            }
+
+            private JoinTable GetEnumTextJoinTable(string referencingTableAlias,
+                TableMapping enumTableMapping)
+            {
+                JoinTable result;
+                var orderProperty = enumTableMapping.GetByPropertyName("Порядок");
+                if (!joinTables.TryGetValue(orderProperty, out result))
+                    joinTables.Add(orderProperty, result = new JoinTable(new JoinClause
+                    {
+                        TableName = "simple1c__enumValues",
+                        TableAlias = nameGenerator.Generate("__nested_table"),
+                        JoinKind = "left",
+                        EqConditions = new[]
+                        {
+                            new JoinEqCondition
+                            {
+                                FieldName = "enumName",
+                                ComparandConstantValue = "'" + enumTableMapping.ObjectName + "'"
+                            },
+                            new JoinEqCondition
+                            {
+                                FieldName = "order",
+                                ComparandTableName = referencingTableAlias,
+                                ComparandFieldName = orderProperty.FieldName
+                            }
+                        }
+                    }));
+                return result;
             }
 
             public string GetSql()
             {
-                if (nestedReferences.Count == 0)
-                    return mapping.DbTableName + " as " + alias;
-                var selectClause = new SelectClause
-                {
-                    TableName = mapping.DbTableName,
-                    TableAlias = "__nested_main_table" + genNumber++,
-                    JoinClauses = new List<JoinClause>(),
-                    Fields = new List<SelectField>()
-                };
-                var propertyToJoinClause = new Dictionary<PropertyMapping, JoinClause>();
-                foreach (var r in nestedReferences)
-                    if (!propertyToJoinClause.ContainsKey(r.mainProperty))
-                    {
-                        var tableAlias = "__nested_table" + genNumber++;
-                        var joinClause = new JoinClause
-                        {
-                            TableName = r.mainProperty.NestedTableMapping.DbTableName,
-                            TableAlias = tableAlias,
-                            LeftFieldName = r.mainProperty.FieldName,
-                            LeftFieldTableName = selectClause.TableAlias,
-                            RightFieldName = r.mainProperty.NestedTableMapping.GetByPropertyName("Ссылка").FieldName,
-                            RightFieldTableName = tableAlias,
-                            JoinKind = "left"
-                        };
-                        selectClause.JoinClauses.Add(joinClause);
-                        propertyToJoinClause.Add(r.mainProperty, joinClause);
-                    }
-                foreach (var r in references)
+                if (joinTables.Count == 0)
+                    return mapping.DbTableName + " as " + outerAlias;
+                var selectClause = new SelectClause(mapping.DbTableName, mainTableInnerAlias);
+                foreach (var r in mainTableFields)
                     selectClause.Fields.Add(new SelectField
                     {
                         Name = r,
                         TableName = selectClause.TableAlias
                     });
-                foreach (var r in nestedReferences)
-                    selectClause.Fields.Add(new SelectField
-                    {
-                        Name = r.nestedProperty.FieldName,
-                        TableName = propertyToJoinClause[r.mainProperty].TableAlias,
-                        Alias = r.alias
-                    });
-                return "(" + selectClause.GetSql() + ") as " + alias;
+                foreach (var r in joinTables.Values)
+                    r.AppendTo(selectClause);
+                return "(" + selectClause.GetSql() + ") as " + outerAlias;
             }
 
-            private class NestedTableFieldReference
+            private class JoinTable
+            {
+                private readonly JoinClause joinClause;
+
+                private readonly Dictionary<string, JoinTableProperty> properties =
+                    new Dictionary<string, JoinTableProperty>();
+
+                public JoinTable(JoinClause joinClause)
+                {
+                    this.joinClause = joinClause;
+                }
+
+                public string Alias
+                {
+                    get { return joinClause.TableAlias; }
+                }
+
+                public JoinTableProperty GetProperty(string fieldName, NameGenerator nameGenerator)
+                {
+                    JoinTableProperty result;
+                    if (!properties.TryGetValue(fieldName, out result))
+                        properties.Add(fieldName, result = new JoinTableProperty
+                        {
+                            alias = nameGenerator.Generate("__nested_field"),
+                            fieldName = fieldName
+                        });
+                    return result;
+                }
+
+                public void AppendTo(SelectClause selectClause)
+                {
+                    selectClause.JoinClauses.Add(joinClause);
+                    foreach (var p in properties)
+                        selectClause.Fields.Add(new SelectField
+                        {
+                            TableName = Alias,
+                            Name = p.Value.fieldName,
+                            Alias = p.Value.alias
+                        });
+                }
+            }
+
+            private class JoinTableProperty
             {
                 public string alias;
-                public PropertyMapping mainProperty;
-                public PropertyMapping nestedProperty;
+                public string fieldName;
+            }
+        }
+
+        private class NameGenerator
+        {
+            private readonly Dictionary<string, int> lastUsed = new Dictionary<string, int>();
+
+            public string Generate(string prefix)
+            {
+                int lastUsedForPrefix;
+                var number = lastUsed[prefix] = lastUsed.TryGetValue(prefix, out lastUsedForPrefix)
+                    ? lastUsedForPrefix + 1
+                    : 0;
+                return prefix + number;
             }
         }
     }

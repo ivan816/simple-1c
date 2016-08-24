@@ -5,10 +5,18 @@ namespace Simple1C.Impl.Sql.SqlBuilders
 {
     public class SelectClause
     {
-        public List<SelectField> Fields { get; set; }
-        public List<JoinClause> JoinClauses { get; set; }
-        public string TableName { get; set; }
-        public string TableAlias { get; set; }
+        public SelectClause(string tableName, string tableAlias)
+        {
+            TableName = tableName;
+            TableAlias = tableAlias;
+            JoinClauses = new List<JoinClause>();
+            Fields = new List<SelectField>();
+        }
+
+        public List<SelectField> Fields { get; private set; }
+        public List<JoinClause> JoinClauses { get; private set; }
+        public string TableName { get; private set; }
+        public string TableAlias { get; private set; }
 
         public string GetSql()
         {
@@ -34,9 +42,15 @@ namespace Simple1C.Impl.Sql.SqlBuilders
                 b.Append(" join ");
                 SqlHelpers.WriteDeclaration(b, join.TableName, join.TableAlias);
                 b.Append(" on ");
-                SqlHelpers.WriteReference(b, join.LeftFieldTableName, join.LeftFieldName);
-                b.Append(" = ");
-                SqlHelpers.WriteReference(b, join.RightFieldTableName, join.RightFieldName);
+                foreach (var eq in join.EqConditions)
+                {
+                    SqlHelpers.WriteReference(b, join.TableAlias, eq.FieldName);
+                    b.Append(" = ");
+                    if (eq.ComparandConstantValue != null)
+                        b.Append(eq.ComparandConstantValue);
+                    else
+                        SqlHelpers.WriteReference(b, eq.ComparandTableName, eq.ComparandFieldName);
+                }
             }
             return b.ToString();
         }
