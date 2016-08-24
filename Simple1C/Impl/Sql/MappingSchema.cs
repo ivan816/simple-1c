@@ -6,12 +6,20 @@ namespace Simple1C.Impl.Sql
 {
     public class MappingSchema
     {
-        private readonly Dictionary<string, TableMapping> tableByQueryName;
+        private readonly Dictionary<string, TableMapping> tableByQueryName =
+            new Dictionary<string, TableMapping>(StringComparer.OrdinalIgnoreCase);
 
         public MappingSchema(IEnumerable<TableMapping> tables)
         {
             Tables = tables.ToArray();
-            tableByQueryName = Tables.ToDictionary(x => x.QueryName, StringComparer.OrdinalIgnoreCase);
+            foreach (var t in Tables)
+                if (!tableByQueryName.ContainsKey(t.QueryTableName))
+                {
+                    //какие-то дурацкие дубли для РегистрБухгалтерии.Хозрасчетный.Субконто, забил пока
+                    //const string messageFormat = "table [{0}] already exist";
+                    //throw new InvalidOperationException(string.Format(messageFormat, t.QueryName));
+                    tableByQueryName.Add(t.QueryTableName, t);
+                }
             foreach (var t in Tables)
                 foreach (var p in t.Properties)
                     if (!string.IsNullOrEmpty(p.NestedTableName))
@@ -42,12 +50,9 @@ namespace Simple1C.Impl.Sql
                     var columnDesc = s.Substring(1).Split(new[] {" "}, StringSplitOptions.None);
                     if (columnDesc.Length != 2 && columnDesc.Length != 3)
                         throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
-                    columnMappings.Add(new PropertyMapping
-                    {
-                        PropertyName = columnDesc[0],
-                        FieldName = columnDesc[1],
-                        NestedTableName = columnDesc.Length == 3 ? columnDesc[2] : null
-                    });
+                    columnMappings.Add(new PropertyMapping(columnDesc[0],
+                        columnDesc[1],
+                        columnDesc.Length == 3 ? columnDesc[2] : null));
                 }
                 else
                 {

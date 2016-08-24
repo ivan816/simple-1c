@@ -109,10 +109,10 @@ namespace Simple1C.Impl.Sql
             public string GetSql()
             {
                 if (nestedReferences.Count == 0)
-                    return mapping.DbName + " as " + alias;
+                    return mapping.DbTableName + " as " + alias;
                 var selectClause = new SelectClause
                 {
-                    TableName = mapping.DbName,
+                    TableName = mapping.DbTableName,
                     TableAlias = "__nested_main_table" + genNumber++,
                     JoinClauses = new List<JoinClause>(),
                     Fields = new List<SelectField>()
@@ -124,7 +124,7 @@ namespace Simple1C.Impl.Sql
                         var tableAlias = "__nested_table" + genNumber++;
                         var joinClause = new JoinClause
                         {
-                            TableName = r.mainProperty.NestedTableMapping.DbName,
+                            TableName = r.mainProperty.NestedTableMapping.DbTableName,
                             TableAlias = tableAlias,
                             LeftFieldName = r.mainProperty.FieldName,
                             LeftFieldTableName = selectClause.TableAlias,

@@ -11,6 +11,7 @@ using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
+using Simple1C.Impl.Sql;
 using Simple1C.Interface;
 
 namespace Generator
@@ -25,6 +26,8 @@ namespace Generator
                 return GenSqlMeta(parameters);
             if (cmd == "get-cs-meta")
                 return GenCsMeta(parameters);
+            if (cmd == "run-sql")
+                return RunSql(parameters);
             Console.Out.WriteLine("Invalid arguments");
             Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-sql-meta|gen-cs-meta]");
             return -1;
@@ -32,12 +35,12 @@ namespace Generator
 
         private static int GenCsMeta(NameValueCollection parameters)
         {
-            var connectionString = parameters["connectionString"];
-            var resultAssemblyFullPath = parameters["resultAssemblyFullPath"];
-            var namespaceRoot = parameters["namespaceRoot"];
-            var scanItems = (parameters["scanItems"] ?? "").Split(',');
-            var sourcePath = parameters["sourcePath"];
-            var csprojFilePath = parameters["csprojFilePath"];
+            var connectionString = parameters["connection-string"];
+            var resultAssemblyFullPath = parameters["result-assembly-full-path"];
+            var namespaceRoot = parameters["namespace-root"];
+            var scanItems = (parameters["scan-items"] ?? "").Split(',');
+            var sourcePath = parameters["source-path"];
+            var csprojFilePath = parameters["csproj-file-spath"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
                 (!string.IsNullOrEmpty(resultAssemblyFullPath) || !string.IsNullOrEmpty(sourcePath)) &&
@@ -47,7 +50,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd gen-cs-meta -connectionString <string> -target cs [-resultAssemblyFullPath <path>] -namespaceRoot <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-sourcePath <sourcePath>] [-csprojFilePath]");
+                    "Usage: Generator.exe -cmd gen-cs-meta -connection-string <string> -target cs [-result-assembly-full-path <path>] -namespace-root <namespace> -scanItems Справочник.Банки,Документ.СписаниеСРасчетногоСчета [-source-path <sourcePath>] [-csproj-file-path]");
                 return -1;
             }
             object globalContext = null;
@@ -111,10 +114,34 @@ namespace Generator
             return 0;
         }
 
+        private static int RunSql(NameValueCollection parameters)
+        {
+            var metaFile = parameters["meta-file"];
+            var connectionString = parameters["connection-string"];
+            var queryFile = parameters["query-file"];
+            var resultConnectionString = parameters["result-connection-string"];
+            var parametersAreValid =
+                !string.IsNullOrEmpty(metaFile) &&
+                !string.IsNullOrEmpty(connectionString) &&
+                !string.IsNullOrEmpty(queryFile) &&
+                !string.IsNullOrEmpty(resultConnectionString);
+            if (!parametersAreValid)
+            {
+                Console.Out.WriteLine("Invalid arguments");
+                Console.Out.WriteLine(
+                    "Usage: Generator.exe -cmd run-sql -meta-files <path to meta file> -connection-string <1c db connection string> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
+                return -1;
+            }
+            var mappingSchema = MappingSchema.Parse(File.ReadAllText(metaFile));
+            var sqlExecuter = new SqlExecuter(mappingSchema, connectionString, resultConnectionString);
+            sqlExecuter.Execute(queryFile);
+            return 0;
+        }
+
         private static int GenSqlMeta(NameValueCollection parameters)
         {
-            var connectionString = parameters["connectionString"];
-            var resultSchemaFileName = parameters["resultSchemaFileName"];
+            var connectionString = parameters["connection-string"];
+            var resultSchemaFileName = parameters["result-schema-file-name"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
                 !string.IsNullOrEmpty(resultSchemaFileName);
@@ -122,7 +149,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd gen-sql-meta -connectionString <string> -resultSchemaFileName <file full path>");
+                    "Usage: Generator.exe -cmd gen-sql-meta -connection-string <string> -result-schema-file-name <file full path>");
                 return -1;
             }
             GlobalContext globalContext = null;
@@ -139,7 +166,6 @@ namespace Generator
                     var tableMappings = new ValueTable(comTable);
                     using (var writer = new StreamWriter(resultSchemaFileName))
                     {
-                        writer.WriteLine(connectionString);
                         for (var i = 0; i < tableMappings.Count; i++)
                         {
                             var tableMapping = tableMappings[i];
@@ -197,7 +223,7 @@ namespace Generator
             var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
             return attributes.ToDictionary(Call.Имя, delegate(object o)
             {
-                Func<string> result =  delegate
+                Func<string> result = delegate
                 {
                     var type = ComHelpers.GetProperty(o, "Тип");
                     var typesObject = ComHelpers.Invoke(type, "Типы");

@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Npgsql">
+      <HintPath>..\packages\Npgsql.3.1.7\lib\net45\Npgsql.dll</HintPath>
+    </Reference>
     <Reference Include="Remotion.Linq">
       <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
     </Reference>
@@ -111,6 +114,9 @@
     <Compile Include="Impl\Sql\SqlBuilders\JoinClause.cs" />
     <Compile Include="Impl\Sql\SqlBuilders\SelectField.cs" />
     <Compile Include="Impl\Sql\SqlBuilders\SqlHelpers.cs" />
+    <Compile Include="Impl\Sql\SqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlDatabaseHelpers.cs" />
+    <Compile Include="Impl\Sql\SqlExecuter.cs" />
     <Compile Include="Impl\Sql\SqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />

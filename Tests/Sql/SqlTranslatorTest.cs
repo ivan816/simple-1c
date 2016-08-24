@@ -13,8 +13,8 @@ namespace Simple1C.Tests.Sql
     from Справочник.Контрагенты as contractors";
             var mappings = @"Справочник.Контрагенты t1
     ИНН c1".Replace("    ", "\t");
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as contractors";
+            const string expectedResult = @"select contractors._c1 as CounterpartyInn
+    from _t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -23,10 +23,10 @@ namespace Simple1C.Tests.Sql
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
                 from Справочник.Контрагенты as contractors";
-            var mappings = @"Справочник.Контрагенты t1
-    ИНН c1".Replace("    ", "\t");
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-                from t1 as contractors";
+            var mappings = @"Справочник.Контрагенты T1
+    ИНН C1".Replace("    ", "\t");
+            const string expectedResult = @"select contractors._c1 as CounterpartyInn
+                from _t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -38,9 +38,9 @@ from справочник.ДоговорыКонтрагентов as contracts
 left outer join справочник.ДоговорыКонтрагентов as otherContracts";
             var mappings = @"Справочник.ДоговорыКонтрагентов t1
     ВидДоговора c1".Replace("    ", "\t");
-            const string expectedResult = @"select contracts.c1 as Kind1, otherContracts.c1 as Kind2
-from t1 as contracts
-left outer join t1 as otherContracts";
+            const string expectedResult = @"select contracts._c1 as Kind1, otherContracts._c1 as Kind2
+from _t1 as contracts
+left outer join _t1 as otherContracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -57,12 +57,12 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ССылка f2
     ИНН f3".Replace("    ", "\t");
 
-            const string expectedResult = @"select contracts.f4, contracts.__nested_field0 as ContractorInn
+            const string expectedResult = @"select contracts._f4, contracts.__nested_field0 as ContractorInn
 from (select
-    __nested_main_table1.f4,
-    __nested_table2.f3 as __nested_field0
-from t1 as __nested_main_table1
-left join t2 as __nested_table2 on __nested_main_table1.f1 = __nested_table2.f2) as contracts";
+    __nested_main_table1._f4,
+    __nested_table2._f3 as __nested_field0
+from _t1 as __nested_main_table1
+left join _t2 as __nested_table2 on __nested_main_table1._f1rref = __nested_table2._f2) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
