@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation.Rendering;
@@ -21,6 +22,11 @@ namespace Simple1C.Impl.Generation
         private static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
         {
             AttributePropertyNames = new[] {"Реквизиты"}
+        };
+
+        private static readonly ConfigurationItemDescriptor standardTableSectionDescriptor = new ConfigurationItemDescriptor
+        {
+            AttributePropertyNames = new string[0]
         };
 
         private readonly GlobalContext globalContext;
@@ -157,33 +163,37 @@ namespace Simple1C.Impl.Generation
                     Type = "Guid?",
                     PropertyName = EntityHelpers.idPropertyName
                 });
+            if (classContext.descriptor.HasStandardTableSections)
+                EmitTableSections(classContext, "СтандартныеТабличныеЧасти", standardTableSectionDescriptor, false);
             if (classContext.descriptor.HasTableSections)
+                EmitTableSections(classContext, "ТабличныеЧасти", tableSectionDescriptor, true);
+        }
+
+        private void EmitTableSections(ClassGenerationContext classContext, string tableSectionsName,
+            ConfigurationItemDescriptor descriptor, bool hasFullname)
+        {
+            var tableSections = ComHelpers.GetProperty(classContext.comObject, tableSectionsName);
+            foreach (var tableSection in (IEnumerable) tableSections)
             {
-                var tableSections = ComHelpers.GetProperty(classContext.comObject, "ТабличныеЧасти");
-                var tableSectionsCount = Call.Количество(tableSections);
-                for (var i = 0; i < tableSectionsCount; i++)
+                var tableSectionName = Call.Имя(tableSection);
+                var nestedClassContext = new ClassGenerationContext
                 {
-                    var tableSection = Call.Получить(tableSections, i);
-                    var tableSectionName = Call.Имя(tableSection);
-                    var nestedClassContext = new ClassGenerationContext
+                    configurationItemFullName = hasFullname ? Call.ПолноеИмя(tableSection) : Call.Имя(tableSection),
+                    comObject = tableSection,
+                    descriptor = descriptor,
+                    generationContext = classContext.generationContext,
+                    target = new ClassModel
                     {
-                        configurationItemFullName = Call.ПолноеИмя(tableSection),
-                        comObject = tableSection,
-                        descriptor = tableSectionDescriptor,
-                        generationContext = classContext.generationContext,
-                        target = new ClassModel
-                        {
-                            Name = "ТабличнаяЧасть" + tableSectionName
-                        }
-                    };
-                    EmitClass(nestedClassContext);
-                    classContext.EmitNestedClass(nestedClassContext.target);
-                    classContext.EmitProperty(new PropertyModel
-                    {
-                        Type = string.Format("List<{0}>", nestedClassContext.target.Name),
-                        PropertyName = tableSectionName
-                    });
-                }
+                        Name = "ТабличнаяЧасть" + tableSectionName
+                    }
+                };
+                EmitClass(nestedClassContext);
+                classContext.EmitNestedClass(nestedClassContext.target);
+                classContext.EmitProperty(new PropertyModel
+                {
+                    Type = string.Format("List<{0}>", nestedClassContext.target.Name),
+                    PropertyName = tableSectionName
+                });
             }
         }
 
