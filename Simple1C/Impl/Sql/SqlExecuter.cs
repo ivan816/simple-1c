@@ -30,10 +30,13 @@ namespace Simple1C.Impl.Sql
             var dataTable = new DataTable(tableName);
             using (var npgsqlConnection = new NpgsqlConnection(connectionString))
             using (var cmd = new NpgsqlCommand(sql, npgsqlConnection))
-            using (var adapter = new NpgsqlDataAdapter(cmd))
             {
-                npgsqlConnection.Open();
-                adapter.Fill(dataTable);
+                cmd.AllResultTypesAreUnknown = true;
+                using (var adapter = new NpgsqlDataAdapter(cmd))
+                {
+                    npgsqlConnection.Open();
+                    adapter.Fill(dataTable);
+                }
             }
             if (resultDatabase.TableExists(tableName))
                 resultDatabase.DropTable("dbo." + tableName);

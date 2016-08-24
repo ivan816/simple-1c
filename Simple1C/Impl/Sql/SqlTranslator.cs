@@ -15,6 +15,7 @@ namespace Simple1C.Impl.Sql
 
         public string Translate(MappingSchema mappingSchema, string source)
         {
+            source = source.Replace('"', '\'');
             var match = tableNameRegex.Match(source);
             var tableNameMarkers = new Dictionary<string, TableNameMarker>();
             while (match.Success)
@@ -84,7 +85,7 @@ namespace Simple1C.Impl.Sql
                     references.Add(mainProperty.FieldName);
                     return mainProperty.FieldName;
                 }
-                if(properties.Length != 3)
+                if (properties.Length != 3)
                     throw new InvalidOperationException("assertion failure");
                 if (mainProperty.NestedTableMapping == null)
                     throw new InvalidOperationException("assertion failure");

@@ -11,8 +11,8 @@ namespace Simple1C.Tests.Sql
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
     from Справочник.Контрагенты as contractors";
-            var mappings = @"Справочник.Контрагенты t1
-    ИНН c1".Replace("    ", "\t");
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1";
             const string expectedResult = @"select contractors._c1 as CounterpartyInn
     from _t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -23,8 +23,8 @@ namespace Simple1C.Tests.Sql
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
                 from Справочник.Контрагенты as contractors";
-            var mappings = @"Справочник.Контрагенты T1
-    ИНН C1".Replace("    ", "\t");
+            const string mappings = @"Справочник.Контрагенты T1
+    ИНН C1";
             const string expectedResult = @"select contractors._c1 as CounterpartyInn
                 from _t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -36,11 +36,26 @@ namespace Simple1C.Tests.Sql
             const string sourceSql = @"select contracts.ВидДоговора as Kind1, otherContracts.ВидДоговора as Kind2
 from справочник.ДоговорыКонтрагентов as contracts
 left outer join справочник.ДоговорыКонтрагентов as otherContracts";
-            var mappings = @"Справочник.ДоговорыКонтрагентов t1
-    ВидДоговора c1".Replace("    ", "\t");
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    ВидДоговора c1";
             const string expectedResult = @"select contracts._c1 as Kind1, otherContracts._c1 as Kind2
 from _t1 as contracts
 left outer join _t1 as otherContracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void ConvertDoubleQuotesToSingleQuotes()
+        {
+            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
+    from Справочник.Контрагенты as contractors
+    where contractors.Наименование = ""test-name""";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1
+    Наименование c2";
+            const string expectedResult = @"select contractors._c1 as CounterpartyInn
+    from _t1 as contractors
+    where contractors._c2 = 'test-name'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -50,12 +65,12 @@ left outer join _t1 as otherContracts";
             const string sourceSql = @"select contracts.наименование, contracts.владелец.ИНН as ContractorInn
 from справочник.ДоговорыКонтрагентов as contracts";
 
-            var mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
     владелец f1 Справочник.Контрагенты
     наименование f4
 Справочник.Контрагенты t2
     ССылка f2
-    ИНН f3".Replace("    ", "\t");
+    ИНН f3";
 
             const string expectedResult = @"select contracts._f4, contracts.__nested_field0 as ContractorInn
 from (select
@@ -69,7 +84,7 @@ left join _t2 as __nested_table2 on __nested_main_table1._f1rref = __nested_tabl
 
         private static void CheckTranslate(string mappings, string sql, string expectedTranslated)
         {
-            var mappingSchema = MappingSchema.Parse(mappings);
+            var mappingSchema = MappingSchema.Parse(SpacesToTabs(mappings));
             var sqlTranslator = new SqlTranslator();
             var actualTranslated = sqlTranslator.Translate(mappingSchema, sql);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
