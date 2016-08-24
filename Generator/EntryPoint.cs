@@ -146,14 +146,7 @@ namespace Generator
                             var queryTableName = tableMapping.GetString("ИмяТаблицы");
                             if (string.IsNullOrEmpty(queryTableName))
                                 continue;
-                            var configurationName = ConfigurationName.ParseOrNull(queryTableName);
-                            if (configurationName != null)
-                            {
-                                var configurationItem = globalContext.FindByName(configurationName.Value);
-                                var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
-                                var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
-                            }
-
+                            var attributes = GetAttributes(globalContext, queryTableName);
                             var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
                             if (string.IsNullOrEmpty(dbTableName))
                                 continue;
@@ -168,7 +161,10 @@ namespace Generator
                                 var dbColumnName = columnMapping.GetString("ИмяПоляХранения");
                                 if (string.IsNullOrEmpty(dbColumnName))
                                     continue;
-                                writer.WriteLine("\t{0} {1} {2}", queryColumnName, dbColumnName);
+                                var attribute = attributes == null ? null : attributes.GetOrDefault(queryColumnName);
+                                var typename = attribute == null ? null : attribute();
+                                writer.WriteLine("\t{0} {1}{2}", queryColumnName, dbColumnName,
+                                    string.IsNullOrEmpty(typename) ? "" : " " + typename);
                             }
                             if ((i + 1)%50 == 0)
                                 Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
@@ -179,15 +175,46 @@ namespace Generator
             return 0;
         }
 
-        private static Dictionary<string, object> GetAttributes(GlobalContext globalContext, string fullname)
+        private static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
+        {
+            {"Строка", "string"},
+            {"Булево", "bool"},
+            {"Дата", "DateTime?"},
+            {"Уникальный идентификатор", "Guid?"},
+            {"Хранилище значения", null},
+            {"Описание типов", "Type[]"}
+        };
+
+        private static Dictionary<string, Func<string>> GetAttributes(GlobalContext globalContext, string fullname)
         {
             var configurationName = ConfigurationName.ParseOrNull(fullname);
             if (configurationName == null)
                 return null;
+            if (!configurationName.Value.HasReference)
+                return null;
             var configurationItem = globalContext.FindByName(configurationName.Value);
             var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
             var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
-            return attributes.ToDictionary(Call.Имя);
+            return attributes.ToDictionary(Call.Имя, delegate(object o)
+            {
+                Func<string> result =  delegate
+                {
+                    var type = ComHelpers.GetProperty(o, "Тип");
+                    var typesObject = ComHelpers.Invoke(type, "Типы");
+                    var typesCount = Call.Количество(typesObject);
+                    if (typesCount != 1)
+                        return null;
+                    var typeObject = Call.Получить(typesObject, 0);
+                    var stringPresentation = globalContext.String(typeObject);
+                    if (simpleTypesMap.ContainsKey(stringPresentation))
+                        return null;
+                    var comObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
+                    if (comObject == null)
+                        return null;
+                    return Call.ПолноеИмя(comObject);
+                };
+                return result;
+            });
         }
 
         public static string GetTemporaryDirectoryFullPath()

@@ -28,20 +28,21 @@ namespace Simple1C.Impl.Sql
         {
             var items = source.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
             var tableMappings = new List<TableMapping>();
-            var columnMappings = new List<ColumnMapping>();
+            var columnMappings = new List<PropertyMapping>();
             string queryTableName = null;
             string dbTableName = null;
             foreach (var s in items)
             {
                 if (s[0] == '\t')
                 {
-                    var columnNames = s.Substring(1).Split(new[] {" "}, StringSplitOptions.None);
-                    if (columnNames.Length != 2)
+                    var columnDesc = s.Substring(1).Split(new[] {" "}, StringSplitOptions.None);
+                    if (columnDesc.Length != 2 && columnDesc.Length != 3)
                         throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
-                    columnMappings.Add(new ColumnMapping
+                    columnMappings.Add(new PropertyMapping
                     {
-                        QueryName = columnNames[0],
-                        DbName = columnNames[1]
+                        PropertyName = columnDesc[0],
+                        FieldName = columnDesc[1],
+                        TypeName = columnDesc.Length == 3 ? columnDesc[2] : null
                     });
                 }
                 else

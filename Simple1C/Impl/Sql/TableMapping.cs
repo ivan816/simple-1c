@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices;
 
 namespace Simple1C.Impl.Sql
 {
@@ -8,21 +9,26 @@ namespace Simple1C.Impl.Sql
     {
         public string QueryName { get; private set; }
         public string DbName { get; private set; }
-        public ColumnMapping[] Columns { get; private set; }
-        private readonly Dictionary<string, ColumnMapping> byQueryName;
+        public PropertyMapping[] Properties { get; private set; }
+        private readonly Dictionary<string, PropertyMapping> byQueryName;
 
-        public TableMapping(string queryName, string dbName, ColumnMapping[] columns)
+        public TableMapping(string queryName, string dbName, PropertyMapping[] properties)
         {
             QueryName = queryName;
             DbName = dbName;
-            Columns = columns;
-            byQueryName = Columns.ToDictionary(x => x.QueryName, StringComparer.OrdinalIgnoreCase);
+            Properties = properties;
+            byQueryName = Properties.ToDictionary(x => x.PropertyName, StringComparer.OrdinalIgnoreCase);
         }
 
-        public ColumnMapping GetByQueryNameOrNull(string queryName)
+        public PropertyMapping GetByQueryName(string queryName)
         {
-            ColumnMapping result;
-            return byQueryName.TryGetValue(queryName, out result) ? result : null;
+            PropertyMapping result;
+            if (!byQueryName.TryGetValue(queryName, out result))
+            {
+                const string messagFormat = "can't find field [{0}] for table [{1}]";
+                throw new InvalidComObjectException(string.Format(messagFormat, queryName, QueryName));
+            }
+            return result;
         }
     }
 }

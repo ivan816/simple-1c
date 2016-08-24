@@ -9,15 +9,15 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Simple()
         {
-            const string sourceSql = @"select ИНН as CounterpartyInn
-                from Справочник.Контрагенты";
+            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
+                from Справочник.Контрагенты as contractors";
             var mappings = @"Справочник.Контрагенты t1
     ИНН c1".Replace("    ", "\t");
-            const string expectedResult = @"select c1 as CounterpartyInn
-                from t1";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+                from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void SimpleWithAlias()
         {
@@ -47,13 +47,19 @@ left outer join t1 as otherContracts";
         [Test]
         public void Nested()
         {
-            const string sourceSql = @"select contracts.владелец.ИНН
+            const string sourceSql = @"select contracts.владелец.ИНН as ContractorInn
 from справочник.ДоговорыКонтрагентов as contracts";
+
             var mappings = @"Справочник.ДоговорыКонтрагентов t1
-    ВидДоговора c1".Replace("    ", "\t");
-            const string expectedResult = @"select contracts
+    владелец f1 Справочник.Контрагенты
+Справочник.Контрагенты t2
+    ССылка f2
+    ИНН f3".Replace("    ", "\t");
+
+            const string expectedResult = @"select __j_gen_0.f3 as ContractorInn
 from t1 as contracts
-left outer join t1 as otherContracts";
+left join t2 as __j_gen_0 on contracts.f1 = __j_gen_0.f2";
+
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
