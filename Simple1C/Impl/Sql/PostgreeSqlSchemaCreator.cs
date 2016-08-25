@@ -41,20 +41,20 @@ namespace Simple1C.Impl.Sql
 
         private EnumMapping[] ExtractEnumMappingsFromCom()
         {
-            var enumerations = ComHelpers.GetProperty(globalContext.ComObject(), "Перечисления");
-            var enumerationsMetadata = ComHelpers.GetProperty(globalContext.Metadata, "Перечисления");
-            var count = Call.Количество(enumerationsMetadata);
+            var enumsManager = ComHelpers.GetProperty(globalContext.ComObject(), "Перечисления");
+            var enumsMeta = ComHelpers.GetProperty(globalContext.Metadata, "Перечисления");
+            var enumsCount = Call.Количество(enumsMeta);
             var result = new List<EnumMapping>();
-            for (var i = 0; i < count; i++)
+            for (var i = 0; i < enumsCount; i++)
             {
-                var enumMeta = Call.Получить(enumerationsMetadata, i);
+                var enumMeta = Call.Получить(enumsMeta, i);
                 var enumName = Call.Имя(enumMeta);
-                var enumManager = ComHelpers.GetProperty(enumerations, enumName);
+                var enumManager = ComHelpers.GetProperty(enumsManager, enumName);
                 var enumValuesMeta = ComHelpers.GetProperty(enumMeta, "ЗначенияПеречисления");
-                var valuesCount = Call.Количество(enumerationsMetadata);
+                var valuesCount = Call.Количество(enumsMeta);
                 for (var j = 0; j < valuesCount; j++)
                 {
-                    var enumValueMeta = Call.Получить(enumValuesMeta, i);
+                    var enumValueMeta = Call.Получить(enumValuesMeta, j);
                     var enumValueName = Call.Имя(enumValueMeta);
                     var enumValue = ComHelpers.GetProperty(enumManager, enumValueName);
                     var order = Convert.ToInt32(ComHelpers.Invoke(enumManager, "Индекс", enumValue));
