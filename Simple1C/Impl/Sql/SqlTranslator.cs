@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
-using Simple1C.Impl.Sql.SqlBuilders;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql
 {
@@ -18,7 +18,7 @@ namespace Simple1C.Impl.Sql
         private static string GetFieldsRegex()
         {
             const string propRegex = @"[a-zA-Z]+\.[^\,\s]+";
-            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})", 
+            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
                 propRegex);
         }
 

@@ -1,4 +1,4 @@
-﻿namespace Simple1C.Impl.Sql.SqlBuilders
+﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     public class SelectField
     {

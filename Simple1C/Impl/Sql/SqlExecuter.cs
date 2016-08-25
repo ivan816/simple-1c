@@ -2,6 +2,7 @@
 using System.Data;
 using System.IO;
 using Npgsql;
+using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql
 {
@@ -9,14 +10,14 @@ namespace Simple1C.Impl.Sql
     {
         private readonly MappingSchema mappingSchema;
         private readonly string connectionString;
-        private readonly SqlDatabase resultDatabase;
+        private readonly MssqlDatabase resultDatabase;
         private readonly string logFilePath;
 
         public SqlExecuter(MappingSchema mappingSchema, string connectionString, string resultConnectionString)
         {
             this.mappingSchema = mappingSchema;
             this.connectionString = connectionString;
-            resultDatabase = new SqlDatabase(resultConnectionString);
+            resultDatabase = new MssqlDatabase(resultConnectionString);
             logFilePath = Path.GetFullPath("log");
             Console.Out.WriteLine("logs [{0}]", logFilePath);
         }

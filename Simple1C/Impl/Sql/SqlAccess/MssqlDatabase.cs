@@ -7,14 +7,14 @@ using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SqlAccess
 {
-    public class SqlDatabase
+    public class MssqlDatabase
     {
         private readonly int commandTimeout;
         private readonly string connectionString;
 
-        public SqlDatabase(string connectionString, int commandTimeout = 100500)
+        public MssqlDatabase(string connectionString, int commandTimeout = 100500)
         {
             this.commandTimeout = commandTimeout;
             this.connectionString = connectionString;
