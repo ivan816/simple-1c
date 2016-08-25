@@ -10,14 +10,14 @@ namespace Simple1C.Impl.Sql
     {
         private readonly MappingSchema mappingSchema;
         private readonly string connectionString;
-        private readonly MssqlDatabase resultDatabase;
+        private readonly MsSqlDatabase resultDatabase;
         private readonly string logFilePath;
 
         public SqlExecuter(MappingSchema mappingSchema, string connectionString, string resultConnectionString)
         {
             this.mappingSchema = mappingSchema;
             this.connectionString = connectionString;
-            resultDatabase = new MssqlDatabase(resultConnectionString);
+            resultDatabase = new MsSqlDatabase(resultConnectionString);
             logFilePath = Path.GetFullPath("log");
             Console.Out.WriteLine("logs [{0}]", logFilePath);
         }
