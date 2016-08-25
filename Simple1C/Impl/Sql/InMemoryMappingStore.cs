@@ -4,24 +4,21 @@ using System.Linq;
 
 namespace Simple1C.Impl.Sql
 {
-    public class InMemoryMappingStore : ITableMappingSource
+    internal class InMemoryMappingStore : ITableMappingSource
     {
-        private readonly Dictionary<string, TableMapping> tableByQueryName;
+        private readonly TableMappingsCache cache;
 
         public InMemoryMappingStore(IEnumerable<TableMapping> tables)
         {
             Tables = tables.ToArray();
-            tableByQueryName = Tables.ToDictionary(x => x.QueryTableName);
+            cache = new TableMappingsCache(Tables, null);
         }
 
         public TableMapping[] Tables { get; private set; }
 
         public TableMapping GetByQueryName(string queryName)
         {
-            TableMapping result;
-            if (!tableByQueryName.TryGetValue(queryName, out result))
-                throw new InvalidOperationException(string.Format("can't find table [{0}]", queryName));
-            return result;
+            return cache.GetByQueryName(queryName);
         }
 
         public static InMemoryMappingStore Parse(string source)
