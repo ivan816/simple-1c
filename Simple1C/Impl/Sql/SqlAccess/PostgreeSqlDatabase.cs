@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override void BulkCopy(DataTable dataTable)
         {
-            using (var npgsqlConnection = new NpgsqlConnection(connectionString))
+            using (var npgsqlConnection = new NpgsqlConnection(ConnectionString))
             using (var writer = npgsqlConnection.BeginBinaryImport(GetCopyFromCommandText(dataTable)))
                 foreach (var r in dataTable.Rows)
                     writer.WriteRow(r);

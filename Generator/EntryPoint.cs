@@ -12,6 +12,7 @@ using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
 using Simple1C.Impl.Sql;
+using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Interface;
 
 namespace Generator
@@ -117,24 +118,27 @@ namespace Generator
         private static int RunSql(NameValueCollection parameters)
         {
             var metaFile = parameters["meta-file"];
-            var connectionString = parameters["connection-string"];
+            var connectionStrings = parameters["connection-strings"];
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(metaFile) &&
-                !string.IsNullOrEmpty(connectionString) &&
+                !string.IsNullOrEmpty(connectionStrings) &&
                 !string.IsNullOrEmpty(queryFile) &&
                 !string.IsNullOrEmpty(resultConnectionString);
             if (!parametersAreValid)
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql -meta-files <path to meta file> -connection-string <1c db connection string> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
+                    "Usage: Generator.exe -cmd run-sql -meta-files <path to meta file> -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
                 return -1;
             }
-            var mappingSchema = MappingSchema.Parse(File.ReadAllText(metaFile));
-            var sqlExecuter = new SqlExecuter(mappingSchema, connectionString, resultConnectionString);
-            sqlExecuter.Execute(queryFile);
+            var sources = connectionStrings.Split(',')
+                .Select(x => new PostgreeSqlDatabase(x))
+                .ToArray();
+            var target = new MsSqlDatabase(resultConnectionString);
+            var sqlExecuter = new SqlExecuter(sources, target, queryFile);
+            sqlExecuter.Execute();
             return 0;
         }
 

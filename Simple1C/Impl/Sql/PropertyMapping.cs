@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 
 namespace Simple1C.Impl.Sql
 {
@@ -10,6 +11,16 @@ namespace Simple1C.Impl.Sql
             FieldName = fieldName;
             NestedTableName = nestedTableName;
             PatchFieldName();
+        }
+
+        public static PropertyMapping Parse(string s)
+        {
+            var columnDesc = s.Split(new[] {" "}, StringSplitOptions.None);
+            if (columnDesc.Length != 2 && columnDesc.Length != 3)
+                throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
+            return new PropertyMapping(columnDesc[0],
+                columnDesc[1],
+                columnDesc.Length == 3 ? columnDesc[2] : null);
         }
 
         private void PatchFieldName()
@@ -30,6 +41,5 @@ namespace Simple1C.Impl.Sql
         public string PropertyName { get; private set; }
         public string FieldName { get; private set; }
         public string NestedTableName { get; private set; }
-        public TableMapping NestedTableMapping { get; set; }
     }
 }

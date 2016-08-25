@@ -10,12 +10,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
     public abstract class AbstractSqlDatabase
     {
         private readonly int commandTimeout;
-        protected readonly string connectionString;
+        public string ConnectionString { get; private set; }
 
         protected AbstractSqlDatabase(string connectionString, int commandTimeout = 100500)
         {
             this.commandTimeout = commandTimeout;
-            this.connectionString = connectionString;
+            ConnectionString = connectionString;
         }
 
         public int ExecuteInt(string commandText)
@@ -45,7 +45,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         private TResult ExecuteScalar<TResult>(string commandText, params object[] args)
         {
-            return Execute(commandText, args, c => (TResult)Convert.ChangeType(c.ExecuteScalar(), typeof(TResult)));
+            return Execute(commandText, args, c => (TResult) Convert.ChangeType(c.ExecuteScalar(), typeof(TResult)));
         }
 
         public bool Exists(string sql, params object[] args)
@@ -82,23 +82,23 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 yield return map(reader);
         }
 
-        public void CreateTable(DataTable dataTable)
+        public void CreateTable(string tableName, DataColumn[] columns)
         {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("CREATE TABLE ");
-            sqlBuilder.Append(dataTable.TableName);
+            sqlBuilder.Append(tableName);
             sqlBuilder.AppendLine();
             sqlBuilder.Append("(");
-            for (var i = 0; i < dataTable.Columns.Count; i++)
+            for (var i = 0; i < columns.Length; i++)
             {
                 sqlBuilder.AppendLine();
                 sqlBuilder.Append('\t');
-                var column = dataTable.Columns[i];
+                var column = columns[i];
                 sqlBuilder.Append(column.ColumnName);
                 sqlBuilder.Append(' ');
                 sqlBuilder.Append(GetSqlType(column));
                 sqlBuilder.Append(column.AllowDBNull ? " NULL" : " NOT NULL");
-                if (i != dataTable.Columns.Count - 1)
+                if (i != columns.Length - 1)
                     sqlBuilder.Append(',');
                 sqlBuilder.AppendLine();
             }
@@ -115,7 +115,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             using (var connection = CreateConnection())
             {
-                connection.ConnectionString = connectionString;
+                connection.ConnectionString = ConnectionString;
                 connection.Open();
                 using (var command = CreateCommand())
                 {

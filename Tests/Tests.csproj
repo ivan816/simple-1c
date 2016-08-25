@@ -33,10 +33,6 @@
     <PlatformTarget>x86</PlatformTarget>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="Irony, Version=1.0.0.0, Culture=neutral, PublicKeyToken=ca48ace7223ead47, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>\\Mac\Home\Downloads\Irony_2013_12_12\Irony_2013_12_12\Irony\bin\Debug\Irony.dll</HintPath>
-    </Reference>
     <Reference Include="Metadata1C, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Assemblies\Metadata1C.dll</HintPath>
@@ -64,14 +60,8 @@
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="Integration\СharacteristicsTest.cs" />
-    <Compile Include="Sql\NestedSyntaxToJoinRewriter.cs" />
-    <Compile Include="Sql\SqlParseHelpers.cs" />
     <Compile Include="Sql\MappingSchemaParsingTest.cs" />
-    <Compile Include="Sql\ParseTreeVisitor.cs" />
-    <Compile Include="Sql\QueryGrammar.cs" />
-    <Compile Include="Sql\SqlFormatter.cs" />
-    <Compile Include="Sql\SqlFormatterTest.cs" />
-    <Compile Include="Sql\SqlTranslatorTest.cs" />
+    <Compile Include="Sql\QueryToSqlTranslatorTest.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />

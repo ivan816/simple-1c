@@ -70,6 +70,7 @@
     <Compile Include="Impl\Call.cs" />
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\AttributesCache.cs" />
+    <Compile Include="Impl\Helpers\ExceptionHelpers.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\FieldAccessorFactory.cs" />
@@ -108,10 +109,13 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\Sql\ITableMappingSource.cs" />
+    <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
-    <Compile Include="Impl\Sql\MappingSchema.cs" />
+    <Compile Include="Impl\Sql\InMemoryMappingStore.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinEqCondition.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
@@ -119,7 +123,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlExecuter.cs" />
-    <Compile Include="Impl\Sql\SqlTranslator.cs" />
+    <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />

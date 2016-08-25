@@ -4,7 +4,7 @@ using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests.Sql
 {
-    public class SqlTranslatorTest : TestBase
+    public class QueryToSqlTranslatorTest : TestBase
     {
         [Test]
         public void Simple()
@@ -179,9 +179,9 @@ left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f
 
         private static void CheckTranslate(string mappings, string sql, string expectedTranslated)
         {
-            var mappingSchema = MappingSchema.Parse(SpacesToTabs(mappings));
-            var sqlTranslator = new SqlTranslator();
-            var actualTranslated = sqlTranslator.Translate(mappingSchema, sql);
+            var inmemoryMappingStore = InMemoryMappingStore.Parse(SpacesToTabs(mappings));
+            var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore);
+            var actualTranslated = sqlTranslator.Translate(sql);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
         }
 

@@ -16,7 +16,7 @@ B b
 C c
     v1 vv1".Replace("    ", "\t");
 
-            var mappingSchema = MappingSchema.Parse(mappings);
+            var mappingSchema = InMemoryMappingStore.Parse(mappings);
             Assert.That(mappingSchema.Tables.Length, Is.EqualTo(3));
             Assert.That(mappingSchema.Tables[0].Properties.Length, Is.EqualTo(2));
             Assert.That(mappingSchema.Tables[0].Properties[0].PropertyName, Is.EqualTo("c1"));

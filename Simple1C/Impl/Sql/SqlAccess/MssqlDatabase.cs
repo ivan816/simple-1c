@@ -15,6 +15,28 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
         }
 
+        public void BulkCopy(IDataReader dataReader, string tableName, DataColumn[] columns)
+        {
+            using (var sqlBulkCopy = new SqlBulkCopy(ConnectionString))
+            {
+                sqlBulkCopy.ColumnMappings.Clear();
+                foreach (var t in columns)
+                    sqlBulkCopy.ColumnMappings.Add(new SqlBulkCopyColumnMapping(t.ColumnName, t.ColumnName));
+                sqlBulkCopy.DestinationTableName = tableName;
+                try
+                {
+                    sqlBulkCopy.WriteToServer(dataReader);
+                }
+                catch (SqlException ex)
+                {
+                    if (IsInvalidColumnLength(ex))
+                        RethrowWithColumnName(ex, sqlBulkCopy);
+                    else
+                        throw;
+                }
+            }
+        }
+
         public bool TableExists(string tableName)
         {
             return Exists("select * from sys.tables where name = @p0", tableName);
@@ -32,7 +54,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override void BulkCopy(DataTable dataTable)
         {
-            using (var sqlBulkCopy = new SqlBulkCopy(connectionString))
+            using (var sqlBulkCopy = new SqlBulkCopy(ConnectionString))
             {
                 sqlBulkCopy.ColumnMappings.Clear();
                 foreach (var column in dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName))
