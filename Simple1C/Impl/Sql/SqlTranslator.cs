@@ -12,13 +12,14 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex fieldsRegex = new Regex(CreateFieldsRegex(),
+        private static readonly Regex fieldsRegex = new Regex(GetFieldsRegex(),
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static string CreateFieldsRegex()
+        private static string GetFieldsRegex()
         {
-            const string fieldNameRegex = @"[a-zA-Z]+\.[^\,\s]+";
-            return string.Format(@"((ПРЕДСТАВЛЕНИЕ)\({0}\)|{0})", fieldNameRegex);
+            const string propRegex = @"[a-zA-Z]+\.[^\,\s]+";
+            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})", 
+                propRegex);
         }
 
         public string Translate(MappingSchema mappingSchema, string source)
@@ -38,7 +39,7 @@ namespace Simple1C.Impl.Sql
             }
             var result = fieldsRegex.Replace(source, delegate(Match m)
             {
-                var properyPath = m.Groups[1].Value;
+                var properyPath = m.Groups["prop"].Value;
                 var properties = properyPath.Split('.');
                 if (properties.Length < 2)
                 {
@@ -47,9 +48,9 @@ namespace Simple1C.Impl.Sql
                 }
                 var tableAlias = properties[0];
                 FunctionName? functionName = null;
-                if (m.Groups[2].Success)
+                if (m.Groups["func"].Success)
                 {
-                    var functionNameString = m.Groups[2].Value;
+                    var functionNameString = m.Groups["func"].Value;
                     if (functionNameString == "ПРЕДСТАВЛЕНИЕ")
                         functionName = FunctionName.Representation;
                     else
@@ -88,7 +89,7 @@ namespace Simple1C.Impl.Sql
         private class TableNameMarker
         {
             private readonly string outerAlias;
-            private string mainTableInnerAlias;
+            private const string mainTableInnerAlias = "__nested_main_table";
             private readonly TableMapping mapping;
             private readonly NameGenerator nameGenerator;
 
@@ -107,7 +108,7 @@ namespace Simple1C.Impl.Sql
             public string GetFieldName(string[] properties, FunctionName? functionName)
             {
                 JoinTable joinTable = null;
-                string referencingTableAlias = null;
+                var referencingTableAlias = mainTableInnerAlias;
                 var referencingTableMapping = mapping;
                 for (var i = 1; i < properties.Length - 1; i++)
                 {
@@ -142,7 +143,7 @@ namespace Simple1C.Impl.Sql
                     }
                 }
                 if (joinTable != null)
-                    return joinTable.GetProperty(lastPropertyName, nameGenerator).alias;
+                    return joinTable.GetProperty(lastProperty.FieldName, nameGenerator).alias;
                 mainTableFields.Add(lastProperty.FieldName);
                 return lastProperty.FieldName;
             }
@@ -151,9 +152,6 @@ namespace Simple1C.Impl.Sql
             {
                 JoinTable result;
                 if (!joinTables.TryGetValue(property, out result))
-                {
-                    if (referencingTableAlias == null)
-                        referencingTableAlias = mainTableInnerAlias = nameGenerator.Generate("__nested_main_table");
                     joinTables.Add(property, result = new JoinTable(new JoinClause
                     {
                         TableName = property.NestedTableMapping.DbTableName,
@@ -169,7 +167,6 @@ namespace Simple1C.Impl.Sql
                             }
                         }
                     }));
-                }
                 return result;
             }
 

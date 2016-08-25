@@ -74,10 +74,82 @@ from справочник.ДоговорыКонтрагентов as contracts"
 
             const string expectedResult = @"select contracts._f4, contracts.__nested_field0 as ContractorInn
 from (select
-    __nested_main_table0._f4,
+    __nested_main_table._f4,
     __nested_table0._f3 as __nested_field0
-from _t1 as __nested_main_table0
-left join _t2 as __nested_table0 on __nested_main_table0._f1rref = __nested_table0._f2) as contracts";
+from _t1 as __nested_main_table
+left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f1rref) as contracts";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void ManyLevelNesting()
+        {
+            const string sourceSql = @"select contracts.Наименование as ContractName,contracts.владелец.ИНН as ContractorInn,contracts.владелец.ОсновнойБанковскийСчет.НомерСчета as AccountNumber
+from справочник.ДоговорыКонтрагентов as contracts";
+
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    владелец f1 Справочник.Контрагенты
+    наименование f2
+Справочник.Контрагенты t2
+    ССылка f3
+    ИНН f4
+    ОсновнойБанковскийСчет f5 Справочник.БанковскиеСчета
+Справочник.БанковскиеСчета t3
+    ССылка f6
+    НомерСчета f7";
+
+            const string expectedResult = @"select contracts._f2 as ContractName,contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as AccountNumber
+from (select
+    __nested_main_table._f2,
+    __nested_table0._f4 as __nested_field0,
+    __nested_table1._f7 as __nested_field1
+from _t1 as __nested_main_table
+left join _t2 as __nested_table0 on __nested_table0._f3 = __nested_main_table._f1rref
+left join _t3 as __nested_table1 on __nested_table1._f6 = __nested_table0._f5rref) as contracts";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void EnumsNoText()
+        {
+            const string sourceSql = @"select contractors.НаименованиеПолное as ContractorFullname,contractors.ЮридическоеФизическоеЛицо as ContractorType
+from справочник.Контрагенты as contractors";
+
+            const string mappings = @"Справочник.Контрагенты t1
+    наименованиеполное f1
+    ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
+Перечисление.ЮридическоеФизическоеЛицо t2
+    ССылка f3
+    Порядок f4";
+
+            const string expectedResult = @"select contractors._f1 as ContractorFullname,contractors._f2rref as ContractorType
+from _t1 as contractors";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void EnumsWithText()
+        {
+            const string sourceSql = @"select contractors.НаименованиеПолное as ContractorFullname,ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as ContractorType
+from справочник.Контрагенты as contractors";
+
+            const string mappings = @"Справочник.Контрагенты t1
+    наименованиеполное f1
+    ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
+Перечисление.ЮридическоеФизическоеЛицо t2
+    ССылка f3
+    Порядок f4";
+
+            const string expectedResult = @"select contractors._f1 as ContractorFullname,contractors.__nested_field0 as ContractorType
+from (select
+    __nested_main_table._f1,
+    __nested_table1.enumValueName as __nested_field0
+from _t1 as __nested_main_table
+left join _t2 as __nested_table0 on __nested_table0._f3 = __nested_main_table._f2rref
+left join simple1c__enumValues as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.order = __nested_table0._f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -99,8 +171,8 @@ from справочник.ДоговорыКонтрагентов as contracts"
 from (select
     __nested_table0._f3 as __nested_field0,
     __nested_table0._f4 as __nested_field1
-from _t1 as __nested_main_table0
-left join _t2 as __nested_table0 on __nested_main_table0._f1rref = __nested_table0._f2) as contracts";
+from _t1 as __nested_main_table
+left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f1rref) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }

@@ -36,22 +36,7 @@ namespace Simple1C.Impl.Sql.SqlBuilders
             b.Append("\r\nfrom ");
             SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
             foreach (var join in JoinClauses)
-            {
-                b.Append("\r\n");
-                b.Append(join.JoinKind);
-                b.Append(" join ");
-                SqlHelpers.WriteDeclaration(b, join.TableName, join.TableAlias);
-                b.Append(" on ");
-                foreach (var eq in join.EqConditions)
-                {
-                    SqlHelpers.WriteReference(b, join.TableAlias, eq.FieldName);
-                    b.Append(" = ");
-                    if (eq.ComparandConstantValue != null)
-                        b.Append(eq.ComparandConstantValue);
-                    else
-                        SqlHelpers.WriteReference(b, eq.ComparandTableName, eq.ComparandFieldName);
-                }
-            }
+                join.WriteTo(b);
             return b.ToString();
         }
     }
