@@ -1,16 +1,12 @@
 ﻿using System;
 using System.CodeDom.Compiler;
-using System.Collections.Generic;
 using System.Collections.Specialized;
-using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.CSharp;
 using Simple1C.Impl;
-using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
-using Simple1C.Impl.Queries;
 using Simple1C.Impl.Sql;
 using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Interface;
@@ -55,14 +51,14 @@ namespace Generator
                 return -1;
             }
             object globalContext = null;
-            ExecuteAction(string.Format("connecting to [{0}]", connectionString),
+            LogHelpers.LogWithTiming(string.Format("connecting to [{0}]", connectionString),
                 () => globalContext = new GlobalContextFactory().Create(connectionString));
 
             sourcePath = sourcePath ?? GetTemporaryDirectoryFullPath();
             if (Directory.Exists(sourcePath))
                 Directory.Delete(sourcePath, true);
             string[] fileNames = null;
-            ExecuteAction(string.Format("generating code into [{0}]", sourcePath),
+            LogHelpers.LogWithTiming(string.Format("generating code into [{0}]", sourcePath),
                 () =>
                 {
                     var generator = new ObjectModelGenerator(globalContext,
@@ -79,7 +75,7 @@ namespace Generator
                         csprojFilePath);
                     return -1;
                 }
-                ExecuteAction(string.Format("patching proj file [{0}]", csprojFilePath),
+                LogHelpers.LogWithTiming(string.Format("patching proj file [{0}]", csprojFilePath),
                     () =>
                     {
                         var updater = new CsProjectFileUpdater(csprojFilePath, sourcePath);
@@ -88,8 +84,8 @@ namespace Generator
             }
 
             if (!string.IsNullOrEmpty(resultAssemblyFullPath))
-                ExecuteAction(string.Format("compiling [{0}] to assembly [{1}]", sourcePath, resultAssemblyFullPath),
-                    () =>
+                LogHelpers.LogWithTiming(string.Format("compiling [{0}] to assembly [{1}]",
+                    sourcePath, resultAssemblyFullPath), () =>
                     {
                         var cSharpCodeProvider = new CSharpCodeProvider();
                         var compilerParameters = new CompilerParameters
@@ -145,106 +141,26 @@ namespace Generator
         private static int GenSqlMeta(NameValueCollection parameters)
         {
             var connectionString = parameters["connection-string"];
-            var resultSchemaFileName = parameters["result-schema-file-name"];
+            var dbConnectionString = parameters["db-connection-string"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
-                !string.IsNullOrEmpty(resultSchemaFileName);
+                !string.IsNullOrEmpty(dbConnectionString);
             if (!parametersAreValid)
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd gen-sql-meta -connection-string <string> -result-schema-file-name <file full path>");
+                    "Usage: Generator.exe -cmd gen-sql-meta -connection-string <string> -db-connection-string <connection string for PostgreeSql db>");
                 return -1;
             }
             GlobalContext globalContext = null;
-            ExecuteAction(string.Format("connecting to [{0}]", connectionString),
+            LogHelpers.LogWithTiming(string.Format("connecting to [{0}]", connectionString),
                 () => globalContext = new GlobalContext(new GlobalContextFactory().Create(connectionString)));
 
-            object comTable = null;
-            ExecuteAction("loading schema info",
-                () => comTable = ComHelpers.Invoke(globalContext.ComObject(), "ПолучитьСтруктуруХраненияБазыДанных"));
-
-            ExecuteAction(string.Format("dumping schema into [{0}]", resultSchemaFileName),
-                () =>
-                {
-                    var tableMappings = new ValueTable(comTable);
-                    using (var writer = new StreamWriter(resultSchemaFileName))
-                    {
-                        for (var i = 0; i < tableMappings.Count; i++)
-                        {
-                            var tableMapping = tableMappings[i];
-                            var queryTableName = tableMapping.GetString("ИмяТаблицы");
-                            if (string.IsNullOrEmpty(queryTableName))
-                                continue;
-                            var attributes = GetAttributes(globalContext, queryTableName);
-                            var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
-                            if (string.IsNullOrEmpty(dbTableName))
-                                continue;
-                            writer.WriteLine("{0} {1}", queryTableName, dbTableName);
-                            var colunMappings = new ValueTable(tableMapping["Поля"]);
-                            for (var j = 0; j < colunMappings.Count; j++)
-                            {
-                                var columnMapping = colunMappings.Get(j);
-                                var queryColumnName = columnMapping.GetString("ИмяПоля");
-                                if (string.IsNullOrEmpty(queryColumnName))
-                                    continue;
-                                var dbColumnName = columnMapping.GetString("ИмяПоляХранения");
-                                if (string.IsNullOrEmpty(dbColumnName))
-                                    continue;
-                                var attribute = attributes == null ? null : attributes.GetOrDefault(queryColumnName);
-                                var typename = attribute == null ? null : attribute();
-                                writer.WriteLine("\t{0} {1}{2}", queryColumnName, dbColumnName,
-                                    string.IsNullOrEmpty(typename) ? "" : " " + typename);
-                            }
-                            if ((i + 1)%50 == 0)
-                                Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
-                                    i + 1, tableMappings.Count, (double) (i + 1)/tableMappings.Count*100);
-                        }
-                    }
-                });
+            var postgreeSqlDatabase = new PostgreeSqlDatabase(dbConnectionString);
+            var postgreeSqlSchemaStore = new PostgreeSqlSchemaStore(postgreeSqlDatabase);
+            var schemaCreator = new PostgreeSqlSchemaCreator(postgreeSqlSchemaStore, globalContext);
+            schemaCreator.Recreate();
             return 0;
-        }
-
-        private static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
-        {
-            {"Строка", "string"},
-            {"Булево", "bool"},
-            {"Дата", "DateTime?"},
-            {"Уникальный идентификатор", "Guid?"},
-            {"Хранилище значения", null},
-            {"Описание типов", "Type[]"}
-        };
-
-        private static Dictionary<string, Func<string>> GetAttributes(GlobalContext globalContext, string fullname)
-        {
-            var configurationName = ConfigurationName.ParseOrNull(fullname);
-            if (configurationName == null)
-                return null;
-            if (!configurationName.Value.HasReference)
-                return null;
-            var configurationItem = globalContext.FindByName(configurationName.Value);
-            var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
-            var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
-            return attributes.ToDictionary(Call.Имя, delegate(object o)
-            {
-                Func<string> result = delegate
-                {
-                    var type = ComHelpers.GetProperty(o, "Тип");
-                    var typesObject = ComHelpers.Invoke(type, "Типы");
-                    var typesCount = Call.Количество(typesObject);
-                    if (typesCount != 1)
-                        return null;
-                    var typeObject = Call.Получить(typesObject, 0);
-                    var stringPresentation = globalContext.String(typeObject);
-                    if (simpleTypesMap.ContainsKey(stringPresentation))
-                        return null;
-                    var comObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
-                    if (comObject == null)
-                        return null;
-                    return Call.ПолноеИмя(comObject);
-                };
-                return result;
-            });
         }
 
         public static string GetTemporaryDirectoryFullPath()
@@ -252,15 +168,6 @@ namespace Generator
             var result = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(result);
             return result;
-        }
-
-        private static void ExecuteAction(string description, Action action)
-        {
-            Console.Out.WriteLine(description);
-            var s = Stopwatch.StartNew();
-            action();
-            s.Stop();
-            Console.Out.WriteLine("done, took [{0}] millis", s.ElapsedMilliseconds);
         }
     }
 }

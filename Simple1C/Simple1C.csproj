@@ -71,6 +71,7 @@
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\AttributesCache.cs" />
     <Compile Include="Impl\Helpers\ExceptionHelpers.cs" />
+    <Compile Include="Impl\Helpers\LogHelpers.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\FieldAccessorFactory.cs" />
@@ -109,7 +110,9 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\Sql\EnumMapping.cs" />
     <Compile Include="Impl\Sql\ITableMappingSource.cs" />
+    <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
     <Compile Include="Impl\Sql\InMemoryMappingStore.cs" />

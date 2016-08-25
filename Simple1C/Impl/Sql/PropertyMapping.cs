@@ -13,6 +13,14 @@ namespace Simple1C.Impl.Sql
             PatchFieldName();
         }
 
+        public string Serialize()
+        {
+            var result = PropertyName + " " + FieldName;
+            return string.IsNullOrEmpty(NestedTableName)
+                ? result
+                : result + " " + NestedTableName;
+        }
+
         public static PropertyMapping Parse(string s)
         {
             var columnDesc = s.Split(new[] {" "}, StringSplitOptions.None);

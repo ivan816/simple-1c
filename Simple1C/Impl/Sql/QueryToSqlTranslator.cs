@@ -190,7 +190,7 @@ namespace Simple1C.Impl.Sql
                 if (!joinTables.TryGetValue(orderProperty, out result))
                     joinTables.Add(orderProperty, result = new JoinTable(new JoinClause
                     {
-                        TableName = "simple1c__enumValues",
+                        TableName = "simple1c__enumMappings",
                         TableAlias = nameGenerator.Generate("__nested_table"),
                         JoinKind = "left",
                         EqConditions = new[]

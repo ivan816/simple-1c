@@ -43,7 +43,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return ExecuteScalar<string>(commandText);
         }
 
-        private TResult ExecuteScalar<TResult>(string commandText, params object[] args)
+        protected TResult ExecuteScalar<TResult>(string commandText, params object[] args)
         {
             return Execute(commandText, args, c => (TResult) Convert.ChangeType(c.ExecuteScalar(), typeof(TResult)));
         }
@@ -82,7 +82,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 yield return map(reader);
         }
 
-        public void CreateTable(string tableName, DataColumn[] columns)
+        public void CreateTable(string tableName, params DataColumn[] columns)
         {
             var sqlBuilder = new StringBuilder();
             sqlBuilder.Append("CREATE TABLE ");
@@ -133,6 +133,5 @@ namespace Simple1C.Impl.Sql.SqlAccess
         protected abstract DbCommand CreateCommand();
         protected abstract string GetSqlType(DataColumn column);
         protected abstract void AddParameter(DbCommand command, string name, object value);
-        public abstract void BulkCopy(DataTable dataTable);
     }
 }

@@ -2,7 +2,6 @@ using System;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
-using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 
@@ -50,28 +49,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
         protected override void AddParameter(DbCommand command, string name, object value)
         {
             ((SqlCommand) command).Parameters.AddWithValue(name, value);
-        }
-
-        public override void BulkCopy(DataTable dataTable)
-        {
-            using (var sqlBulkCopy = new SqlBulkCopy(ConnectionString))
-            {
-                sqlBulkCopy.ColumnMappings.Clear();
-                foreach (var column in dataTable.Columns.Cast<DataColumn>().Select(x => x.ColumnName))
-                    sqlBulkCopy.ColumnMappings.Add(new SqlBulkCopyColumnMapping(column, column));
-                sqlBulkCopy.DestinationTableName = dataTable.TableName;
-                try
-                {
-                    sqlBulkCopy.WriteToServer(dataTable);
-                }
-                catch (SqlException ex)
-                {
-                    if (IsInvalidColumnLength(ex))
-                        RethrowWithColumnName(ex, sqlBulkCopy);
-                    else
-                        throw;
-                }
-            }
         }
 
         private static bool IsInvalidColumnLength(SqlException ex)
