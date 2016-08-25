@@ -4,6 +4,6 @@
     {
         public string enumName;
         public string enumValueName;
-        public int order;
+        public int orderIndex;
     }
 }

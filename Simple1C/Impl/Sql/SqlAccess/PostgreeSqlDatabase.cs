@@ -16,9 +16,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public bool TableExists(string tableName)
         {
-            const string sql = @"SELECT * FROM information_schema.tables 
-    WHERE table_schema = @p0 AND table_name = @p1";
-            return Exists(sql, "public", tableName);
+            const string sqlFormat = @"SELECT cast(to_regclass('public.{0}') as varchar(200));";
+            return !string.IsNullOrEmpty(ExecuteString(string.Format(sqlFormat, tableName)));
         }
 
         protected override void AddParameter(DbCommand command, string name, object value)
@@ -28,10 +27,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public void BulkCopy(IEnumerable<object[]> data, string tableName, DataColumn[] columns)
         {
-            using (var npgsqlConnection = new NpgsqlConnection(ConnectionString))
+            using (var connection = new NpgsqlConnection(ConnectionString))
             {
-                var copyCommandText = GetCopyCommandText(tableName,columns);
-                using (var writer = npgsqlConnection.BeginBinaryImport(copyCommandText))
+                connection.Open();
+                var copyCommandText = GetCopyCommandText(tableName, columns);
+                using (var writer = connection.BeginBinaryImport(copyCommandText))
                     foreach (var r in data)
                         writer.WriteRow(r);
             }

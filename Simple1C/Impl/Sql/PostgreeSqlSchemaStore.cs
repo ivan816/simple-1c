@@ -66,13 +66,13 @@ namespace Simple1C.Impl.Sql
                     },
                     new DataColumn
                     {
-                        ColumnName = "order",
+                        ColumnName = "orderIndex",
                         AllowDBNull = false,
                         DataType = typeof(int)
                     }
                 },
                 createIndexesSql =
-                    "CREATE INDEX simple1c__enumMappings_index ON simple1c__enumMappings (enumName,order)"
+                    "CREATE INDEX simple1c__enumMappings_index ON simple1c__enumMappings (enumName,orderIndex)"
             };
 
         public PostgreeSqlSchemaStore(PostgreeSqlDatabase database)
@@ -87,7 +87,7 @@ namespace Simple1C.Impl.Sql
             {
                 x.enumName,
                 x.enumValueName,
-                x.order
+                x.orderIndex
             });
         }
 
@@ -110,7 +110,7 @@ namespace Simple1C.Impl.Sql
         {
             const string sql = "select queryTableName,dbName,properties " +
                                "from simple1c__tableMappings " +
-                               "where queryTableName = @p0" +
+                               "where lower(queryTableName) = lower(@p0)" +
                                "limit 1";
             return database.ExecuteReader(
                 sql, new object[] {queryName.ToLower()},
@@ -126,7 +126,7 @@ namespace Simple1C.Impl.Sql
         {
             if (database.TableExists(tableDesc.tableName))
                 database.DropTable(tableDesc.tableName);
-            database.CreateTable(tableDesc.tableName, tableDesc.columns);
+            database.CreateTable("public." + tableDesc.tableName, tableDesc.columns);
             database.BulkCopy(data.Select(getColumnValues),
                 tableDesc.tableName,
                 tableDesc.columns);

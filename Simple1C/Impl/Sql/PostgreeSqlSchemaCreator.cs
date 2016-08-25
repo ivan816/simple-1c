@@ -51,19 +51,32 @@ namespace Simple1C.Impl.Sql
                 var enumName = Call.Имя(enumMeta);
                 var enumManager = ComHelpers.GetProperty(enumsManager, enumName);
                 var enumValuesMeta = ComHelpers.GetProperty(enumMeta, "ЗначенияПеречисления");
-                var valuesCount = Call.Количество(enumsMeta);
+                var valuesCount = Call.Количество(enumValuesMeta);
                 for (var j = 0; j < valuesCount; j++)
                 {
                     var enumValueMeta = Call.Получить(enumValuesMeta, j);
                     var enumValueName = Call.Имя(enumValueMeta);
-                    var enumValue = ComHelpers.GetProperty(enumManager, enumValueName);
-                    var order = Convert.ToInt32(ComHelpers.Invoke(enumManager, "Индекс", enumValue));
-                    result.Add(new EnumMapping
+                    object enumValue = null;
+                    try
                     {
-                        enumName = enumName,
-                        enumValueName = enumValueName,
-                        order = order
-                    });
+                        enumValue = ComHelpers.GetProperty(enumManager, enumValueName);
+                    }
+                    catch
+                    {
+                        //сраный 1С куда-то проебывает (DISP_E_MEMBERNOTFOUND)
+                        //УсловияПримененияТребованийЗаконодательства.ЕстьТранспортныеСредства
+                        //и только это значения этого енума, остальные на месте
+                    }
+                    if (enumValue != null)
+                    {
+                        var order = Convert.ToInt32(ComHelpers.Invoke(enumManager, "Индекс", enumValue));
+                        result.Add(new EnumMapping
+                        {
+                            enumName = enumName,
+                            enumValueName = enumValueName,
+                            orderIndex = order
+                        });
+                    }
                 }
             }
             return result.ToArray();
@@ -72,7 +85,7 @@ namespace Simple1C.Impl.Sql
         private TableMapping[] ExtractTableMappingsFromCom(object comTable)
         {
             var tableMappings = new ValueTable(comTable);
-            var result = new TableMapping[tableMappings.Count];
+            var result = new List<TableMapping>();
             for (var i = 0; i < tableMappings.Count; i++)
             {
                 var tableMapping = tableMappings[i];
@@ -84,7 +97,7 @@ namespace Simple1C.Impl.Sql
                 if (string.IsNullOrEmpty(dbTableName))
                     continue;
                 var colunMappings = new ValueTable(tableMapping["Поля"]);
-                var propertyMappings = new PropertyMapping[colunMappings.Count];
+                var propertyMappings = new List<PropertyMapping>();
                 for (var j = 0; j < colunMappings.Count; j++)
                 {
                     var columnMapping = colunMappings.Get(j);
@@ -96,15 +109,15 @@ namespace Simple1C.Impl.Sql
                         continue;
                     var attribute = attributes == null ? null : attributes.GetOrDefault(queryColumnName);
                     var typename = attribute == null ? null : attribute();
-                    propertyMappings[j] = new PropertyMapping(queryColumnName, dbColumnName,
-                        string.IsNullOrEmpty(typename) ? "" : " " + typename);
+                    propertyMappings.Add(new PropertyMapping(queryColumnName, dbColumnName,
+                        string.IsNullOrEmpty(typename) ? "" : " " + typename));
                 }
-                result[i] = new TableMapping(queryTableName, dbTableName, propertyMappings);
+                result.Add(new TableMapping(queryTableName, dbTableName, propertyMappings.ToArray()));
                 if ((i + 1)%50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
                         i + 1, tableMappings.Count, (double) (i + 1)/tableMappings.Count*100);
             }
-            return result;
+            return result.ToArray();
         }
 
         private static Dictionary<string, Func<string>> GetAttributes(GlobalContext globalContext, string fullname)

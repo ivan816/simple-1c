@@ -202,7 +202,7 @@ namespace Simple1C.Impl.Sql
                             },
                             new JoinEqCondition
                             {
-                                FieldName = "order",
+                                FieldName = "orderIndex",
                                 ComparandTableName = referencingTableAlias,
                                 ComparandFieldName = orderProperty.FieldName
                             }
