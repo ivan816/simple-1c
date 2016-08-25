@@ -7,7 +7,7 @@ using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess
 {
-    public abstract class AbstractSqlDatabase
+    internal abstract class AbstractSqlDatabase
     {
         private readonly int commandTimeout;
         public string ConnectionString { get; private set; }

@@ -7,7 +7,7 @@ using System.Text.RegularExpressions;
 
 namespace Simple1C.Impl.Sql.SqlAccess
 {
-    public class MsSqlDatabase: AbstractSqlDatabase
+    internal class MsSqlDatabase : AbstractSqlDatabase
     {
         public MsSqlDatabase(string connectionString, int commandTimeout = 100500) 
             : base(connectionString, commandTimeout)

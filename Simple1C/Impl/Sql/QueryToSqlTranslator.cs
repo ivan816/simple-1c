@@ -7,7 +7,7 @@ using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql
 {
-    public class QueryToSqlTranslator
+    internal class QueryToSqlTranslator
     {
         private readonly ITableMappingSource mappingSource;
 

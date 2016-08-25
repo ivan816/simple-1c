@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Simple1C.Impl.Sql
 {
-    public class PropertyMapping
+    internal class PropertyMapping
     {
         public PropertyMapping(string propertyName, string fieldName, string nestedTableName)
         {

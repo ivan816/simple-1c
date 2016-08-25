@@ -3,7 +3,7 @@ using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    public class SelectClause
+    internal class SelectClause
     {
         public SelectClause(string tableName, string tableAlias)
         {

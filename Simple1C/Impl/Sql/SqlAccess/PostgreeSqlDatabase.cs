@@ -7,7 +7,7 @@ using Npgsql;
 
 namespace Simple1C.Impl.Sql.SqlAccess
 {
-    public class PostgreeSqlDatabase : AbstractSqlDatabase
+    internal class PostgreeSqlDatabase : AbstractSqlDatabase
     {
         public PostgreeSqlDatabase(string connectionString, int commandTimeout = 100500)
             : base(connectionString, commandTimeout)

@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    public class SelectField
+    internal class SelectField
     {
         public string Name { get; set; }
         public string TableName { get; set; }

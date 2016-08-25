@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql
 {
-    public interface ITableMappingSource
+    internal interface ITableMappingSource
     {
         TableMapping GetByQueryName(string queryName);
     }

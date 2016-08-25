@@ -1,6 +1,6 @@
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    public class JoinEqCondition
+    internal class JoinEqCondition
     {
         public string FieldName { get; set; }
         public string ComparandConstantValue { get; set; }

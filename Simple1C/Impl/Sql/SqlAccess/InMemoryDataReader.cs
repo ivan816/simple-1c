@@ -4,7 +4,7 @@ using System.Data;
 
 namespace Simple1C.Impl.Sql.SqlAccess
 {
-    public class InMemoryDataReader : IDataReader
+    internal class InMemoryDataReader : IDataReader
     {
         private readonly List<object[]> data;
         private readonly int rowCount;

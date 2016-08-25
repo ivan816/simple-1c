@@ -12,7 +12,7 @@ using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql
 {
-    public class SqlExecuter
+    internal class SqlExecuter
     {
         private readonly PostgreeSqlDatabase[] sources;
         private readonly MsSqlDatabase target;

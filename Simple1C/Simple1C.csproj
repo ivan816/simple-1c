@@ -124,7 +124,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectField.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlHelpers.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\SqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlExecuter.cs" />
     <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />

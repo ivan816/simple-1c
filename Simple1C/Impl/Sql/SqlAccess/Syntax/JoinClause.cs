@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    public class JoinClause
+    internal class JoinClause
     {
         public string TableName { get; set; }
         public string TableAlias { get; set; }

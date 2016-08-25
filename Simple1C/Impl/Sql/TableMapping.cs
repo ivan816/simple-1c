@@ -5,7 +5,7 @@ using System.Text;
 
 namespace Simple1C.Impl.Sql
 {
-    public class TableMapping
+    internal class TableMapping
     {
         public string QueryTableName { get; private set; }
         public string DbTableName { get; private set; }
