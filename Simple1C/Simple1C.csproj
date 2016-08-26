@@ -85,6 +85,7 @@
     <Compile Include="Impl\Helpers\MemberAccessor\UnboxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\UntypedMemberAccessor.cs" />
     <Compile Include="Impl\Helpers\NameValueCollectionHelpers.cs" />
+    <Compile Include="Impl\Helpers\StringHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
     <Compile Include="Impl\MappingSource.cs" />
     <Compile Include="Impl\Metadata.cs" />

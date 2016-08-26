@@ -149,7 +149,31 @@ from (select
     __nested_table1.enumValueName as __nested_field0
 from _t1 as __nested_main_table
 left join _t2 as __nested_table0 on __nested_table0._f3 = __nested_main_table._f2rref
-left join simple1c__enumValues as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.order = __nested_table0._f4) as contractors";
+left join simple1c__enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0._f4) as contractors";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void ManyInstancesOfSameProperty()
+        {
+            const string sourceSql = @"select contractors.ИНН as Inn,contractors.Родитель.ИНН as ParentInn,contractors.ГоловнойКонтрагент.ИНН as HeadInn
+from справочник.Контрагенты as contractors";
+
+            const string mappings = @"Справочник.Контрагенты t1
+    ССылка f1
+    ИНН f2
+    Родитель f3 Справочник.Контрагенты
+    ГоловнойКонтрагент f4 Справочник.Контрагенты";
+
+            const string expectedResult = @"select contractors._f2 as Inn,contractors.__nested_field0 as ParentInn,contractors.__nested_field1 as HeadInn
+from (select
+    __nested_main_table._f2,
+    __nested_table0._f2 as __nested_field0,
+    __nested_table1._f2 as __nested_field1
+from _t1 as __nested_main_table
+left join _t1 as __nested_table0 on __nested_table0._f1 = __nested_main_table._f3rref
+left join _t1 as __nested_table1 on __nested_table1._f1 = __nested_main_table._f4rref) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
