@@ -595,6 +595,24 @@ namespace Simple1C.Tests
             }
         }
 
+        public class LikeFilterTest : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQuery(Source<Контрагенты>()
+                    .Where(x => x.Наименование.Contains("some text")),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.Контрагенты КАК src ГДЕ (src.Наименование ПОДОБНО \"%\" + &p0 + \"%\")",
+                    P("p0", "some text"));
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class Контрагенты
+            {
+                public string Наименование { get; set; }
+            }
+        }
+
         public class RegistryTest : QueryBuilderTest
         {
             [Test]

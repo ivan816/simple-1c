@@ -66,8 +66,14 @@ namespace Simple1C.Impl.Queriables
                 return true;
             var xMethodCall = node as MethodCallExpression;
             if (xMethodCall != null)
-                return xMethodCall.Method.DeclaringType == typeof(object) &&
-                       xMethodCall.Method.Name == "GetType";
+            {
+                if (xMethodCall.Method.DeclaringType == typeof(object) &&
+                    xMethodCall.Method.Name == "GetType")
+                    return true;
+                if (xMethodCall.Method.DeclaringType == typeof(string) &&
+                    xMethodCall.Method.Name == "Contains")
+                    return true;
+            }
             return false;
         }
 
@@ -171,6 +177,15 @@ namespace Simple1C.Impl.Queriables
                 filterBuilder.Append("ТИПЗНАЧЕНИЯ(");
                 Visit(node.Object);
                 filterBuilder.Append(")");
+                return node;
+            }
+            if (node.Method.DeclaringType == typeof(string) && node.Method.Name == "Contains")
+            {
+                filterBuilder.Append("(");
+                Visit(node.Object);
+                filterBuilder.Append(" ПОДОБНО \"%\" + ");
+                Visit(node.Arguments[0]);
+                filterBuilder.Append(" + \"%\")");
                 return node;
             }
             return base.VisitMethodCall(node);

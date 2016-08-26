@@ -15,7 +15,9 @@ namespace Simple1C.Impl.Queriables
         private readonly List<SelectedPropertyItem> items = new List<SelectedPropertyItem>();
         private Expression xRoot;
         private bool rootIsSingleItem;
-        private static readonly MethodInfo presentationMethodInfo = typeof(Функции).GetMethod("Представление", BindingFlags.Static | BindingFlags.Public);
+
+        private static readonly MethodInfo presentationMethodInfo = typeof(Функции)
+            .GetMethod("Представление", BindingFlags.Static | BindingFlags.Public);
 
         public PropertiesExtractingVisitor(MemberAccessBuilder memberAccessBuilder)
         {
