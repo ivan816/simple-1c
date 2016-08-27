@@ -45,12 +45,13 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         protected TResult ExecuteScalar<TResult>(string commandText, params object[] args)
         {
-            return Execute(commandText, args, c => (TResult) Convert.ChangeType(c.ExecuteScalar(), typeof(TResult)));
+            return ExecuteWithResult(commandText, args,
+                c => (TResult) Convert.ChangeType(c.ExecuteScalar(), typeof(TResult)));
         }
 
         public bool Exists(string sql, params object[] args)
         {
-            return Execute(sql, args, c =>
+            return ExecuteWithResult(sql, args, c =>
             {
                 using (var reader = c.ExecuteReader())
                     return reader.Read();
@@ -67,12 +68,22 @@ namespace Simple1C.Impl.Sql.SqlAccess
             ExecuteNonQuery(string.Format("drop table {0}", tableName));
         }
 
-        public IEnumerable<T> ExecuteReader<T>(string commandText, object[] args, Func<DbDataReader, T> map)
+        public IEnumerable<T> ExecuteEnumerable<T>(string commandText, object[] args, Func<DbDataReader, T> map)
         {
-            return Execute(commandText, args, c =>
+            return ExecuteWithResult(commandText, args, c =>
             {
                 using (var reader = c.ExecuteReader())
                     return ReadAll(reader, map).ToArray();
+            });
+        }
+
+        public void ExecuteReader(string commandText, object[] args, Action<DbDataReader> action)
+        {
+            Execute(commandText, args, c =>
+            {
+                using (var reader = c.ExecuteReader())
+                    while (reader.Read())
+                        action(reader);
             });
         }
 
@@ -106,12 +117,20 @@ namespace Simple1C.Impl.Sql.SqlAccess
             ExecuteNonQuery(sqlBuilder.ToString());
         }
 
-        public int ExecuteNonQuery(string commandText, params object[] parameters)
+        public void ExecuteNonQuery(string commandText, params object[] parameters)
         {
-            return Execute(commandText, parameters, c => c.ExecuteNonQuery());
+            Execute(commandText, parameters, c => c.ExecuteNonQuery());
         }
 
-        public TResult Execute<TResult>(string commandText, object[] parameters, Func<DbCommand, TResult> useCommand)
+        public TResult ExecuteWithResult<TResult>(string commandText, object[] parameters,
+            Func<DbCommand, TResult> useCommand)
+        {
+            var result = default(TResult);
+            Execute(commandText, parameters, c => result = useCommand(c));
+            return result;
+        }
+
+        public void Execute(string commandText, object[] parameters, Action<DbCommand> useCommand)
         {
             using (var connection = CreateConnection())
             {
@@ -124,7 +143,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     command.CommandText = commandText;
                     command.CommandTimeout = commandTimeout;
                     command.Connection = connection;
-                    return useCommand(command);
+                    useCommand(command);
                 }
             }
         }

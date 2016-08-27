@@ -5,27 +5,24 @@ using System.Data.Common;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using System.Threading.Tasks;
 using Npgsql;
-using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql
 {
-    internal class SqlExecuter
+    internal class QueryExecuter
     {
         private readonly PostgreeSqlDatabase[] sources;
         private readonly MsSqlDatabase target;
         private readonly string logFilePath;
         private readonly object lockObject = new object();
-        private readonly List<object[]> writeBatch = new List<object[]>();
-        private readonly bool isFirstWrite = true;
-        private readonly CancellationTokenSource cancellation = new CancellationTokenSource();
         private DataColumn[] columns;
-        private int rowsCount;
         private const int batchSize = 1000;
+        private readonly List<object[]> writeBatch = new List<object[]>();
+        private volatile bool errorOccured;
+        private int filledRowsCountInBatch;
 
-        public SqlExecuter(PostgreeSqlDatabase[] sources, MsSqlDatabase target, string queryFileName)
+        public QueryExecuter(PostgreeSqlDatabase[] sources, MsSqlDatabase target, string queryFileName)
         {
             this.sources = sources;
             this.target = target;
@@ -37,44 +34,49 @@ namespace Simple1C.Impl.Sql
 
         public void Execute()
         {
-            var tasks = new Task[sources.Length];
-            for (var i = 0; i < tasks.Length; i++)
+            var sourceThreads = new Thread[sources.Length];
+            for (var i = 0; i < sourceThreads.Length; i++)
             {
                 var source = sources[i];
-                tasks[i] = Task.Run(async delegate
+                sourceThreads[i] = new Thread(delegate(object _)
                 {
                     try
                     {
                         var mappingSchema = new PostgreeSqlSchemaStore(source);
                         var translator = new QueryToSqlTranslator(mappingSchema);
                         var sql = translator.Translate(queryText);
-                        WriteLog("[{0}] translation\r\n{1}", tableName, sql);
-                        using (var connection = new NpgsqlConnection(source.ConnectionString))
-                        using (var command = new NpgsqlCommand(sql, connection))
+                        WriteLog("[{0}] translation for [{1}]\r\n{2}",
+                            tableName, source.ConnectionString, sql);
+                        source.ExecuteReader(sql, new object[0], delegate(DbDataReader reader)
                         {
-                            command.AllResultTypesAreUnknown = true;
-                            await connection.OpenAsync(cancellation.Token);
-                            using (var reader = (NpgsqlDataReader) await ExecuteReader(command))
-                                while (await reader.ReadAsync(cancellation.Token))
-                                    HandleRow(reader);
-                        }
+                            if (errorOccured)
+                                throw new OperationCanceledException();
+                            HandleRow(reader);
+                        });
+                    }
+                    catch (OperationCanceledException)
+                    {
                     }
                     catch (Exception e)
                     {
-                        if (e.IsCancellation())
-                            return;
+                        errorOccured = true;
                         WriteLog("error for [{0}]\r\n{1}", source.ConnectionString, e);
-                        cancellation.Cancel();
                     }
-                }, cancellation.Token);
+                });
+                sourceThreads[i].Start();
             }
+            foreach (var t in sourceThreads)
+                t.Join();
+            Console.Out.WriteLine("done");
         }
 
-        private void HandleRow(NpgsqlDataReader reader)
+        private void HandleRow(DbDataReader dbReader)
         {
+            var reader = (NpgsqlDataReader) dbReader;
             lock (lockObject)
             {
                 if (columns == null)
+                {
                     columns = reader.GetColumnSchema()
                         .Select(column => new DataColumn
                         {
@@ -84,31 +86,22 @@ namespace Simple1C.Impl.Sql
                             MaxLength = column.ColumnSize.GetValueOrDefault(-1)
                         })
                         .ToArray();
-                var currentRowIndex = rowsCount;
+                    if (target.TableExists(tableName))
+                        target.DropTable("dbo." + tableName);
+                    target.CreateTable(tableName, columns);
+                }
+                var currentRowIndex = filledRowsCountInBatch;
                 object[] rowData;
                 if (currentRowIndex < writeBatch.Count)
                     rowData = writeBatch[currentRowIndex];
                 else
                     writeBatch.Add(rowData = new object[columns.Length]);
                 reader.GetValues(rowData);
-                rowsCount++;
-                if (rowsCount == batchSize)
-                {
-                    if (isFirstWrite)
-                    {
-                        if (target.TableExists(tableName))
-                            target.DropTable("dbo." + tableName);
-                        target.CreateTable(tableName, columns);
-                    }
-                    target.BulkCopy(new InMemoryDataReader(writeBatch, rowsCount, columns.Length),
+                filledRowsCountInBatch++;
+                if (filledRowsCountInBatch == batchSize)
+                    target.BulkCopy(new InMemoryDataReader(writeBatch, filledRowsCountInBatch, columns.Length),
                         tableName, columns);
-                }
             }
-        }
-
-        private Task<DbDataReader> ExecuteReader(NpgsqlCommand command)
-        {
-            return command.ExecuteReaderAsync(CommandBehavior.SingleResult, cancellation.Token);
         }
 
         private readonly object logLock = new object();

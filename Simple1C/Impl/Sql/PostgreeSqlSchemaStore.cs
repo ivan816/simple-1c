@@ -123,7 +123,7 @@ namespace Simple1C.Impl.Sql
                                "from simple1c__tableMappings " +
                                "where lower(queryTableName) = lower(@p0)" +
                                "limit 1";
-            return database.ExecuteReader(
+            return database.ExecuteEnumerable(
                 sql, new object[] {queryName.ToLower()},
                 r => new TableMapping(r.GetString(0),
                     r.GetString(1),

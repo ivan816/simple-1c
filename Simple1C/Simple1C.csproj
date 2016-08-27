@@ -70,7 +70,6 @@
     <Compile Include="Impl\Call.cs" />
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\AttributesCache.cs" />
-    <Compile Include="Impl\Helpers\ExceptionHelpers.cs" />
     <Compile Include="Impl\Helpers\LogHelpers.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
@@ -125,7 +124,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectField.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
-    <Compile Include="Impl\Sql\SqlExecuter.cs" />
+    <Compile Include="Impl\Sql\QueryExecuter.cs" />
     <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />

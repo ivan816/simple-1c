@@ -133,7 +133,7 @@ namespace Generator
                 .Select(x => new PostgreeSqlDatabase(x))
                 .ToArray();
             var target = new MsSqlDatabase(resultConnectionString);
-            var sqlExecuter = new SqlExecuter(sources, target, queryFile);
+            var sqlExecuter = new QueryExecuter(sources, target, queryFile);
             sqlExecuter.Execute();
             return 0;
         }
