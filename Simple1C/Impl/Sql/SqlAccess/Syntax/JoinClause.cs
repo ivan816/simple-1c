@@ -23,12 +23,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
                     isFirst = false;
                 else
                     b.Append(" and ");
-                SqlHelpers.WriteReference(b, TableAlias, eq.FieldName);
+                SqlHelpers.WriteReference(b, TableAlias, eq.ColumnName);
                 b.Append(" = ");
                 if (eq.ComparandConstantValue != null)
                     b.Append(eq.ComparandConstantValue);
                 else
-                    SqlHelpers.WriteReference(b, eq.ComparandTableName, eq.ComparandFieldName);
+                    SqlHelpers.WriteReference(b, eq.ComparandTableName, eq.ComparandColumnName);
             }
         }
     }

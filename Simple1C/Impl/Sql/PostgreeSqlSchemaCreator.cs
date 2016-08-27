@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
@@ -96,6 +97,7 @@ namespace Simple1C.Impl.Sql
                 var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
                 if (string.IsNullOrEmpty(dbTableName))
                     continue;
+                dbTableName = PatchDbTableName(dbTableName);
                 var colunMappings = new ValueTable(tableMapping["Поля"]);
                 var propertyMappings = new List<PropertyMapping>();
                 for (var j = 0; j < colunMappings.Count; j++)
@@ -109,6 +111,7 @@ namespace Simple1C.Impl.Sql
                         continue;
                     var attribute = attributes == null ? null : attributes.GetOrDefault(queryColumnName);
                     var typename = attribute == null ? null : attribute();
+                    dbColumnName = PatchFieldName(dbColumnName, typename);
                     propertyMappings.Add(new PropertyMapping(queryColumnName, dbColumnName,
                         string.IsNullOrEmpty(typename) ? "" : " " + typename));
                 }
@@ -118,6 +121,26 @@ namespace Simple1C.Impl.Sql
                         i + 1, tableMappings.Count, (double) (i + 1)/tableMappings.Count*100);
             }
             return result.ToArray();
+        }
+
+        private static string PatchFieldName(string fieldName, string testedTableName)
+        {
+            if (fieldName == "ID")
+                return "_idrref";
+            var b = new StringBuilder(fieldName);
+            b[0] = char.ToLower(b[0]);
+            b.Insert(0, '_');
+            if (!string.IsNullOrEmpty(testedTableName))
+                b.Append("rref");
+            return b.ToString();
+        }
+
+        private static string PatchDbTableName(string dbTableName)
+        {
+            var b = new StringBuilder(dbTableName);
+            b[0] = char.ToLower(b[0]);
+            b.Insert(0, '_');
+            return b.ToString();
         }
 
         private static Dictionary<string, Func<string>> GetAttributes(GlobalContext globalContext, string fullname)

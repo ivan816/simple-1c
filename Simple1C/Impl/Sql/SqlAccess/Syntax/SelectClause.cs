@@ -10,10 +10,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             TableName = tableName;
             TableAlias = tableAlias;
             JoinClauses = new List<JoinClause>();
-            Fields = new List<SelectField>();
+            Columns = new List<SelectColumn>();
         }
 
-        public List<SelectField> Fields { get; private set; }
+        public List<SelectColumn> Columns { get; private set; }
         public List<JoinClause> JoinClauses { get; private set; }
         public string TableName { get; private set; }
         public string TableAlias { get; private set; }
@@ -23,7 +23,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             var b = new StringBuilder();
             b.Append("select");
             var isFirst = true;
-            foreach (var f in Fields)
+            foreach (var f in Columns)
             {
                 if (isFirst)
                     isFirst = false;

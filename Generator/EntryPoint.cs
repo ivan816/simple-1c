@@ -113,12 +113,10 @@ namespace Generator
 
         private static int RunSql(NameValueCollection parameters)
         {
-            var metaFile = parameters["meta-file"];
             var connectionStrings = parameters["connection-strings"];
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
             var parametersAreValid =
-                !string.IsNullOrEmpty(metaFile) &&
                 !string.IsNullOrEmpty(connectionStrings) &&
                 !string.IsNullOrEmpty(queryFile) &&
                 !string.IsNullOrEmpty(resultConnectionString);
@@ -126,7 +124,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql -meta-files <path to meta file> -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
+                    "Usage: Generator.exe -cmd run-sql -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
                 return -1;
             }
             var sources = connectionStrings.Split(',')

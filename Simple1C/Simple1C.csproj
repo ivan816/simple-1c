@@ -121,7 +121,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinEqCondition.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectField.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectColumn.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />

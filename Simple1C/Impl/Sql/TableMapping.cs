@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace Simple1C.Impl.Sql
 {
@@ -20,7 +19,6 @@ namespace Simple1C.Impl.Sql
             QueryTableName = queryTableName;
             DbTableName = dbName;
             Properties = properties;
-            PatchDbTableName();
             foreach (var p in Properties)
                 if (!byPropertyName.ContainsKey(p.PropertyName))
                 {
@@ -31,14 +29,6 @@ namespace Simple1C.Impl.Sql
                     //throw new InvalidOperationException(string.Format(messageFormat, p.PropertyName, QueryName));
                 }
             ObjectName = QueryTableName.Split('.')[1];
-        }
-
-        private void PatchDbTableName()
-        {
-            var b = new StringBuilder(DbTableName);
-            b[0] = char.ToLower(b[0]);
-            b.Insert(0, '_');
-            DbTableName = b.ToString();
         }
 
         public PropertyMapping GetByPropertyName(string queryName)

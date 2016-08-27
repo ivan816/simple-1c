@@ -1,4 +1,5 @@
 ﻿using System;
+using System;
 using System.Collections.Generic;
 using NUnit.Framework;
 using Simple1C.Impl.Sql;
@@ -15,8 +16,8 @@ namespace Simple1C.Tests.Sql
     from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты t1
     ИНН c1";
-            const string expectedResult = @"select contractors._c1 as CounterpartyInn
-    from _t1 as contractors";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+    from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -27,8 +28,8 @@ namespace Simple1C.Tests.Sql
                 from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты T1
     ИНН C1";
-            const string expectedResult = @"select contractors._c1 as CounterpartyInn
-                from _t1 as contractors";
+            const string expectedResult = @"select contractors.C1 as CounterpartyInn
+                from T1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -40,9 +41,9 @@ from справочник.ДоговорыКонтрагентов as contracts
 left outer join справочник.ДоговорыКонтрагентов as otherContracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1
     ВидДоговора c1";
-            const string expectedResult = @"select contracts._c1 as Kind1, otherContracts._c1 as Kind2
-from _t1 as contracts
-left outer join _t1 as otherContracts";
+            const string expectedResult = @"select contracts.c1 as Kind1, otherContracts.c1 as Kind2
+from t1 as contracts
+left outer join t1 as otherContracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -55,9 +56,9 @@ left outer join _t1 as otherContracts";
             const string mappings = @"Справочник.Контрагенты t1
     ИНН c1
     Наименование c2";
-            const string expectedResult = @"select contractors._c1 as CounterpartyInn
-    from _t1 as contractors
-    where contractors._c2 = 'test-name'";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+    from t1 as contractors
+    where contractors.c2 = 'test-name'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -74,12 +75,12 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ССылка f2
     ИНН f3";
 
-            const string expectedResult = @"select contracts._f4, contracts.__nested_field0 as ContractorInn
+            const string expectedResult = @"select contracts.f4, contracts.__nested_field0 as ContractorInn
 from (select
-    __nested_main_table._f4,
-    __nested_table0._f3 as __nested_field0
-from _t1 as __nested_main_table
-left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f1rref) as contracts";
+    __nested_main_table.f4,
+    __nested_table0.f3 as __nested_field0
+from t1 as __nested_main_table
+left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -101,14 +102,14 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ССылка f6
     НомерСчета f7";
 
-            const string expectedResult = @"select contracts._f2 as ContractName,contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as AccountNumber
+            const string expectedResult = @"select contracts.f2 as ContractName,contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as AccountNumber
 from (select
-    __nested_main_table._f2,
-    __nested_table0._f4 as __nested_field0,
-    __nested_table1._f7 as __nested_field1
-from _t1 as __nested_main_table
-left join _t2 as __nested_table0 on __nested_table0._f3 = __nested_main_table._f1rref
-left join _t3 as __nested_table1 on __nested_table1._f6 = __nested_table0._f5rref) as contracts";
+    __nested_main_table.f2,
+    __nested_table0.f4 as __nested_field0,
+    __nested_table1.f7 as __nested_field1
+from t1 as __nested_main_table
+left join t2 as __nested_table0 on __nested_table0.f3 = __nested_main_table.f1
+left join t3 as __nested_table1 on __nested_table1.f6 = __nested_table0.f5) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -126,8 +127,8 @@ from справочник.Контрагенты as contractors";
     ССылка f3
     Порядок f4";
 
-            const string expectedResult = @"select contractors._f1 as ContractorFullname,contractors._f2rref as ContractorType
-from _t1 as contractors";
+            const string expectedResult = @"select contractors.f1 as ContractorFullname,contractors.f2 as ContractorType
+from t1 as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -145,13 +146,13 @@ from справочник.Контрагенты as contractors";
     ССылка f3
     Порядок f4";
 
-            const string expectedResult = @"select contractors._f1 as ContractorFullname,contractors.__nested_field0 as ContractorType
+            const string expectedResult = @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorType
 from (select
-    __nested_main_table._f1,
+    __nested_main_table.f1,
     __nested_table1.enumValueName as __nested_field0
-from _t1 as __nested_main_table
-left join _t2 as __nested_table0 on __nested_table0._f3 = __nested_main_table._f2rref
-left join simple1c__enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0._f4) as contractors";
+from t1 as __nested_main_table
+left join t2 as __nested_table0 on __nested_table0.f3 = __nested_main_table.f2
+left join simple1c__enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0.f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -168,14 +169,14 @@ from справочник.Контрагенты as contractors";
     Родитель f3 Справочник.Контрагенты
     ГоловнойКонтрагент f4 Справочник.Контрагенты";
 
-            const string expectedResult = @"select contractors._f2 as Inn,contractors.__nested_field0 as ParentInn,contractors.__nested_field1 as HeadInn
+            const string expectedResult = @"select contractors.f2 as Inn,contractors.__nested_field0 as ParentInn,contractors.__nested_field1 as HeadInn
 from (select
-    __nested_main_table._f2,
-    __nested_table0._f2 as __nested_field0,
-    __nested_table1._f2 as __nested_field1
-from _t1 as __nested_main_table
-left join _t1 as __nested_table0 on __nested_table0._f1 = __nested_main_table._f3rref
-left join _t1 as __nested_table1 on __nested_table1._f1 = __nested_main_table._f4rref) as contractors";
+    __nested_main_table.f2,
+    __nested_table0.f2 as __nested_field0,
+    __nested_table1.f2 as __nested_field1
+from t1 as __nested_main_table
+left join t1 as __nested_table0 on __nested_table0.f1 = __nested_main_table.f3
+left join t1 as __nested_table1 on __nested_table1.f1 = __nested_main_table.f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -195,10 +196,10 @@ from справочник.ДоговорыКонтрагентов as contracts"
 
             const string expectedResult = @"select contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as ContractorName
 from (select
-    __nested_table0._f3 as __nested_field0,
-    __nested_table0._f4 as __nested_field1
-from _t1 as __nested_main_table
-left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f1rref) as contracts";
+    __nested_table0.f3 as __nested_field0,
+    __nested_table0.f4 as __nested_field1
+from t1 as __nested_main_table
+left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
