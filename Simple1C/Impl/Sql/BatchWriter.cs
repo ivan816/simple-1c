@@ -26,34 +26,41 @@ namespace Simple1C.Impl.Sql
             this.batchSize = batchSize;
         }
 
+        public void EnsureTable(DbDataReader dbReader)
+        {
+            var reader = (NpgsqlDataReader) dbReader;
+            lock (lockObject)
+            {
+                if (columns != null)
+                    return;
+                //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
+                var schemaTable = reader.GetSchemaTable();
+
+                if (schemaTable == null)
+                    throw new InvalidOperationException("assertion failure");
+                columns = schemaTable.Rows
+                    .Cast<DataRow>()
+                    .Select(r => new DataColumn
+                    {
+                        ColumnName = (string) r["ColumnName"],
+                        AllowDBNull = (bool) r["AllowDBNull"],
+                        DataType = (Type) r["DataType"],
+
+                        //ебнутый Npgsql на четыре символа меньше возрващает почему-то
+                        MaxLength = (int) r["ColumnSize"] + 4
+                    })
+                    .ToArray();
+                if (target.TableExists(tableName))
+                    target.DropTable("dbo." + tableName);
+                target.CreateTable(tableName, columns);
+            }
+        }
+
         public void InsertRow(DbDataReader dbReader)
         {
             var reader = (NpgsqlDataReader) dbReader;
             lock (lockObject)
             {
-                if (columns == null)
-                {
-                    //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
-                    var schemaTable = reader.GetSchemaTable();
-
-                    if (schemaTable == null)
-                        throw new InvalidOperationException("assertion failure");
-                    columns = schemaTable.Rows
-                        .Cast<DataRow>()
-                        .Select(r => new DataColumn
-                        {
-                            ColumnName = (string) r["ColumnName"],
-                            AllowDBNull = (bool) r["AllowDBNull"],
-                            DataType = (Type) r["DataType"],
-
-                            //ебнутый Npgsql на четыре символа меньше возрващает почему-то
-                            MaxLength = (int) r["ColumnSize"] + 4
-                        })
-                        .ToArray();
-                    if (target.TableExists(tableName))
-                        target.DropTable("dbo." + tableName);
-                    target.CreateTable(tableName, columns);
-                }
                 var currentRowIndex = filledRowsCount;
                 object[] rowData;
                 if (currentRowIndex < rows.Count)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data.Common;
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
@@ -45,11 +44,18 @@ namespace Simple1C.Impl.Sql
                             if (dumpSql)
                                 Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
                                     source.ConnectionString, queryText, sql);
-                            source.ExecuteReader(sql, new object[0], delegate(DbDataReader reader)
+                            source.Execute(sql, new object[0], c =>
                             {
-                                if (errorOccured)
-                                    throw new OperationCanceledException();
-                                w.InsertRow(reader);
+                                using (var reader = c.ExecuteReader())
+                                {
+                                    w.EnsureTable(reader);
+                                    while (reader.Read())
+                                    {
+                                        if (errorOccured)
+                                            throw new OperationCanceledException();
+                                        w.InsertRow(reader);
+                                    }
+                                }
                             });
                         }
                         catch (OperationCanceledException)

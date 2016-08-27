@@ -289,6 +289,32 @@ left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName 
         }
         
         [Test]
+        public void PatchGroupByWithEnumsText()
+        {
+            const string sourceSql =
+                @"select ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as ContractorTypeText, count(*) as ContractorCount
+from справочник.Контрагенты as contractors
+group by contractors.ЮридическоеФизическоеЛицо";
+
+            const string mappings = @"Справочник.Контрагенты t1
+    ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
+Перечисление.ЮридическоеФизическоеЛицо t2
+    ССылка f3
+    Порядок f4";
+
+            const string expectedResult =
+                @"select contractors.__nested_field0 as ContractorTypeText, count(*) as ContractorCount
+from (select
+    __nested_table2.enumValueName as __nested_field0
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f2
+left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors
+group by contractors.__nested_field0";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
         public void ManyInstancesOfSameProperty()
         {
             const string sourceSql =

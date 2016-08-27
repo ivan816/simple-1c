@@ -30,6 +30,17 @@ namespace Simple1C.Impl.Sql
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
+        private static readonly Dictionary<string, SelectPart> selectParts = new Dictionary<string, SelectPart>
+        {
+            {"select", SelectPart.Select},
+            {"where", SelectPart.Where},
+            {"group by", SelectPart.GroupBy}
+        };
+
+        private static readonly Dictionary<string, Regex> selectPartsRegexes = selectParts.Keys
+            .ToDictionary(x => x, x => new Regex(string.Format(@"\b({0})\b", x),
+                RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase));
+
         private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
             new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
             {
@@ -74,6 +85,18 @@ namespace Simple1C.Impl.Sql
                 queryTables.Add(alias, CreateQueryEntity(queryName));
                 match = match.NextMatch();
             }
+            var partsPositions = new List<SelectPartPosition>();
+            foreach (var selectPart in selectParts)
+            {
+                var m = selectPartsRegexes[selectPart.Key].Match(result);
+                if (m.Success)
+                    partsPositions.Add(new SelectPartPosition
+                    {
+                        index = m.Index,
+                        part = selectPart.Value
+                    });
+            }
+            partsPositions.Sort((x, y) => x.index.CompareTo(y.index));
             result = propertiesRegex.Replace(result, delegate(Match m)
             {
                 var properyPath = m.Groups["prop"].Value;
@@ -96,13 +119,24 @@ namespace Simple1C.Impl.Sql
                             functionNameString, properyPath));
                     }
                 }
-                return GetColumnName(properties, functionName);
+                return GetColumnName(properties, functionName, GetSelectPart(m.Index, partsPositions));
             });
             result = tableNameRegex.Replace(result,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
             result = functions.Aggregate(result, (s, f) => functionRegexes[f.Key]
                 .Replace(s, m => f.Value(this, m.Groups[1].Value)));
             return result;
+        }
+
+        private SelectPart GetSelectPart(int index, List<SelectPartPosition> positions)
+        {
+            for (var i = positions.Count - 1; i >= 0; i--)
+            {
+                var position = positions[i];
+                if (index > position.index)
+                    return position.part;
+            }
+            throw new InvalidOperationException("asserton failure");
         }
 
         private string GetEnumValueSql(string enumValue)
@@ -137,7 +171,7 @@ namespace Simple1C.Impl.Sql
             return mainEntity;
         }
 
-        private string GetColumnName(string[] properties, FunctionName? functionName)
+        private string GetColumnName(string[] properties, FunctionName? functionName, SelectPart selectPart)
         {
             var lastEntity = GetQueryTable(properties[0]);
             QueryEntityProperty lastProperty;
@@ -149,6 +183,14 @@ namespace Simple1C.Impl.Sql
                 columnNeedsAlias = true;
             }
             lastProperty = lastEntity.GetOrCreateProperty(properties[properties.Length - 1]);
+
+            if (!functionName.HasValue && selectPart == SelectPart.GroupBy)
+            {
+                var nestedEntity = lastProperty.nestedEntity;
+                if (nestedEntity != null && nestedEntity.mapping.IsEnum())
+                    if (nestedEntity.properties[0].parts.Contains(SelectPart.Select))
+                        functionName = FunctionName.Representation;
+            }
             if (functionName.HasValue)
             {
                 if (functionName.Value != FunctionName.Representation)
@@ -172,7 +214,9 @@ namespace Simple1C.Impl.Sql
                 lastProperty = lastEntity.GetOrCreateProperty(propertyName);
                 columnNeedsAlias = true;
             }
-            lastProperty.selected = true;
+            lastProperty.referenced = true;
+            if (!lastProperty.parts.Contains(selectPart))
+                lastProperty.parts.Add(selectPart);
             if (lastProperty.alias == null && columnNeedsAlias)
                 lastProperty.alias = nameGenerator.GenerateColumnName();
             return properties[0] + "." + (lastProperty.alias ?? lastProperty.mapping.ColumnName);
@@ -230,7 +274,7 @@ namespace Simple1C.Impl.Sql
 
         private void AddPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
         {
-            if (property.selected)
+            if (property.referenced)
             {
                 if (entity.mapping.IsEnum())
                 {
@@ -311,8 +355,9 @@ namespace Simple1C.Impl.Sql
         {
             public PropertyMapping mapping;
             public string alias;
-            public bool selected;
+            public bool referenced;
             public QueryEntity nestedEntity;
+            public readonly List<SelectPart> parts = new List<SelectPart>();
         }
 
         private JoinClause CreateEnumMappingsJoinClause(QueryEntity enumEntity)
@@ -340,6 +385,19 @@ namespace Simple1C.Impl.Sql
                     }
                 }
             };
+        }
+
+        private enum SelectPart
+        {
+            Select,
+            Where,
+            GroupBy
+        }
+
+        private class SelectPartPosition
+        {
+            public SelectPart part;
+            public int index;
         }
 
         private enum FunctionName

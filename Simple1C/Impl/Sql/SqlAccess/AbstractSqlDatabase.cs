@@ -77,16 +77,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
             });
         }
 
-        public void ExecuteReader(string commandText, object[] args, Action<DbDataReader> action)
-        {
-            Execute(commandText, args, c =>
-            {
-                using (var reader = c.ExecuteReader())
-                    while (reader.Read())
-                        action(reader);
-            });
-        }
-
         private static IEnumerable<T> ReadAll<T>(DbDataReader reader, Func<DbDataReader, T> map)
         {
             while (reader.Read())
