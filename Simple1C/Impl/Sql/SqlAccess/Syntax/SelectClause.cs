@@ -11,17 +11,19 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             TableAlias = tableAlias;
             JoinClauses = new List<JoinClause>();
             Columns = new List<SelectColumn>();
+            WhereEqConditions = new List<EqCondition>();
         }
 
         public List<SelectColumn> Columns { get; private set; }
         public List<JoinClause> JoinClauses { get; private set; }
+        public List<EqCondition> WhereEqConditions { get; private set; }
         public string TableName { get; private set; }
         public string TableAlias { get; private set; }
 
         public string GetSql()
         {
             var b = new StringBuilder();
-            b.Append("select");
+            b.Append("(select");
             var isFirst = true;
             foreach (var f in Columns)
             {
@@ -37,6 +39,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
             foreach (var join in JoinClauses)
                 join.WriteTo(b);
+            if (WhereEqConditions.Count > 0)
+            {
+                b.Append("\r\nwhere ");
+                SqlHelpers.WriteEqConditions(b, WhereEqConditions);
+            }
+            b.Append(")");
             return b.ToString();
         }
     }

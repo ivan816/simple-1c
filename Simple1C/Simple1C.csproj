@@ -112,14 +112,14 @@
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\Sql\BatchWriter.cs" />
     <Compile Include="Impl\Sql\EnumMapping.cs" />
-    <Compile Include="Impl\Sql\ITableMappingSource.cs" />
+    <Compile Include="Impl\Sql\IMappingSource.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinEqCondition.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\EqCondition.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectColumn.cs" />

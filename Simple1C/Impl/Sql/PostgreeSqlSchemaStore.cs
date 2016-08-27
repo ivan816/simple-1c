@@ -7,9 +7,10 @@ using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql
 {
-    internal class PostgreeSqlSchemaStore : ITableMappingSource
+    internal class PostgreeSqlSchemaStore : IMappingSource
     {
         private readonly PostgreeSqlDatabase database;
+
         private readonly Dictionary<string, TableMapping> cache =
             new Dictionary<string, TableMapping>(StringComparer.OrdinalIgnoreCase);
 
@@ -101,7 +102,7 @@ namespace Simple1C.Impl.Sql
             });
         }
 
-        public TableMapping GetByQueryName(string queryName)
+        public TableMapping ResolveTable(string queryName)
         {
             TableMapping result;
             if (!cache.TryGetValue(queryName, out result))

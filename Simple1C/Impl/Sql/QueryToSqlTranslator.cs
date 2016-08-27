@@ -10,10 +10,13 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryToSqlTranslator
     {
-        private readonly ITableMappingSource mappingSource;
+        private readonly IMappingSource mappingSource;
 
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static readonly Regex valueFunctionRegex = new Regex(@"значение\(([^\)]+)\)",
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -38,25 +41,25 @@ namespace Simple1C.Impl.Sql
 
         private readonly NameGenerator nameGenerator = new NameGenerator();
 
-        public QueryToSqlTranslator(ITableMappingSource mappingSource)
+        public QueryToSqlTranslator(IMappingSource mappingSource)
         {
             this.mappingSource = mappingSource;
         }
 
         public string Translate(string source)
         {
-            source = source.Replace("\"", "'");
-            source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
-            var match = tableNameRegex.Match(source);
+            var result = source;
+            result = result.Replace("\"", "'");
+            result = keywordsRegex.Replace(result, m => keywordsMap[m.Groups[1].Value]);
+            var match = tableNameRegex.Match(result);
             while (match.Success)
             {
                 var queryName = match.Groups[2].Value;
                 var alias = match.Groups[3].Value;
-                queryTables.Add(alias,
-                    new QueryEntity(mappingSource.GetByQueryName(queryName)));
+                queryTables.Add(alias, CreateQueryEntity(queryName));
                 match = match.NextMatch();
             }
-            var result = propertiesRegex.Replace(source, delegate(Match m)
+            result = propertiesRegex.Replace(result, delegate(Match m)
             {
                 var properyPath = m.Groups["prop"].Value;
                 var properties = properyPath.Split('.');
@@ -82,7 +85,29 @@ namespace Simple1C.Impl.Sql
             });
             result = tableNameRegex.Replace(result,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
+            result = valueFunctionRegex.Replace(result, m => GetEnumValueSql(m.Groups[1].Value));
             return result;
+        }
+
+        private string GetEnumValueSql(string enumValue)
+        {
+            var enumValueItems = enumValue.Split('.');
+            var table = CreateQueryEntity(enumValueItems[0] + "." + enumValueItems[1]);
+            var selectClause = CreateSelectClause(table);
+            selectClause.Columns.Add(new SelectColumn
+            {
+                Name = table.mapping.GetByPropertyName("Ссылка").ColumnName,
+                TableName = GetQueryEntityAlias(table)
+            });
+            var enumMappingsJoinClause = CreateEnumMappingsJoinClause(table);
+            selectClause.JoinClauses.Add(enumMappingsJoinClause);
+            selectClause.WhereEqConditions.Add(new EqCondition
+            {
+                ColumnName = "enumValueName",
+                ColumnTableName = enumMappingsJoinClause.TableAlias,
+                ComparandConstantValue = enumValueItems[2]
+            });
+            return selectClause.GetSql();
         }
 
         private QueryEntity GetQueryTable(string alias)
@@ -133,7 +158,7 @@ namespace Simple1C.Impl.Sql
             }
             lastProperty.selected = true;
             if (lastProperty.alias == null && columnNeedsAlias)
-                lastProperty.alias = nameGenerator.Generate("__nested_field");
+                lastProperty.alias = nameGenerator.GenerateColumnName();
             return properties[0] + "." + (lastProperty.alias ?? lastProperty.mapping.ColumnName);
         }
 
@@ -148,10 +173,15 @@ namespace Simple1C.Impl.Sql
                     throw new InvalidOperationException(string.Format(messageFormat,
                         property.mapping.PropertyName, propertyPath.JoinStrings(".")));
                 }
-                var tableMapping = mappingSource.GetByQueryName(nestedTableName);
-                property.nestedEntity = new QueryEntity(tableMapping, nameGenerator.Generate("__nested_table"));
+                property.nestedEntity = CreateQueryEntity(nestedTableName);
             }
             return property.nestedEntity;
+        }
+
+        private QueryEntity CreateQueryEntity(string tableName)
+        {
+            var tableMapping = mappingSource.ResolveTable(tableName);
+            return new QueryEntity(tableMapping);
         }
 
         private string GetSql(string alias)
@@ -167,9 +197,9 @@ namespace Simple1C.Impl.Sql
             string sql;
             if (hasNestedTables)
             {
-                var selectClause = new SelectClause(table.mapping.DbTableName, table.alias);
+                var selectClause = CreateSelectClause(table);
                 BuildSubQuery(table, selectClause);
-                sql = "(" + selectClause.GetSql() + ")";
+                sql = selectClause.GetSql();
             }
             else
                 sql = table.mapping.DbTableName;
@@ -188,33 +218,13 @@ namespace Simple1C.Impl.Sql
             {
                 if (entity.mapping.IsEnum())
                 {
-                    var enumMappingsTableAlias = nameGenerator.Generate("__nested_table");
-                    var enumMappingsJoinClause = new JoinClause
-                    {
-                        TableName = "simple1c__enumMappings",
-                        TableAlias = enumMappingsTableAlias,
-                        JoinKind = "left",
-                        EqConditions = new[]
-                        {
-                            new JoinEqCondition
-                            {
-                                ColumnName = "enumName",
-                                ComparandConstantValue = "'" + entity.mapping.ObjectName.Name + "'"
-                            },
-                            new JoinEqCondition
-                            {
-                                ColumnName = "orderIndex",
-                                ComparandTableName = entity.alias,
-                                ComparandColumnName = property.mapping.ColumnName
-                            }
-                        }
-                    };
+                    var enumMappingsJoinClause = CreateEnumMappingsJoinClause(entity);
                     target.JoinClauses.Add(enumMappingsJoinClause);
                     target.Columns.Add(new SelectColumn
                     {
                         Name = "enumValueName",
                         Alias = property.alias,
-                        TableName = enumMappingsTableAlias
+                        TableName = enumMappingsJoinClause.TableAlias
                     });
                     return;
                 }
@@ -222,29 +232,35 @@ namespace Simple1C.Impl.Sql
                 {
                     Name = property.mapping.ColumnName,
                     Alias = property.alias,
-                    TableName = entity.alias
+                    TableName = GetQueryEntityAlias(entity)
                 });
             }
             if (property.nestedEntity != null)
             {
                 var joinClause = new JoinClause
                 {
-                    TableAlias = property.nestedEntity.alias,
+                    TableAlias = GetQueryEntityAlias(property.nestedEntity),
                     TableName = property.nestedEntity.mapping.DbTableName,
                     JoinKind = "left",
                     EqConditions = new[]
                     {
-                        new JoinEqCondition
+                        new EqCondition
                         {
                             ColumnName = property.nestedEntity.mapping.GetByPropertyName("Ссылка").ColumnName,
+                            ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
                             ComparandColumnName = property.mapping.ColumnName,
-                            ComparandTableName = entity.alias
+                            ComparandTableName = GetQueryEntityAlias(entity)
                         }
                     }
                 };
                 target.JoinClauses.Add(joinClause);
                 BuildSubQuery(property.nestedEntity, target);
             }
+        }
+
+        private string GetQueryEntityAlias(QueryEntity entity)
+        {
+            return entity.alias ?? (entity.alias = nameGenerator.GenerateTableName());
         }
 
         private static string GetPropertiesRegex()
@@ -254,16 +270,21 @@ namespace Simple1C.Impl.Sql
                 propRegex);
         }
 
+        private SelectClause CreateSelectClause(QueryEntity queryEntity)
+        {
+            return new SelectClause(queryEntity.mapping.DbTableName,
+                GetQueryEntityAlias(queryEntity));
+        }
+
         private class QueryEntity
         {
-            public QueryEntity(TableMapping mapping, string alias = null)
+            public QueryEntity(TableMapping mapping)
             {
                 this.mapping = mapping;
-                this.alias = alias ?? "__nested_main_table";
             }
 
             public readonly TableMapping mapping;
-            public readonly string alias;
+            public string alias;
             public readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
 
             public QueryEntityProperty GetOrCreateProperty(string name)
@@ -283,6 +304,33 @@ namespace Simple1C.Impl.Sql
             public string alias;
             public bool selected;
             public QueryEntity nestedEntity;
+        }
+
+        private JoinClause CreateEnumMappingsJoinClause(QueryEntity enumEntity)
+        {
+            var tableAlias = nameGenerator.GenerateTableName();
+            return new JoinClause
+            {
+                TableName = "simple1c__enumMappings",
+                TableAlias = tableAlias,
+                JoinKind = "left",
+                EqConditions = new[]
+                {
+                    new EqCondition
+                    {
+                        ColumnName = "enumName",
+                        ColumnTableName = tableAlias,
+                        ComparandConstantValue = enumEntity.mapping.ObjectName.Name
+                    },
+                    new EqCondition
+                    {
+                        ColumnName = "orderIndex",
+                        ColumnTableName = tableAlias,
+                        ComparandTableName = GetQueryEntityAlias(enumEntity),
+                        ComparandColumnName = enumEntity.mapping.GetByPropertyName("Порядок").ColumnName
+                    }
+                }
+            };
         }
 
         private enum FunctionName
@@ -305,11 +353,22 @@ namespace Simple1C.Impl.Sql
         {
             private readonly Dictionary<string, int> lastUsed = new Dictionary<string, int>();
 
-            public string Generate(string prefix)
+            public string GenerateTableName()
+            {
+                return Generate("__nested_table");
+            }
+
+            public string GenerateColumnName()
+            {
+                return Generate("__nested_field");
+            }
+
+            private string Generate(string prefix)
             {
                 int lastUsedForPrefix;
-                var number =
-                    lastUsed[prefix] = lastUsed.TryGetValue(prefix, out lastUsedForPrefix) ? lastUsedForPrefix + 1 : 0;
+                var number = lastUsed[prefix] = lastUsed.TryGetValue(prefix, out lastUsedForPrefix)
+                    ? lastUsedForPrefix + 1
+                    : 0;
                 return prefix + number;
             }
         }

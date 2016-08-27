@@ -86,9 +86,9 @@ namespace Simple1C.Tests.Sql
     Наименование c3";
             const string expectedResult = @"select contracts.__nested_field0 as Currency
     from (select
-    __nested_table0.c3 as __nested_field0
-from t1 as __nested_main_table
-left join t2 as __nested_table0 on __nested_table0.с2 = __nested_main_table.c1) as contracts";
+    __nested_table1.c3 as __nested_field0
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.с2 = __nested_table0.c1) as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -164,10 +164,10 @@ from справочник.ДоговорыКонтрагентов as contracts"
 
             const string expectedResult = @"select contracts.f4, contracts.__nested_field0 as ContractorInn
 from (select
-    __nested_main_table.f4,
-    __nested_table0.f3 as __nested_field0
-from t1 as __nested_main_table
-left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) as contracts";
+    __nested_table0.f4,
+    __nested_table1.f3 as __nested_field0
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f2 = __nested_table0.f1) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -193,12 +193,12 @@ from справочник.ДоговорыКонтрагентов as contracts"
             const string expectedResult =
                 @"select contracts.f2 as ContractName,contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as AccountNumber
 from (select
-    __nested_main_table.f2,
-    __nested_table0.f4 as __nested_field0,
-    __nested_table1.f7 as __nested_field1
-from t1 as __nested_main_table
-left join t2 as __nested_table0 on __nested_table0.f3 = __nested_main_table.f1
-left join t3 as __nested_table1 on __nested_table1.f6 = __nested_table0.f5) as contracts";
+    __nested_table0.f2,
+    __nested_table1.f4 as __nested_field0,
+    __nested_table2.f7 as __nested_field1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f1
+left join t3 as __nested_table2 on __nested_table2.f6 = __nested_table1.f5) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -222,6 +222,32 @@ from t1 as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+        
+        [Test]
+        public void FilterByEnumValue()
+        {
+            const string sourceSql =
+                @"select contractors.НаименованиеПолное as ContractorFullname
+from справочник.Контрагенты as contractors
+where contractors.ЮридическоеФизическоеЛицо = Значение(Перечисление.ЮридическоеФизическоеЛицо.СПокупателем)";
+
+            const string mappings = @"Справочник.Контрагенты t1
+    наименованиеполное f1
+    ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
+Перечисление.ЮридическоеФизическоеЛицо t2
+    ССылка f3
+    Порядок f4";
+
+            const string expectedResult = @"select contractors.f1 as ContractorFullname
+from t1 as contractors
+where contractors.f2 = (select
+    __nested_table0.f3
+from t2 as __nested_table0
+left join simple1c__enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0.f4
+where __nested_table1.enumValueName = 'СПокупателем')";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void EnumsWithText()
@@ -240,16 +266,16 @@ from справочник.Контрагенты as contractors";
             const string expectedResult =
                 @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorTypeText,contractors.f2 as ContractorType
 from (select
-    __nested_main_table.f1,
-    __nested_main_table.f2,
-    __nested_table1.enumValueName as __nested_field0
-from t1 as __nested_main_table
-left join t2 as __nested_table0 on __nested_table0.f3 = __nested_main_table.f2
-left join simple1c__enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0.f4) as contractors";
+    __nested_table0.f1,
+    __nested_table0.f2,
+    __nested_table2.enumValueName as __nested_field0
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f2
+left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-
+        
         [Test]
         public void ManyInstancesOfSameProperty()
         {
@@ -266,12 +292,12 @@ from справочник.Контрагенты as contractors";
             const string expectedResult =
                 @"select contractors.f2 as Inn,contractors.__nested_field0 as ParentInn,contractors.__nested_field1 as HeadInn
 from (select
-    __nested_main_table.f2,
-    __nested_table0.f2 as __nested_field0,
-    __nested_table1.f2 as __nested_field1
-from t1 as __nested_main_table
-left join t1 as __nested_table0 on __nested_table0.f1 = __nested_main_table.f3
-left join t1 as __nested_table1 on __nested_table1.f1 = __nested_main_table.f4) as contractors";
+    __nested_table0.f2,
+    __nested_table1.f2 as __nested_field0,
+    __nested_table2.f2 as __nested_field1
+from t1 as __nested_table0
+left join t1 as __nested_table1 on __nested_table1.f1 = __nested_table0.f3
+left join t1 as __nested_table2 on __nested_table2.f1 = __nested_table0.f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -293,10 +319,10 @@ from справочник.ДоговорыКонтрагентов as contracts"
             const string expectedResult =
                 @"select contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as ContractorName
 from (select
-    __nested_table0.f3 as __nested_field0,
-    __nested_table0.f4 as __nested_field1
-from t1 as __nested_main_table
-left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) as contracts";
+    __nested_table1.f3 as __nested_field0,
+    __nested_table1.f4 as __nested_field1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f2 = __nested_table0.f1) as contracts";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -342,7 +368,7 @@ left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) 
             return new InMemoryMappingStore(tableMappings);
         }
 
-        internal class InMemoryMappingStore : ITableMappingSource
+        internal class InMemoryMappingStore : IMappingSource
         {
             private readonly Dictionary<string, TableMapping> mappings;
 
@@ -351,7 +377,7 @@ left join t2 as __nested_table0 on __nested_table0.f2 = __nested_main_table.f1) 
                 this.mappings = mappings;
             }
 
-            public TableMapping GetByQueryName(string queryName)
+            public TableMapping ResolveTable(string queryName)
             {
                 return mappings[queryName];
             }
