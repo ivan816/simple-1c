@@ -227,7 +227,7 @@ from t1 as contractors";
         public void EnumsWithText()
         {
             const string sourceSql =
-                @"select contractors.НаименованиеПолное as ContractorFullname,ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as ContractorType
+                @"select contractors.НаименованиеПолное as ContractorFullname,ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as ContractorTypeText,contractors.ЮридическоеФизическоеЛицо as ContractorType
 from справочник.Контрагенты as contractors";
 
             const string mappings = @"Справочник.Контрагенты t1
@@ -238,9 +238,10 @@ from справочник.Контрагенты as contractors";
     Порядок f4";
 
             const string expectedResult =
-                @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorType
+                @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorTypeText,contractors.f2 as ContractorType
 from (select
     __nested_main_table.f1,
+    __nested_main_table.f2,
     __nested_table1.enumValueName as __nested_field0
 from t1 as __nested_main_table
 left join t2 as __nested_table0 on __nested_table0.f3 = __nested_main_table.f2

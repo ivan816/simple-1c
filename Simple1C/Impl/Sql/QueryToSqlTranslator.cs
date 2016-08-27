@@ -131,7 +131,7 @@ namespace Simple1C.Impl.Sql
                 lastProperty = lastEntity.GetOrCreateProperty(propertyName);
                 columnNeedsAlias = true;
             }
-            lastProperty.isLeaf = true;
+            lastProperty.selected = true;
             if (lastProperty.alias == null && columnNeedsAlias)
                 lastProperty.alias = nameGenerator.Generate("__nested_field");
             return properties[0] + "." + (lastProperty.alias ?? lastProperty.mapping.ColumnName);
@@ -184,72 +184,67 @@ namespace Simple1C.Impl.Sql
 
         private void AddPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
         {
-            if (property.isLeaf)
+            if (property.selected)
             {
-                AddLeafPropertyToSubquery(entity, property, target);
-                return;
-            }
-            if (property.nestedEntity == null)
-                throw new InvalidOperationException("assertion failure");
-            var joinClause = new JoinClause
-            {
-                TableAlias = property.nestedEntity.alias,
-                TableName = property.nestedEntity.mapping.DbTableName,
-                JoinKind = "left",
-                EqConditions = new[]
+                if (entity.mapping.IsEnum())
                 {
-                    new JoinEqCondition
+                    var enumMappingsTableAlias = nameGenerator.Generate("__nested_table");
+                    var enumMappingsJoinClause = new JoinClause
                     {
-                        ColumnName = property.nestedEntity.mapping.GetByPropertyName("Ссылка").ColumnName,
-                        ComparandColumnName = property.mapping.ColumnName,
-                        ComparandTableName = entity.alias
-                    }
+                        TableName = "simple1c__enumMappings",
+                        TableAlias = enumMappingsTableAlias,
+                        JoinKind = "left",
+                        EqConditions = new[]
+                        {
+                            new JoinEqCondition
+                            {
+                                ColumnName = "enumName",
+                                ComparandConstantValue = "'" + entity.mapping.ObjectName.Name + "'"
+                            },
+                            new JoinEqCondition
+                            {
+                                ColumnName = "orderIndex",
+                                ComparandTableName = entity.alias,
+                                ComparandColumnName = property.mapping.ColumnName
+                            }
+                        }
+                    };
+                    target.JoinClauses.Add(enumMappingsJoinClause);
+                    target.Columns.Add(new SelectColumn
+                    {
+                        Name = "enumValueName",
+                        Alias = property.alias,
+                        TableName = enumMappingsTableAlias
+                    });
+                    return;
                 }
-            };
-            target.JoinClauses.Add(joinClause);
-            BuildSubQuery(property.nestedEntity, target);
-        }
-
-        private void AddLeafPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
-        {
-            if (!entity.mapping.IsEnum())
-            {
                 target.Columns.Add(new SelectColumn
                 {
                     Name = property.mapping.ColumnName,
                     Alias = property.alias,
                     TableName = entity.alias
                 });
-                return;
             }
-            var enumMappingsTableAlias = nameGenerator.Generate("__nested_table");
-            var enumMappingsJoinClause = new JoinClause
+            if (property.nestedEntity != null)
             {
-                TableName = "simple1c__enumMappings",
-                TableAlias = enumMappingsTableAlias,
-                JoinKind = "left",
-                EqConditions = new[]
+                var joinClause = new JoinClause
                 {
-                    new JoinEqCondition
+                    TableAlias = property.nestedEntity.alias,
+                    TableName = property.nestedEntity.mapping.DbTableName,
+                    JoinKind = "left",
+                    EqConditions = new[]
                     {
-                        ColumnName = "enumName",
-                        ComparandConstantValue = "'" + entity.mapping.ObjectName.Name + "'"
-                    },
-                    new JoinEqCondition
-                    {
-                        ColumnName = "orderIndex",
-                        ComparandTableName = entity.alias,
-                        ComparandColumnName = property.mapping.ColumnName
+                        new JoinEqCondition
+                        {
+                            ColumnName = property.nestedEntity.mapping.GetByPropertyName("Ссылка").ColumnName,
+                            ComparandColumnName = property.mapping.ColumnName,
+                            ComparandTableName = entity.alias
+                        }
                     }
-                }
-            };
-            target.JoinClauses.Add(enumMappingsJoinClause);
-            target.Columns.Add(new SelectColumn
-            {
-                Name = "enumValueName",
-                Alias = property.alias,
-                TableName = enumMappingsTableAlias
-            });
+                };
+                target.JoinClauses.Add(joinClause);
+                BuildSubQuery(property.nestedEntity, target);
+            }
         }
 
         private static string GetPropertiesRegex()
@@ -286,7 +281,7 @@ namespace Simple1C.Impl.Sql
         {
             public PropertyMapping mapping;
             public string alias;
-            public bool isLeaf;
+            public bool selected;
             public QueryEntity nestedEntity;
         }
 
