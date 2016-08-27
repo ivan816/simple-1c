@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Collections.Generic;
+using NUnit.Framework;
 using Simple1C.Impl.Sql;
 using Simple1C.Tests.Helpers;
 
@@ -203,7 +205,7 @@ left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f
 
         private static void CheckTranslate(string mappings, string sql, string expectedTranslated)
         {
-            var inmemoryMappingStore = InMemoryMappingStore.Parse(SpacesToTabs(mappings));
+            var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
             var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore);
             var actualTranslated = sqlTranslator.Translate(sql);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
@@ -212,6 +214,47 @@ left join _t2 as __nested_table0 on __nested_table0._f2 = __nested_main_table._f
         private static string SpacesToTabs(string s)
         {
             return s.Replace("    ", "\t");
+        }
+
+        private static InMemoryMappingStore Parse(string source)
+        {
+            var items = source.Split(new[] { "\r\n" }, StringSplitOptions.RemoveEmptyEntries);
+            var tableMappings = new Dictionary<string, TableMapping>(StringComparer.OrdinalIgnoreCase);
+            var columnMappings = new List<PropertyMapping>();
+            string queryTableName = null;
+            string dbTableName = null;
+            foreach (var s in items)
+            {
+                if (s[0] == '\t')
+                    columnMappings.Add(PropertyMapping.Parse(s.Substring(1)));
+                else
+                {
+                    if (queryTableName != null)
+                        tableMappings.Add(queryTableName, new TableMapping(queryTableName, dbTableName, columnMappings.ToArray()));
+                    var tableNames = s.Split(new[] { " " }, StringSplitOptions.None);
+                    queryTableName = tableNames[0];
+                    dbTableName = tableNames[1];
+                    columnMappings.Clear();
+                }
+            }
+            if (queryTableName != null)
+                tableMappings.Add(queryTableName, new TableMapping(queryTableName, dbTableName, columnMappings.ToArray()));
+            return new InMemoryMappingStore(tableMappings);
+        }
+
+        internal class InMemoryMappingStore : ITableMappingSource
+        {
+            private readonly Dictionary<string, TableMapping> mappings;
+
+            public InMemoryMappingStore(Dictionary<string,TableMapping> mappings)
+            {
+                this.mappings = mappings;
+            }
+
+            public TableMapping GetByQueryName(string queryName)
+            {
+                return mappings[queryName];
+            }
         }
     }
 }

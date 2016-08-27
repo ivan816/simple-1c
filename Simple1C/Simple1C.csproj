@@ -116,7 +116,6 @@
     <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
-    <Compile Include="Impl\Sql\InMemoryMappingStore.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
@@ -129,7 +128,6 @@
     <Compile Include="Impl\Sql\SqlExecuter.cs" />
     <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
-    <Compile Include="Impl\Sql\TableMappingsCache.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />

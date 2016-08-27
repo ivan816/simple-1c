@@ -10,7 +10,8 @@ namespace Simple1C.Impl.Sql
     internal class PostgreeSqlSchemaStore : ITableMappingSource
     {
         private readonly PostgreeSqlDatabase database;
-        private readonly TableMappingsCache cache;
+        private readonly Dictionary<string, TableMapping> cache =
+            new Dictionary<string, TableMapping>(StringComparer.OrdinalIgnoreCase);
 
         private static readonly TableDesc typeMappingsTableDesc =
             new TableDesc
@@ -78,7 +79,6 @@ namespace Simple1C.Impl.Sql
         public PostgreeSqlSchemaStore(PostgreeSqlDatabase database)
         {
             this.database = database;
-            cache = new TableMappingsCache(Enumerable.Empty<TableMapping>(), LoadMappingOrNull);
         }
 
         public void WriteEnumMappings(EnumMapping[] mappings)
@@ -103,7 +103,18 @@ namespace Simple1C.Impl.Sql
 
         public TableMapping GetByQueryName(string queryName)
         {
-            return cache.GetByQueryName(queryName);
+            TableMapping result;
+            if (!cache.TryGetValue(queryName, out result))
+            {
+                result = LoadMappingOrNull(queryName);
+                if (result == null)
+                {
+                    const string messageFormat = "can't find table mapping for [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, queryName));
+                }
+                cache.Add(queryName, result);
+            }
+            return result;
         }
 
         private TableMapping LoadMappingOrNull(string queryName)
