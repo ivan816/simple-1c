@@ -116,6 +116,7 @@ namespace Generator
             var connectionStrings = parameters["connection-strings"];
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
+            var dumpSql = parameters["dump-sql"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionStrings) &&
                 !string.IsNullOrEmpty(queryFile) &&
@@ -124,14 +125,14 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results>");
+                    "Usage: Generator.exe -cmd run-sql -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
                 return -1;
             }
             var sources = connectionStrings.Split(',')
                 .Select(x => new PostgreeSqlDatabase(x))
                 .ToArray();
             var target = new MsSqlDatabase(resultConnectionString);
-            var sqlExecuter = new QueryExecuter(sources, target, queryFile);
+            var sqlExecuter = new QueryExecuter(sources, target, queryFile, dumpSql == "true");
             sqlExecuter.Execute();
             return 0;
         }

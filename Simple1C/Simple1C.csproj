@@ -110,6 +110,7 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\Sql\BatchWriter.cs" />
     <Compile Include="Impl\Sql\EnumMapping.cs" />
     <Compile Include="Impl\Sql\ITableMappingSource.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
