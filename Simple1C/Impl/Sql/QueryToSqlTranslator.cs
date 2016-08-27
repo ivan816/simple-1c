@@ -15,9 +15,6 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex valueFunctionRegex = new Regex(@"значение\(([^\)]+)\)",
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -33,8 +30,26 @@ namespace Simple1C.Impl.Sql
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
+        private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
+            new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
+            {
+                {"значение", (t, s) => t.GetEnumValueSql(s)},
+                {"год", (_, s) => string.Format("date_part('year', {0})", s)}
+            };
+
+        private static readonly Dictionary<string, Regex> functionRegexes = functions.Keys
+            .ToDictionary(x => x, x => new Regex(string.Format(@"{0}\(([^\)]+)\)", x),
+                RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase));
+
         private static readonly Regex propertiesRegex = new Regex(GetPropertiesRegex(),
             RegexOptions.Compiled | RegexOptions.Singleline);
+
+        private static string GetPropertiesRegex()
+        {
+            const string propRegex = @"[a-zA-Z]+\.[а-яА-Я\.]+";
+            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
+                propRegex);
+        }
 
         private readonly Dictionary<string, QueryEntity> queryTables =
             new Dictionary<string, QueryEntity>(StringComparer.OrdinalIgnoreCase);
@@ -85,7 +100,8 @@ namespace Simple1C.Impl.Sql
             });
             result = tableNameRegex.Replace(result,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
-            result = valueFunctionRegex.Replace(result, m => GetEnumValueSql(m.Groups[1].Value));
+            result = functions.Aggregate(result, (s, f) => functionRegexes[f.Key]
+                .Replace(s, m => f.Value(this, m.Groups[1].Value)));
             return result;
         }
 
@@ -261,13 +277,6 @@ namespace Simple1C.Impl.Sql
         private string GetQueryEntityAlias(QueryEntity entity)
         {
             return entity.alias ?? (entity.alias = nameGenerator.GenerateTableName());
-        }
-
-        private static string GetPropertiesRegex()
-        {
-            const string propRegex = @"[a-zA-Z]+\.[а-яА-Я\.]+";
-            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
-                propRegex);
         }
 
         private SelectClause CreateSelectClause(QueryEntity queryEntity)

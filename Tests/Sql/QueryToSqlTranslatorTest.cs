@@ -19,6 +19,18 @@ namespace Simple1C.Tests.Sql
     from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+
+        [Test]
+        public void PatchYearFunction()
+        {
+            const string sourceSql = @"select ГОД(contracts.Дата) as ContractDate
+    from Справочник.ДоговорыКонтрагентов as contracts";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    Дата c1";
+            const string expectedResult = @"select date_part('year', contracts.c1) as ContractDate
+    from t1 as contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
         
         [Test]
         public void CanUseRussianSyntax()
