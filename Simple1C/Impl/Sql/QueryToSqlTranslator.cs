@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql
 {
@@ -96,52 +98,60 @@ namespace Simple1C.Impl.Sql
 
         private string GetColumnName(string[] properties, FunctionName? functionName)
         {
-            var queryTable = GetQueryTable(properties[0]);
-            QueryEntityProperty lastProperty = null;
-            for (var i = 1; i < properties.Length; i++)
+            var lastEntity = GetQueryTable(properties[0]);
+            QueryEntityProperty lastProperty;
+            var columnNeedsAlias = false;
+            for (var i = 1; i < properties.Length - 1; i++)
             {
-                var propertyName = properties[i];
-                lastProperty = null;
-                var isLastProperty = i == properties.Length - 1;
-                foreach (var f in queryTable.properties)
-                {
-                    var found = f.mapping.PropertyName.EqualsIgnoringCase(propertyName) &&
-                                (!isLastProperty || f.functionName == functionName);
-                    if (found)
-                    {
-                        lastProperty = f;
-                        break;
-                    }
-                }
-                if (lastProperty == null)
-                {
-                    lastProperty = new QueryEntityProperty
-                    {
-                        mapping = queryTable.mapping.GetByPropertyName(propertyName),
-                        functionName = isLastProperty ? functionName : null
-                    };
-                    if (!string.IsNullOrEmpty(lastProperty.mapping.NestedTableName))
-                    {
-                        var tableMapping = mappingSource.GetByQueryName(lastProperty.mapping.NestedTableName);
-                        if (!tableMapping.IsEnum() || functionName != null)
-                            lastProperty.nestedEntity = new QueryEntity(tableMapping,
-                                nameGenerator.Generate("__nested_table"));
-                    }
-                    else if (!isLastProperty)
-                    {
-                        const string messageFormat = "property [{0}] has no table mapping, property path [{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            propertyName, properties.JoinStrings(".")));
-                    }
-                    queryTable.properties.Add(lastProperty);
-                }
-                queryTable = lastProperty.nestedEntity;
+                lastProperty = lastEntity.GetOrCreateProperty(properties[i]);
+                lastEntity = GetOrCreateQueryEntity(lastProperty, properties);
+                columnNeedsAlias = true;
             }
-            if (lastProperty == null)
-                throw new InvalidOperationException("assertion failure");
-            if (lastProperty.alias == null && (properties.Length > 2 || lastProperty.nestedEntity != null))
+            lastProperty = lastEntity.GetOrCreateProperty(properties[properties.Length - 1]);
+            if (functionName.HasValue)
+            {
+                if (functionName.Value != FunctionName.Representation)
+                {
+                    const string messageFormat = "unexpected function [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        FormatFunctionName(functionName.Value)));
+                }
+                lastEntity = GetOrCreateQueryEntity(lastProperty, properties);
+                var scope = lastEntity.mapping.ObjectName.Scope;
+                var validScopes = new[] {ConfigurationScope.Перечисления, ConfigurationScope.Справочники};
+                if (!validScopes.Contains(scope))
+                {
+                    const string messageFormat = "function [{0}] is only supported for [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        FormatFunctionName(functionName.Value), validScopes.JoinStrings(",")));
+                }
+                var propertyName = scope == ConfigurationScope.Справочники
+                    ? "Наименование"
+                    : "Порядок";
+                lastProperty = lastEntity.GetOrCreateProperty(propertyName);
+                columnNeedsAlias = true;
+            }
+            lastProperty.isLeaf = true;
+            if (lastProperty.alias == null && columnNeedsAlias)
                 lastProperty.alias = nameGenerator.Generate("__nested_field");
             return properties[0] + "." + (lastProperty.alias ?? lastProperty.mapping.ColumnName);
+        }
+
+        private QueryEntity GetOrCreateQueryEntity(QueryEntityProperty property, string[] propertyPath)
+        {
+            if (property.nestedEntity == null)
+            {
+                var nestedTableName = property.mapping.NestedTableName;
+                if (string.IsNullOrEmpty(nestedTableName))
+                {
+                    const string messageFormat = "property [{0}] has no table mapping, property path [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        property.mapping.PropertyName, propertyPath.JoinStrings(".")));
+                }
+                var tableMapping = mappingSource.GetByQueryName(nestedTableName);
+                property.nestedEntity = new QueryEntity(tableMapping, nameGenerator.Generate("__nested_table"));
+            }
+            return property.nestedEntity;
         }
 
         private string GetSql(string alias)
@@ -174,16 +184,13 @@ namespace Simple1C.Impl.Sql
 
         private void AddPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
         {
-            if (property.nestedEntity == null)
+            if (property.isLeaf)
             {
-                target.Columns.Add(new SelectColumn
-                {
-                    Name = property.mapping.ColumnName,
-                    Alias = property.alias,
-                    TableName = entity.alias
-                });
+                AddLeafPropertyToSubquery(entity, property, target);
                 return;
             }
+            if (property.nestedEntity == null)
+                throw new InvalidOperationException("assertion failure");
             var joinClause = new JoinClause
             {
                 TableAlias = property.nestedEntity.alias,
@@ -200,39 +207,49 @@ namespace Simple1C.Impl.Sql
                 }
             };
             target.JoinClauses.Add(joinClause);
-            if (property.nestedEntity.mapping.IsEnum())
+            BuildSubQuery(property.nestedEntity, target);
+        }
+
+        private void AddLeafPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
+        {
+            if (!entity.mapping.IsEnum())
             {
-                var enumMappingsTableAlias = nameGenerator.Generate("__nested_table");
-                var enumMappingsJoinClause = new JoinClause
-                {
-                    TableName = "simple1c__enumMappings",
-                    TableAlias = enumMappingsTableAlias,
-                    JoinKind = "left",
-                    EqConditions = new[]
-                    {
-                        new JoinEqCondition
-                        {
-                            ColumnName = "enumName",
-                            ComparandConstantValue = "'" + property.nestedEntity.mapping.ObjectName + "'"
-                        },
-                        new JoinEqCondition
-                        {
-                            ColumnName = "orderIndex",
-                            ComparandTableName = property.nestedEntity.alias,
-                            ComparandColumnName = property.nestedEntity.mapping.GetByPropertyName("Порядок").ColumnName
-                        }
-                    }
-                };
-                target.JoinClauses.Add(enumMappingsJoinClause);
                 target.Columns.Add(new SelectColumn
                 {
-                    Name = "enumValueName",
+                    Name = property.mapping.ColumnName,
                     Alias = property.alias,
-                    TableName = enumMappingsTableAlias
+                    TableName = entity.alias
                 });
+                return;
             }
-            else
-                BuildSubQuery(property.nestedEntity, target);
+            var enumMappingsTableAlias = nameGenerator.Generate("__nested_table");
+            var enumMappingsJoinClause = new JoinClause
+            {
+                TableName = "simple1c__enumMappings",
+                TableAlias = enumMappingsTableAlias,
+                JoinKind = "left",
+                EqConditions = new[]
+                {
+                    new JoinEqCondition
+                    {
+                        ColumnName = "enumName",
+                        ComparandConstantValue = "'" + entity.mapping.ObjectName.Name + "'"
+                    },
+                    new JoinEqCondition
+                    {
+                        ColumnName = "orderIndex",
+                        ComparandTableName = entity.alias,
+                        ComparandColumnName = property.mapping.ColumnName
+                    }
+                }
+            };
+            target.JoinClauses.Add(enumMappingsJoinClause);
+            target.Columns.Add(new SelectColumn
+            {
+                Name = "enumValueName",
+                Alias = property.alias,
+                TableName = enumMappingsTableAlias
+            });
         }
 
         private static string GetPropertiesRegex()
@@ -253,19 +270,40 @@ namespace Simple1C.Impl.Sql
             public readonly TableMapping mapping;
             public readonly string alias;
             public readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
+
+            public QueryEntityProperty GetOrCreateProperty(string name)
+            {
+                foreach (var f in properties)
+                    if (f.mapping.PropertyName.EqualsIgnoringCase(name))
+                        return f;
+                var result = new QueryEntityProperty {mapping = mapping.GetByPropertyName(name)};
+                properties.Add(result);
+                return result;
+            }
         }
 
         private class QueryEntityProperty
         {
             public PropertyMapping mapping;
-            public FunctionName? functionName;
             public string alias;
+            public bool isLeaf;
             public QueryEntity nestedEntity;
         }
 
         private enum FunctionName
         {
             Representation
+        }
+
+        private static string FormatFunctionName(FunctionName name)
+        {
+            switch (name)
+            {
+                case FunctionName.Representation:
+                    return "ПРЕДСТАВЛЕНИЕ";
+                default:
+                    throw new ArgumentOutOfRangeException("name", name, null);
+            }
         }
 
         private class NameGenerator
@@ -275,9 +313,8 @@ namespace Simple1C.Impl.Sql
             public string Generate(string prefix)
             {
                 int lastUsedForPrefix;
-                var number = lastUsed[prefix] = lastUsed.TryGetValue(prefix, out lastUsedForPrefix)
-                    ? lastUsedForPrefix + 1
-                    : 0;
+                var number =
+                    lastUsed[prefix] = lastUsed.TryGetValue(prefix, out lastUsedForPrefix) ? lastUsedForPrefix + 1 : 0;
                 return prefix + number;
             }
         }

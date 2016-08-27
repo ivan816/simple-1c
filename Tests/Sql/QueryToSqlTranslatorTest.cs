@@ -75,6 +75,40 @@ namespace Simple1C.Tests.Sql
         }
 
         [Test]
+        public void MapPresentationToDescriptionForReferences()
+        {
+            const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contracts.ВалютаВзаиморасчетов) as Currency
+    from Справочник.ДоговорыКонтрагентов as contracts";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    ВалютаВзаиморасчетов c1 Справочник.Валюты
+Справочник.Валюты t2
+    Ссылка с2
+    Наименование c3";
+            const string expectedResult = @"select contracts.__nested_field0 as Currency
+    from (select
+    __nested_table0.c3 as __nested_field0
+from t1 as __nested_main_table
+left join t2 as __nested_table0 on __nested_table0.с2 = __nested_main_table.c1) as contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void CorrectCrashForInvalidUseIfPresentationFunction()
+        {
+            const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(testRef.Договор) as TestContract
+    from Справочник.Тестовый as testRef";
+            const string mappings = @"Справочник.Тестовый t1
+    Договор с1 Документ.ПоступлениеТоваровУслуг
+Документ.ПоступлениеТоваровУслуг t2
+    Ссылка с2
+    Наименование c3";
+            
+            var exception = Assert.Throws<InvalidOperationException>(() => 
+                CheckTranslate(mappings, sourceSql, null));
+            Assert.That(exception.Message, Is.EqualTo("function [ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
+        }
+
+        [Test]
         public void SimpleWithAlias()
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn

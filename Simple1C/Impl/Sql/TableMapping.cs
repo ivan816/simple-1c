@@ -8,7 +8,7 @@ namespace Simple1C.Impl.Sql
         public string QueryTableName { get; private set; }
         public string DbTableName { get; private set; }
         public PropertyMapping[] Properties { get; private set; }
-        public string ObjectName { get; private set; }
+        public ConfigurationName ObjectName { get; private set; }
 
         private readonly Dictionary<string, PropertyMapping> byPropertyName =
             new Dictionary<string, PropertyMapping>(StringComparer.OrdinalIgnoreCase);
@@ -27,7 +27,7 @@ namespace Simple1C.Impl.Sql
                     //const string messageFormat = "property [{0}] for table [{1}] already exist";
                     //throw new InvalidOperationException(string.Format(messageFormat, p.PropertyName, QueryName));
                 }
-            ObjectName = QueryTableName.Split('.')[1];
+            ObjectName = ConfigurationName.Parse(QueryTableName);
         }
 
         public PropertyMapping GetByPropertyName(string queryName)
