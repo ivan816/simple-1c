@@ -21,6 +21,33 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void CanUseRussianSyntax()
+        {
+            const string sourceSql = @"выбрать contractors.ИНН как CounterpartyInn
+    из Справочник.Контрагенты как contractors
+    ГДЕ contractors.наименование =""test-name"" и contractors.ИНН <> ""test-inn""";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1
+    Наименование c2";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+    from t1 as contractors
+    where contractors.c2 ='test-name' and contractors.c1 <> 'test-inn'";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void MatchEntityAliasCaseInsensitive()
+        {
+            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
+    from Справочник.Контрагенты as Contractors";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+    from t1 as Contractors";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
         public void DoNotIncludeBraceInPropertyName()
         {
             const string sourceSql = @"select (contractors.ИНН) as CounterpartyInn
@@ -29,6 +56,21 @@ namespace Simple1C.Tests.Sql
     ИНН c1";
             const string expectedResult = @"select (contractors.c1) as CounterpartyInn
     from t1 as contractors";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void DoNotIncludeEqualSignInPropertyName()
+        {
+            const string sourceSql = @"select contractors.Наименование as CounterpartyInn
+    from Справочник.Контрагенты as contractors
+    where contractors.ИНН=""test-inn""";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1
+    Наименование c2";
+            const string expectedResult = @"select contractors.c2 as CounterpartyInn
+    from t1 as contractors
+    where contractors.c1='test-inn'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 

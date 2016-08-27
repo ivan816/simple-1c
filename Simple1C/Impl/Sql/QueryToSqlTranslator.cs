@@ -13,10 +13,27 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private static readonly Dictionary<string, string> keywordsMap =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                {"выбрать", "select"},
+                {"как", "as"},
+                {"из", "from"},
+                {"где", "where"},
+                {"и", "and"},
+                {"или", "or"}
+            };
+
+        private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
+            keywordsMap.Keys.JoinStrings("|")),
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
         private static readonly Regex propertiesRegex = new Regex(GetPropertiesRegex(),
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private readonly Dictionary<string, QueryEntity> queryTables = new Dictionary<string, QueryEntity>();
+        private readonly Dictionary<string, QueryEntity> queryTables =
+            new Dictionary<string, QueryEntity>(StringComparer.OrdinalIgnoreCase);
+
         private readonly NameGenerator nameGenerator = new NameGenerator();
 
         public QueryToSqlTranslator(ITableMappingSource mappingSource)
@@ -26,7 +43,8 @@ namespace Simple1C.Impl.Sql
 
         public string Translate(string source)
         {
-            source = source.Replace('"', '\'');
+            source = source.Replace("\"", "'");
+            source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             var match = tableNameRegex.Match(source);
             while (match.Success)
             {
@@ -106,7 +124,8 @@ namespace Simple1C.Impl.Sql
                     {
                         var tableMapping = mappingSource.GetByQueryName(lastProperty.mapping.NestedTableName);
                         if (!tableMapping.IsEnum() || functionName != null)
-                            lastProperty.nestedEntity = new QueryEntity(tableMapping, nameGenerator.Generate("__nested_table"));
+                            lastProperty.nestedEntity = new QueryEntity(tableMapping,
+                                nameGenerator.Generate("__nested_table"));
                     }
                     else if (!isLastProperty)
                     {
@@ -179,7 +198,7 @@ namespace Simple1C.Impl.Sql
                         ComparandTableName = entity.alias
                     }
                 }
-            };  
+            };
             target.JoinClauses.Add(joinClause);
             if (property.nestedEntity.mapping.IsEnum())
             {
@@ -218,7 +237,7 @@ namespace Simple1C.Impl.Sql
 
         private static string GetPropertiesRegex()
         {
-            const string propRegex = @"[a-zA-Z]+\.[^\)\,\s]+";
+            const string propRegex = @"[a-zA-Z]+\.[а-яА-Я\.]+";
             return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
                 propRegex);
         }

@@ -25,7 +25,7 @@ namespace Simple1C.Impl.Sql
             tableName = Path.GetFileNameWithoutExtension(queryFileName);
         }
 
-        public void Execute()
+        public bool Execute()
         {
             var s = Stopwatch.StartNew();
             var sourceThreads = new Thread[sources.Length];
@@ -68,6 +68,7 @@ namespace Simple1C.Impl.Sql
             }
             s.Stop();
             Console.Out.WriteLine("\r\ndone, [{0}] millis", s.ElapsedMilliseconds);
+            return errorOccured;
         }
     }
 }

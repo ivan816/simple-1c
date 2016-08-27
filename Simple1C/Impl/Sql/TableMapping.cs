@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
 
 namespace Simple1C.Impl.Sql
 {
@@ -37,7 +36,7 @@ namespace Simple1C.Impl.Sql
             if (!byPropertyName.TryGetValue(queryName, out result))
             {
                 const string messagFormat = "can't find field [{0}] for table [{1}]";
-                throw new InvalidComObjectException(string.Format(messagFormat, queryName, QueryTableName));
+                throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
             }
             return result;
         }

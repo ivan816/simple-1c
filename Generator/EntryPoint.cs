@@ -133,8 +133,8 @@ namespace Generator
                 .ToArray();
             var target = new MsSqlDatabase(resultConnectionString);
             var sqlExecuter = new QueryExecuter(sources, target, queryFile, dumpSql == "true");
-            sqlExecuter.Execute();
-            return 0;
+            var succeeded = sqlExecuter.Execute();
+            return succeeded ? 0 : -1;
         }
 
         private static int GenSqlMeta(NameValueCollection parameters)
