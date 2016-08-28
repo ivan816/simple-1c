@@ -5,5 +5,6 @@
         public string Name { get; set; }
         public string TableName { get; set; }
         public string Alias { get; set; }
+        public string FunctionName { get; set; }
     }
 }

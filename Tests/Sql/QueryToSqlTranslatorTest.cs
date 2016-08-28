@@ -19,6 +19,32 @@ namespace Simple1C.Tests.Sql
     from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+        
+        [Test]
+        public void InvertIsFolder()
+        {
+            const string sourceSql = @"select contracts.ЭтоГруппа as IsFolder
+    from справочник.ДоговорыКонтрагентов as contracts";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+    ЭтоГруппа c1";
+            const string expectedResult = @"select contracts.__nested_field0 as IsFolder
+    from (select
+    not(__nested_table0.c1) as __nested_field0
+from t1 as __nested_table0) as contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void StripPresentationFunctionFromSimpleProperties()
+        {
+            const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contractors.ИНН) as CounterpartyInn
+    from Справочник.Контрагенты as contractors";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1";
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
+    from t1 as contractors";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void UnionAll()

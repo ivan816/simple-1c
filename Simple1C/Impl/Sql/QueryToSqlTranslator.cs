@@ -62,7 +62,7 @@ namespace Simple1C.Impl.Sql
         }
 
         private static readonly Regex unionRegex = new Regex(@"\bunion(\s+all)?\b",
-               RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private readonly Dictionary<string, QueryEntity> queryTables =
             new Dictionary<string, QueryEntity>(StringComparer.OrdinalIgnoreCase);
@@ -185,7 +185,7 @@ namespace Simple1C.Impl.Sql
             return selectClause.GetSql();
         }
 
-        private QueryEntity GetQueryTable(string alias)
+        private QueryEntity GetQueryEntity(string alias)
         {
             QueryEntity mainEntity;
             if (!queryTables.TryGetValue(alias, out mainEntity))
@@ -198,17 +198,17 @@ namespace Simple1C.Impl.Sql
 
         private string GetColumnName(string[] properties, FunctionName? functionName, SelectPart selectPart)
         {
-            var lastEntity = GetQueryTable(properties[0]);
+            var mainEntity = GetQueryEntity(properties[0]);
+            var lastEntity = mainEntity;
             QueryEntityProperty lastProperty;
-            var columnNeedsAlias = false;
+            var subqueryRequired = false;
             for (var i = 1; i < properties.Length - 1; i++)
             {
                 lastProperty = lastEntity.GetOrCreateProperty(properties[i]);
                 lastEntity = GetOrCreateQueryEntity(lastProperty, properties);
-                columnNeedsAlias = true;
+                subqueryRequired = true;
             }
             lastProperty = lastEntity.GetOrCreateProperty(properties[properties.Length - 1]);
-
             if (!functionName.HasValue && selectPart == SelectPart.GroupBy)
             {
                 var nestedEntity = lastProperty.nestedEntity;
@@ -216,6 +216,8 @@ namespace Simple1C.Impl.Sql
                     if (nestedEntity.properties[0].parts.Contains(SelectPart.Select))
                         functionName = FunctionName.Representation;
             }
+            if (functionName.HasValue && string.IsNullOrEmpty(lastProperty.mapping.NestedTableName))
+                functionName = null;
             if (functionName.HasValue)
             {
                 if (functionName.Value != FunctionName.Representation)
@@ -237,12 +239,19 @@ namespace Simple1C.Impl.Sql
                     ? "Наименование"
                     : "Порядок";
                 lastProperty = lastEntity.GetOrCreateProperty(propertyName);
-                columnNeedsAlias = true;
+                subqueryRequired = true;
             }
+            if (lastProperty.mapping.PropertyName == "ЭтоГруппа")
+            {
+                lastProperty.functionName = "not";
+                subqueryRequired = true;
+            }
+            if (subqueryRequired)
+                mainEntity.subqueryRequired = true;
             lastProperty.referenced = true;
             if (!lastProperty.parts.Contains(selectPart))
                 lastProperty.parts.Add(selectPart);
-            if (lastProperty.alias == null && columnNeedsAlias)
+            if (lastProperty.alias == null && subqueryRequired)
                 lastProperty.alias = nameGenerator.GenerateColumnName();
             return properties[0] + "." + (lastProperty.alias ?? lastProperty.mapping.ColumnName);
         }
@@ -271,23 +280,16 @@ namespace Simple1C.Impl.Sql
 
         private string GetSql(string alias)
         {
-            var table = GetQueryTable(alias);
-            var hasNestedTables = false;
-            foreach (var f in table.properties)
-                if (f.nestedEntity != null)
-                {
-                    hasNestedTables = true;
-                    break;
-                }
+            var mainEntity = GetQueryEntity(alias);
             string sql;
-            if (hasNestedTables)
+            if (mainEntity.subqueryRequired)
             {
-                var selectClause = CreateSelectClause(table);
-                BuildSubQuery(table, selectClause);
+                var selectClause = CreateSelectClause(mainEntity);
+                BuildSubQuery(mainEntity, selectClause);
                 sql = selectClause.GetSql();
             }
             else
-                sql = table.mapping.DbTableName;
+                sql = mainEntity.mapping.DbTableName;
             return sql + " as " + alias;
         }
 
@@ -317,7 +319,8 @@ namespace Simple1C.Impl.Sql
                 {
                     Name = property.mapping.ColumnName,
                     Alias = property.alias,
-                    TableName = GetQueryEntityAlias(entity)
+                    TableName = GetQueryEntityAlias(entity),
+                    FunctionName = property.functionName
                 });
             }
             if (property.nestedEntity != null)
@@ -364,6 +367,7 @@ namespace Simple1C.Impl.Sql
             public readonly TableMapping mapping;
             public string alias;
             public readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
+            public bool subqueryRequired;
 
             public QueryEntityProperty GetOrCreateProperty(string name)
             {
@@ -382,6 +386,7 @@ namespace Simple1C.Impl.Sql
             public string alias;
             public bool referenced;
             public QueryEntity nestedEntity;
+            public string functionName;
             public readonly List<SelectPart> parts = new List<SelectPart>();
         }
 

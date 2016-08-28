@@ -32,7 +32,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
                 else
                     b.Append(",");
                 b.Append("\r\n\t");
+                if (!string.IsNullOrEmpty(f.FunctionName))
+                {
+                    b.Append(f.FunctionName);
+                    b.Append('(');
+                }
                 SqlHelpers.WriteReference(b, f.TableName, f.Name);
+                if (!string.IsNullOrEmpty(f.FunctionName))
+                    b.Append(')');
                 SqlHelpers.WriteAlias(b, f.Alias);
             }
             b.Append("\r\nfrom ");
