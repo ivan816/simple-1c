@@ -21,6 +21,63 @@ namespace Simple1C.Tests.Sql
         }
 
         [Test]
+        public void UnionAll()
+        {
+            const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as Type
+from Справочник.Контрагенты as contractors
+where contractors.ИНН = ""test-inn1""
+
+union all
+
+select ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as Type
+from Справочник.Контрагенты as contractors
+where contractors.ИНН = ""test-inn2""
+
+union
+
+select ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as Type
+from Справочник.Контрагенты as contractors
+where contractors.ИНН = ""test-inn3""";
+            const string mappings = @"Справочник.Контрагенты t1
+    ИНН c1
+    ЮридическоеФизическоеЛицо c2 Перечисление.ЮридическоеФизическоеЛицо
+Перечисление.ЮридическоеФизическоеЛицо t2
+    Ссылка c3
+    Порядок c4 ";
+            const string expectedResult = @"select contractors.__nested_field0 as Type
+from (select
+    __nested_table2.enumValueName as __nested_field0,
+    __nested_table0.c1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
+left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+where contractors.c1 = 'test-inn1'
+
+union all
+
+select contractors.__nested_field0 as Type
+from (select
+    __nested_table2.enumValueName as __nested_field0,
+    __nested_table0.c1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
+left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+where contractors.c1 = 'test-inn2'
+
+union
+
+select contractors.__nested_field0 as Type
+from (select
+    __nested_table2.enumValueName as __nested_field0,
+    __nested_table0.c1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
+left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+where contractors.c1 = 'test-inn3'";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void PatchYearFunction()
         {
             const string sourceSql = @"select ГОД(contracts.Дата) as ContractDate

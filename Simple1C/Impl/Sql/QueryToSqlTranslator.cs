@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
@@ -10,8 +11,6 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryToSqlTranslator
     {
-        private readonly IMappingSource mappingSource;
-
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
@@ -62,10 +61,14 @@ namespace Simple1C.Impl.Sql
                 propRegex);
         }
 
+        private static readonly Regex unionRegex = new Regex(@"\bunion(\s+all)?\b",
+               RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
         private readonly Dictionary<string, QueryEntity> queryTables =
             new Dictionary<string, QueryEntity>(StringComparer.OrdinalIgnoreCase);
 
         private readonly NameGenerator nameGenerator = new NameGenerator();
+        private readonly IMappingSource mappingSource;
 
         public QueryToSqlTranslator(IMappingSource mappingSource)
         {
@@ -74,6 +77,28 @@ namespace Simple1C.Impl.Sql
 
         public string Translate(string source)
         {
+            var match = unionRegex.Match(source);
+            if (!match.Success)
+                return TranslateSingleSelect(source);
+            var b = new StringBuilder();
+            var lastPosition = 0;
+            while (match.Success)
+            {
+                var itemText = source.Substring(lastPosition, match.Index - lastPosition);
+                b.Append(TranslateSingleSelect(itemText));
+                b.Append(match.Value);
+                lastPosition = match.Index + match.Value.Length;
+                match = match.NextMatch();
+            }
+            b.Append(TranslateSingleSelect(source.Substring(lastPosition)));
+            return b.ToString();
+        }
+
+        private string TranslateSingleSelect(string source)
+        {
+            nameGenerator.Reset();
+            queryTables.Clear();
+
             var result = source;
             result = result.Replace("\"", "'");
             result = keywordsRegex.Replace(result, m => keywordsMap[m.Groups[1].Value]);
@@ -423,6 +448,11 @@ namespace Simple1C.Impl.Sql
             public string GenerateTableName()
             {
                 return Generate("__nested_table");
+            }
+
+            public void Reset()
+            {
+                lastUsed.Clear();
             }
 
             public string GenerateColumnName()
