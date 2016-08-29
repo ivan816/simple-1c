@@ -13,6 +13,9 @@ using Simple1C.Interface;
 
 namespace Generator
 {
+    //todo генерить вьюшки в отдельную базу, реврайтить select-ы на эти вьюшки
+    //motivation: сейчас имена колонок в join-ах в генерируемых подзапросах не переименовываются,
+    //и руками можно было бы запросы прямо на sql-е писать
     public static class EntryPoint
     {
         public static int Main(string[] args)
@@ -157,8 +160,7 @@ namespace Generator
             var translator = new QueryToSqlTranslator(mappingSchema);
             var query = File.ReadAllText(queryFile);
             var sql = translator.Translate(query);
-            Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
-                connectionString, query, sql);
+            Console.Out.WriteLine(sql);
             return 0;
         }
 

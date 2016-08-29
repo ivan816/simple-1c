@@ -171,7 +171,7 @@ namespace Simple1C.Impl.Sql
             var selectClause = CreateSelectClause(table);
             selectClause.Columns.Add(new SelectColumn
             {
-                Name = table.mapping.GetByPropertyName("Ссылка").ColumnName,
+                Name = table.GetColumnName("Ссылка"),
                 TableName = GetQueryEntityAlias(table)
             });
             var enumMappingsJoinClause = CreateEnumMappingsJoinClause(table);
@@ -329,18 +329,23 @@ namespace Simple1C.Impl.Sql
                 {
                     TableAlias = GetQueryEntityAlias(property.nestedEntity),
                     TableName = property.nestedEntity.mapping.DbTableName,
-                    JoinKind = "left",
-                    EqConditions = new[]
-                    {
-                        new EqCondition
-                        {
-                            ColumnName = property.nestedEntity.mapping.GetByPropertyName("Ссылка").ColumnName,
-                            ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
-                            ComparandColumnName = property.mapping.ColumnName,
-                            ComparandTableName = GetQueryEntityAlias(entity)
-                        }
-                    }
+                    JoinKind = "left"
                 };
+                if (!property.nestedEntity.mapping.IsEnum())
+                    joinClause.EqConditions.Add(new EqCondition
+                    {
+                        ColumnName = property.nestedEntity.GetAreaColumnName(),
+                        ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
+                        ComparandColumnName = entity.GetAreaColumnName(),
+                        ComparandTableName = GetQueryEntityAlias(entity)
+                    });
+                joinClause.EqConditions.Add(new EqCondition
+                {
+                    ColumnName = property.nestedEntity.GetIdColumnName(),
+                    ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
+                    ComparandColumnName = property.mapping.ColumnName,
+                    ComparandTableName = GetQueryEntityAlias(entity)
+                });
                 target.JoinClauses.Add(joinClause);
                 BuildSubQuery(property.nestedEntity, target);
             }
@@ -378,6 +383,21 @@ namespace Simple1C.Impl.Sql
                 properties.Add(result);
                 return result;
             }
+
+            public string GetAreaColumnName()
+            {
+                return GetColumnName("ОбластьДанныхОсновныеДанные");
+            }
+
+            public string GetIdColumnName()
+            {
+                return GetColumnName("Ссылка");
+            }
+
+            public string GetColumnName(string propertyName)
+            {
+                return mapping.GetByPropertyName(propertyName).ColumnName;
+            }
         }
 
         private class QueryEntityProperty
@@ -393,28 +413,26 @@ namespace Simple1C.Impl.Sql
         private JoinClause CreateEnumMappingsJoinClause(QueryEntity enumEntity)
         {
             var tableAlias = nameGenerator.GenerateTableName();
-            return new JoinClause
+            var result = new JoinClause
             {
                 TableName = "simple1c__enumMappings",
                 TableAlias = tableAlias,
-                JoinKind = "left",
-                EqConditions = new[]
-                {
-                    new EqCondition
-                    {
-                        ColumnName = "enumName",
-                        ColumnTableName = tableAlias,
-                        ComparandConstantValue = enumEntity.mapping.ObjectName.Name
-                    },
-                    new EqCondition
-                    {
-                        ColumnName = "orderIndex",
-                        ColumnTableName = tableAlias,
-                        ComparandTableName = GetQueryEntityAlias(enumEntity),
-                        ComparandColumnName = enumEntity.mapping.GetByPropertyName("Порядок").ColumnName
-                    }
-                }
+                JoinKind = "left"
             };
+            result.EqConditions.Add(new EqCondition
+            {
+                ColumnName = "enumName",
+                ColumnTableName = tableAlias,
+                ComparandConstantValue = enumEntity.mapping.ObjectName.Name
+            });
+            result.EqConditions.Add(new EqCondition
+            {
+                ColumnName = "orderIndex",
+                ColumnTableName = tableAlias,
+                ComparandTableName = GetQueryEntityAlias(enumEntity),
+                ComparandColumnName = enumEntity.mapping.GetByPropertyName("Порядок").ColumnName
+            });
+            return result;
         }
 
         private enum SelectPart

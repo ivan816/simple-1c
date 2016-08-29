@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using Simple1C.Impl.Com;
+using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
 
@@ -85,45 +86,60 @@ namespace Simple1C.Impl.Sql
 
         private TableMapping[] ExtractTableMappingsFromCom(object comTable)
         {
-            var tableMappings = new ValueTable(comTable);
+            var tableRows = new ValueTable(comTable);
             var result = new List<TableMapping>();
-            for (var i = 0; i < tableMappings.Count; i++)
+            for (var i = 0; i < tableRows.Count; i++)
             {
-                var tableMapping = tableMappings[i];
-                var queryTableName = tableMapping.GetString("ИмяТаблицы");
+                var tableRow = tableRows[i];
+                var queryTableName = tableRow.GetString("ИмяТаблицы");
                 if (string.IsNullOrEmpty(queryTableName))
                     continue;
-                var attributes = GetAttributes(globalContext, queryTableName);
-                var dbTableName = tableMapping.GetString("ИмяТаблицыХранения");
+                var dbTableName = tableRow.GetString("ИмяТаблицыХранения");
                 if (string.IsNullOrEmpty(dbTableName))
                     continue;
                 dbTableName = PatchDbTableName(dbTableName);
-                var colunMappings = new ValueTable(tableMapping["Поля"]);
+                var configurationName = ConfigurationName.ParseOrNull(queryTableName);
+                if (configurationName == null)
+                    continue;
+                var descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
+                if (descriptor == null)
+                    continue;
+                var configurationItem = globalContext.FindByName(configurationName.Value);
+                var propertyTypes = GetPropertyTypes(configurationItem.ComObject, descriptor);
                 var propertyMappings = new List<PropertyMapping>();
-                for (var j = 0; j < colunMappings.Count; j++)
+                var columnRows = new ValueTable(tableRow["Поля"]);
+                foreach (var m in columnRows)
                 {
-                    var columnMapping = colunMappings.Get(j);
-                    var queryColumnName = columnMapping.GetString("ИмяПоля");
-                    if (string.IsNullOrEmpty(queryColumnName))
+                    var queryColumnName = m.GetString("ИмяПоля");
+                    var dbColumnName = m.GetString("ИмяПоляХранения");
+                    if (string.IsNullOrEmpty(queryColumnName) || string.IsNullOrEmpty(dbColumnName))
                         continue;
-                    var dbColumnName = columnMapping.GetString("ИмяПоляХранения");
-                    if (string.IsNullOrEmpty(dbColumnName))
-                        continue;
-                    var attribute = attributes == null ? null : attributes.GetOrDefault(queryColumnName);
-                    var typename = attribute == null ? null : attribute();
-                    dbColumnName = PatchFieldName(dbColumnName, typename);
-                    propertyMappings.Add(new PropertyMapping(queryColumnName, dbColumnName,
-                        string.IsNullOrEmpty(typename) ? "" : " " + typename));
+                    var typeName = propertyTypes.GetOrDefault(queryColumnName);
+                    dbColumnName = PatchColumnName(dbColumnName, typeName);
+                    var propertyMapping = new PropertyMapping(queryColumnName, dbColumnName, typeName);
+                    propertyMappings.Add(propertyMapping);
                 }
-                result.Add(new TableMapping(queryTableName, dbTableName, propertyMappings.ToArray()));
+                if (descriptor.HasTableSections)
+                {
+                    var tableSections = ComHelpers.GetProperty(configurationItem.ComObject, "ТабличныеЧасти");
+                    foreach (var tableSection in (IEnumerable)tableSections)
+                    {
+                        var tableFullname = Call.ПолноеИмя(tableSection);
+                        var tableQueryTable = TableSectionFullNameToQueryName(tableFullname);
+                        var propertyMapping = new PropertyMapping(Call.Имя(tableSection), null, tableQueryTable);
+                        propertyMappings.Add(propertyMapping);
+                    }
+                }
+                var tableMapping = new TableMapping(queryTableName, dbTableName, propertyMappings.ToArray());
+                result.Add(tableMapping);
                 if ((i + 1)%50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
-                        i + 1, tableMappings.Count, (double) (i + 1)/tableMappings.Count*100);
+                        i + 1, tableRows.Count, (double) (i + 1)/tableRows.Count*100);
             }
             return result.ToArray();
         }
 
-        private static string PatchFieldName(string fieldName, string testedTableName)
+        private static string PatchColumnName(string fieldName, string testedTableName)
         {
             if (fieldName == "ID")
                 return "_idrref";
@@ -140,49 +156,38 @@ namespace Simple1C.Impl.Sql
             var b = new StringBuilder(dbTableName);
             b[0] = char.ToLower(b[0]);
             b.Insert(0, '_');
+            b.Replace('.', '_');
             return b.ToString();
         }
 
-        private static Dictionary<string, Func<string>> GetAttributes(GlobalContext globalContext, string fullname)
+        private Dictionary<string, string> GetPropertyTypes(object comObject, ConfigurationItemDescriptor descriptor)
         {
-            var configurationName = ConfigurationName.ParseOrNull(fullname);
-            if (configurationName == null)
-                return null;
-            if (!configurationName.Value.HasReference)
-                return null;
-            var configurationItem = globalContext.FindByName(configurationName.Value);
-            var descriptor = MetadataHelpers.GetDescriptor(configurationName.Value.Scope);
-            var attributes = MetadataHelpers.GetAttributes(configurationItem.ComObject, descriptor);
-            return attributes.ToDictionary(Call.Имя, delegate(object o)
+            var attributes = MetadataHelpers.GetAttributes(comObject, descriptor);
+            var result = new Dictionary<string, string>();
+            foreach (var a in attributes)
             {
-                Func<string> result = delegate
-                {
-                    var type = ComHelpers.GetProperty(o, "Тип");
-                    var typesObject = ComHelpers.Invoke(type, "Типы");
-                    var typesCount = Call.Количество(typesObject);
-                    if (typesCount != 1)
-                        return null;
-                    var typeObject = Call.Получить(typesObject, 0);
-                    var stringPresentation = globalContext.String(typeObject);
-                    if (simpleTypesMap.ContainsKey(stringPresentation))
-                        return null;
-                    var comObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
-                    if (comObject == null)
-                        return null;
-                    return Call.ПолноеИмя(comObject);
-                };
-                return result;
-            });
+                var type = ComHelpers.GetProperty(a, "Тип");
+                var typesObject = ComHelpers.Invoke(type, "Типы");
+                var typesCount = Call.Количество(typesObject);
+                if (typesCount != 1)
+                    continue;
+                var typeObject = Call.Получить(typesObject, 0);
+                var stringPresentation = globalContext.String(typeObject);
+                if (MetadataHelpers.simpleTypesMap.ContainsKey(stringPresentation))
+                    continue;
+                var propertyComObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
+                if (propertyComObject == null)
+                    continue;
+                result.Add(Call.Имя(a), Call.ПолноеИмя(propertyComObject));
+            }
+            return result;
         }
 
-        private static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
+        private static string TableSectionFullNameToQueryName(string s)
         {
-            {"Строка", "string"},
-            {"Булево", "bool"},
-            {"Дата", "DateTime?"},
-            {"Уникальный идентификатор", "Guid?"},
-            {"Хранилище значения", null},
-            {"Описание типов", "Type[]"}
-        };
+            var lastDot = s.LastIndexOf('.');
+            var lastPrevDot = s.LastIndexOf('.', lastDot - 1);
+            return s.Substring(0, lastPrevDot) + '.' + s.Substring(lastDot + 1);
+        }
     }
 }

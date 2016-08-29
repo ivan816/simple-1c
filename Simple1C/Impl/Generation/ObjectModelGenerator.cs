@@ -9,16 +9,6 @@ namespace Simple1C.Impl.Generation
 {
     internal class ObjectModelGenerator
     {
-        private static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
-        {
-            {"Строка", "string"},
-            {"Булево", "bool"},
-            {"Дата", "DateTime?"},
-            {"Уникальный идентификатор", "Guid?"},
-            {"Хранилище значения", null},
-            {"Описание типов", "Type[]"}
-        };
-
         private static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
         {
             AttributePropertyNames = new[] {"Реквизиты"}
@@ -215,8 +205,7 @@ namespace Simple1C.Impl.Generation
                 {
                     typeObject = Call.Получить(typesObject, i);
                     stringPresentation = globalContext.String(typeObject);
-                    if (stringPresentation != "Число" &&
-                        !simpleTypesMap.ContainsKey(stringPresentation))
+                    if (stringPresentation != "Число" && !MetadataHelpers.simpleTypesMap.ContainsKey(stringPresentation))
                     {
                         var configurationItem = FindByType(typeObject);
                         if (configurationItem != null)
@@ -228,7 +217,7 @@ namespace Simple1C.Impl.Generation
             typeObject = Call.Получить(typesObject, 0);
             stringPresentation = globalContext.String(typeObject);
             string typeName;
-            if (simpleTypesMap.TryGetValue(stringPresentation, out typeName))
+            if (MetadataHelpers.simpleTypesMap.TryGetValue(stringPresentation, out typeName))
             {
                 if (typeName == null)
                     return null;

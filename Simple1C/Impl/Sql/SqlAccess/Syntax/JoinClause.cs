@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.Collections.Generic;
+using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
@@ -7,7 +8,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public string TableName { get; set; }
         public string TableAlias { get; set; }
         public string JoinKind { get; set; }
-        public EqCondition[] EqConditions { get; set; }
+        public List<EqCondition> EqConditions { get; private set; }
+
+        public JoinClause()
+        {
+            EqConditions = new List<EqCondition>();
+        }
 
         public void WriteTo(StringBuilder b)
         {

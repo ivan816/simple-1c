@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql
 {
@@ -8,7 +9,16 @@ namespace Simple1C.Impl.Sql
         public string QueryTableName { get; private set; }
         public string DbTableName { get; private set; }
         public PropertyMapping[] Properties { get; private set; }
-        public ConfigurationName ObjectName { get; private set; }
+        private ConfigurationName? objectName;
+
+        public ConfigurationName ObjectName
+        {
+            get
+            {
+                var result = objectName ?? (objectName = ConfigurationName.Parse(QueryTableName));
+                return result.Value;
+            }
+        }
 
         private readonly Dictionary<string, PropertyMapping> byPropertyName =
             new Dictionary<string, PropertyMapping>(StringComparer.OrdinalIgnoreCase);
@@ -27,7 +37,6 @@ namespace Simple1C.Impl.Sql
                     //const string messageFormat = "property [{0}] for table [{1}] already exist";
                     //throw new InvalidOperationException(string.Format(messageFormat, p.PropertyName, QueryName));
                 }
-            ObjectName = ConfigurationName.Parse(QueryTableName);
         }
 
         public PropertyMapping GetByPropertyName(string queryName)
@@ -43,7 +52,7 @@ namespace Simple1C.Impl.Sql
 
         public bool IsEnum()
         {
-            return QueryTableName.StartsWith("перечисление", StringComparison.OrdinalIgnoreCase);
+            return ObjectName.Scope == ConfigurationScope.Перечисления;
         }
     }
 }
