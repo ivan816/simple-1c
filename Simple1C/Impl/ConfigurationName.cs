@@ -76,6 +76,8 @@ namespace Simple1C.Impl
         public static ConfigurationName? ParseOrNull(string s)
         {
             var items = s.Split('.');
+            if (items.Length != 2)
+                return null;
             var scope = ParseScopeNameOrNull(items[0]);
             return scope.HasValue
                 ? new ConfigurationName(scope.Value, items[1])

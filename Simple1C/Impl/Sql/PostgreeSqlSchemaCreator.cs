@@ -98,14 +98,34 @@ namespace Simple1C.Impl.Sql
                 if (string.IsNullOrEmpty(dbTableName))
                     continue;
                 dbTableName = PatchDbTableName(dbTableName);
-                var configurationName = ConfigurationName.ParseOrNull(queryTableName);
-                if (configurationName == null)
+                var purpose = tableRow.GetString("Назначение");
+                ConfigurationItemDescriptor descriptor;
+                object comObject;
+                if (purpose == "Основная")
+                {
+                    var configurationName = ConfigurationName.ParseOrNull(queryTableName);
+                    if(!configurationName.HasValue)
+                        continue;
+                    descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
+                    if(descriptor == null)
+                        continue;
+                    var configurationItem = globalContext.FindByName(configurationName.Value);
+                    comObject = configurationItem.ComObject;
+                }
+                else if (purpose == "ТабличнаяЧасть")
+                {
+                    descriptor = MetadataHelpers.tableSectionDescriptor;
+                    var fullname = TableSectionQueryNameToFullName(queryTableName);
+                    comObject = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоПолномуИмени", fullname);
+                    if (comObject == null)
+                    {
+                        const string messageFormat = "can't find table section [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, queryTableName));
+                    }
+                }
+                else
                     continue;
-                var descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
-                if (descriptor == null)
-                    continue;
-                var configurationItem = globalContext.FindByName(configurationName.Value);
-                var propertyTypes = GetPropertyTypes(configurationItem.ComObject, descriptor);
+                var propertyTypes = GetPropertyTypes(comObject, descriptor);
                 var propertyMappings = new List<PropertyMapping>();
                 var columnRows = new ValueTable(tableRow["Поля"]);
                 foreach (var m in columnRows)
@@ -121,7 +141,7 @@ namespace Simple1C.Impl.Sql
                 }
                 if (descriptor.HasTableSections)
                 {
-                    var tableSections = ComHelpers.GetProperty(configurationItem.ComObject, "ТабличныеЧасти");
+                    var tableSections = ComHelpers.GetProperty(comObject, "ТабличныеЧасти");
                     foreach (var tableSection in (IEnumerable)tableSections)
                     {
                         var tableFullname = Call.ПолноеИмя(tableSection);
@@ -132,9 +152,9 @@ namespace Simple1C.Impl.Sql
                 }
                 var tableMapping = new TableMapping(queryTableName, dbTableName, propertyMappings.ToArray());
                 result.Add(tableMapping);
-                if ((i + 1)%50 == 0)
+                if ((i + 1) % 50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
-                        i + 1, tableRows.Count, (double) (i + 1)/tableRows.Count*100);
+                        i + 1, tableRows.Count, (double)(i + 1) / tableRows.Count * 100);
             }
             return result.ToArray();
         }
@@ -188,6 +208,12 @@ namespace Simple1C.Impl.Sql
             var lastDot = s.LastIndexOf('.');
             var lastPrevDot = s.LastIndexOf('.', lastDot - 1);
             return s.Substring(0, lastPrevDot) + '.' + s.Substring(lastDot + 1);
+        }
+
+        private static string TableSectionQueryNameToFullName(string s)
+        {
+            var lastDot = s.LastIndexOf('.');
+            return s.Substring(0, lastDot) + ".ТабличнаяЧасть." + s.Substring(lastDot + 1);
         }
     }
 }

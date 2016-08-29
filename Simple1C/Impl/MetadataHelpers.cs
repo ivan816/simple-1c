@@ -20,6 +20,16 @@ namespace Simple1C.Impl
             {"Описание типов", "Type[]"}
         };
 
+        public static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
+        {
+            AttributePropertyNames = new[] { "Реквизиты" }
+        };
+
+        public static readonly ConfigurationItemDescriptor standardTableSectionDescriptor = new ConfigurationItemDescriptor
+        {
+            AttributePropertyNames = new string[0]
+        };
+
         private static readonly string[] standardPropertiesToExclude =
         {
             "ИмяПредопределенныхДанных",

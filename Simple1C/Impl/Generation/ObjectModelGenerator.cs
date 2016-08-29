@@ -9,16 +9,6 @@ namespace Simple1C.Impl.Generation
 {
     internal class ObjectModelGenerator
     {
-        private static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
-        {
-            AttributePropertyNames = new[] {"Реквизиты"}
-        };
-
-        private static readonly ConfigurationItemDescriptor standardTableSectionDescriptor = new ConfigurationItemDescriptor
-        {
-            AttributePropertyNames = new string[0]
-        };
-
         private readonly GlobalContext globalContext;
         private readonly IEnumerable<string> itemNames;
         private readonly string namespaceRoot;
@@ -154,9 +144,9 @@ namespace Simple1C.Impl.Generation
                     PropertyName = EntityHelpers.idPropertyName
                 });
             if (classContext.descriptor.HasStandardTableSections)
-                EmitTableSections(classContext, "СтандартныеТабличныеЧасти", standardTableSectionDescriptor, false);
+                EmitTableSections(classContext, "СтандартныеТабличныеЧасти", MetadataHelpers.standardTableSectionDescriptor, false);
             if (classContext.descriptor.HasTableSections)
-                EmitTableSections(classContext, "ТабличныеЧасти", tableSectionDescriptor, true);
+                EmitTableSections(classContext, "ТабличныеЧасти", MetadataHelpers.tableSectionDescriptor, true);
         }
 
         private void EmitTableSections(ClassGenerationContext classContext, string tableSectionsName,
