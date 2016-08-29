@@ -25,8 +25,10 @@ namespace Generator
                 return GenSqlMeta(parameters);
             if (cmd == "run-sql")
                 return RunSql(parameters);
+            if (cmd == "translate-sql")
+                return TranslateSql(parameters);
             Console.Out.WriteLine("Invalid arguments");
-            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-cs-meta|gen-sql-meta|run-sql]");
+            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-cs-meta|gen-sql-meta|run-sql|translate-sql]");
             return -1;
         }
 
@@ -135,6 +137,29 @@ namespace Generator
             var sqlExecuter = new QueryExecuter(sources, target, queryFile, dumpSql == "true");
             var succeeded = sqlExecuter.Execute();
             return succeeded ? 0 : -1;
+        }
+
+        private static int TranslateSql(NameValueCollection parameters)
+        {
+            var connectionString = parameters["connection-string"];
+            var queryFile = parameters["query-file"];
+            var parametersAreValid = !string.IsNullOrEmpty(connectionString) &&
+                                     !string.IsNullOrEmpty(queryFile);
+            if (!parametersAreValid)
+            {
+                Console.Out.WriteLine("Invalid arguments");
+                Console.Out.WriteLine(
+                    "Usage: Generator.exe -cmd translate-sql -connection-string <1c db connection string> -query-file <path to file with 1c query>");
+                return -1;
+            }
+            var db = new PostgreeSqlDatabase(connectionString);
+            var mappingSchema = new PostgreeSqlSchemaStore(db);
+            var translator = new QueryToSqlTranslator(mappingSchema);
+            var query = File.ReadAllText(queryFile);
+            var sql = translator.Translate(query);
+            Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
+                connectionString, query, sql);
+            return 0;
         }
 
         private static int GenSqlMeta(NameValueCollection parameters)
