@@ -36,6 +36,13 @@ namespace Simple1C.Impl.Sql
                     },
                     new DataColumn
                     {
+                        ColumnName = "type",
+                        AllowDBNull = false,
+                        DataType = typeof(string),
+                        MaxLength = 50
+                    },
+                    new DataColumn
+                    {
                         ColumnName = "properties",
                         AllowDBNull = false,
                         DataType = typeof(string),
@@ -120,7 +127,7 @@ namespace Simple1C.Impl.Sql
 
         private TableMapping LoadMappingOrNull(string queryName)
         {
-            const string sql = "select queryTableName,dbName,properties " +
+            const string sql = "select queryTableName,dbName,type,properties " +
                                "from simple1c__tableMappings " +
                                "where lower(queryTableName) = lower(@p0)" +
                                "limit 1";
@@ -128,6 +135,7 @@ namespace Simple1C.Impl.Sql
                 sql, new object[] {queryName.ToLower()},
                 r => new TableMapping(r.GetString(0),
                     r.GetString(1),
+                    TableMapping.ParseTableType(r.GetString(2)),
                     r.GetString(2)
                         .Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries)
                         .Select(PropertyMapping.Parse).ToArray()))

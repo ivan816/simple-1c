@@ -227,8 +227,11 @@ namespace Simple1C.Impl.Sql
                         FormatFunctionName(functionName.Value)));
                 }
                 lastEntity = GetOrCreateQueryEntity(lastProperty, properties);
-                var scope = lastEntity.mapping.ObjectName.Scope;
-                var validScopes = new[] {ConfigurationScope.Перечисления, ConfigurationScope.Справочники};
+                var scope = lastEntity.mapping.ObjectName.HasValue
+                    ? lastEntity.mapping.ObjectName.Value.Scope
+                    : (ConfigurationScope?) null;
+                var validScopes = new ConfigurationScope?[]
+                {ConfigurationScope.Перечисления, ConfigurationScope.Справочники};
                 if (!validScopes.Contains(scope))
                 {
                     const string messageFormat = "function [{0}] is only supported for [{1}]";
@@ -260,7 +263,16 @@ namespace Simple1C.Impl.Sql
         {
             if (property.nestedEntity == null)
             {
-                var nestedTableName = property.mapping.NestedTableName;
+                string nestedTableName;
+                if (property.mapping.PropertyName == "Ссылка")
+                {
+                    if (property.owner.mapping.Type == TableType.Main)
+                        return property.owner;
+                    var ownerTableName = property.owner.mapping.QueryTableName;
+                    nestedTableName = TableMapping.GetMainQueryNameByTableSectionQueryName(ownerTableName);
+                }
+                else
+                    nestedTableName = property.mapping.NestedTableName;
                 if (string.IsNullOrEmpty(nestedTableName))
                 {
                     const string messageFormat = "property [{0}] has no table mapping, property path [{1}]";
@@ -379,7 +391,7 @@ namespace Simple1C.Impl.Sql
                 foreach (var f in properties)
                     if (f.mapping.PropertyName.EqualsIgnoringCase(name))
                         return f;
-                var result = new QueryEntityProperty {mapping = mapping.GetByPropertyName(name)};
+                var result = new QueryEntityProperty(this, mapping.GetByPropertyName(name));
                 properties.Add(result);
                 return result;
             }
@@ -402,7 +414,15 @@ namespace Simple1C.Impl.Sql
 
         private class QueryEntityProperty
         {
-            public PropertyMapping mapping;
+            public readonly QueryEntity owner;
+            public readonly PropertyMapping mapping;
+
+            public QueryEntityProperty(QueryEntity owner, PropertyMapping mapping)
+            {
+                this.owner = owner;
+                this.mapping = mapping;
+            }
+
             public string alias;
             public bool referenced;
             public QueryEntity nestedEntity;
@@ -419,11 +439,13 @@ namespace Simple1C.Impl.Sql
                 TableAlias = tableAlias,
                 JoinKind = "left"
             };
+            if (!enumEntity.mapping.ObjectName.HasValue)
+                throw new InvalidOperationException("assertion failure");
             result.EqConditions.Add(new EqCondition
             {
                 ColumnName = "enumName",
                 ColumnTableName = tableAlias,
-                ComparandConstantValue = enumEntity.mapping.ObjectName.Name
+                ComparandConstantValue = enumEntity.mapping.ObjectName.Value.Name
             });
             result.EqConditions.Add(new EqCondition
             {

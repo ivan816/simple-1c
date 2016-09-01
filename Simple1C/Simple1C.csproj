@@ -128,6 +128,7 @@
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
     <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
+    <Compile Include="Impl\Sql\TableType.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />

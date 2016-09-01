@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
@@ -86,11 +87,22 @@ namespace Simple1C.Impl.Sql
 
         private TableMapping[] ExtractTableMappingsFromCom(object comTable)
         {
-            var tableRows = new ValueTable(comTable);
+            var tableRowsToProcess = new ValueTable(comTable)
+                .OrderByDescending(delegate(ValueTableRow tableRow)
+                {
+                    var purpose = tableRow.GetString("Назначение");
+                    if (purpose == "Основная")
+                        return 10;
+                    if (purpose == "ТабличнаяЧасть")
+                        return 5;
+                    return 0;
+                })
+                .ToArray();
+            var tableMappingByQueryName = new Dictionary<string, TableMapping>();
             var result = new List<TableMapping>();
-            for (var i = 0; i < tableRows.Count; i++)
+            for (var i = 0; i < tableRowsToProcess.Length; i++)
             {
-                var tableRow = tableRows[i];
+                var tableRow = tableRowsToProcess[i];
                 var queryTableName = tableRow.GetString("ИмяТаблицы");
                 if (string.IsNullOrEmpty(queryTableName))
                     continue;
@@ -101,6 +113,8 @@ namespace Simple1C.Impl.Sql
                 var purpose = tableRow.GetString("Назначение");
                 ConfigurationItemDescriptor descriptor;
                 object comObject;
+                var propertyMappings = new List<PropertyMapping>();
+                TableType tableType;
                 if (purpose == "Основная")
                 {
                     var configurationName = ConfigurationName.ParseOrNull(queryTableName);
@@ -111,6 +125,7 @@ namespace Simple1C.Impl.Sql
                         continue;
                     var configurationItem = globalContext.FindByName(configurationName.Value);
                     comObject = configurationItem.ComObject;
+                    tableType = TableType.Main;
                 }
                 else if (purpose == "ТабличнаяЧасть")
                 {
@@ -118,15 +133,22 @@ namespace Simple1C.Impl.Sql
                     var fullname = TableSectionQueryNameToFullName(queryTableName);
                     comObject = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоПолномуИмени", fullname);
                     if (comObject == null)
-                    {
-                        const string messageFormat = "can't find table section [{0}]";
-                        throw new InvalidOperationException(string.Format(messageFormat, queryTableName));
-                    }
+                        continue;
+                    var mainQueryName = TableMapping.GetMainQueryNameByTableSectionQueryName(queryTableName);
+                    TableMapping mainTableMapping;
+                    if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
+                        continue;
+                    if(!mainTableMapping.HasProperty("ОбластьДанныхОсновныеДанные"))
+                        continue;
+                    propertyMappings.Add(new PropertyMapping("Ссылка",
+                        GetTableSectionIdColumnNameByTableName(dbTableName), null));
+                    propertyMappings.Add(new PropertyMapping("ОбластьДанныхОсновныеДанные",
+                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").ColumnName, null));
+                    tableType = TableType.TableSection;
                 }
                 else
                     continue;
                 var propertyTypes = GetPropertyTypes(comObject, descriptor);
-                var propertyMappings = new List<PropertyMapping>();
                 var columnRows = new ValueTable(tableRow["Поля"]);
                 foreach (var m in columnRows)
                 {
@@ -150,11 +172,12 @@ namespace Simple1C.Impl.Sql
                         propertyMappings.Add(propertyMapping);
                     }
                 }
-                var tableMapping = new TableMapping(queryTableName, dbTableName, propertyMappings.ToArray());
+                var tableMapping = new TableMapping(queryTableName, dbTableName, tableType, propertyMappings.ToArray());
                 result.Add(tableMapping);
+                tableMappingByQueryName.Add(queryTableName, tableMapping);
                 if ((i + 1) % 50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
-                        i + 1, tableRows.Count, (double)(i + 1) / tableRows.Count * 100);
+                        i + 1, tableRowsToProcess.Length, (double)(i + 1) / tableRowsToProcess.Length* 100);
             }
             return result.ToArray();
         }
@@ -214,6 +237,12 @@ namespace Simple1C.Impl.Sql
         {
             var lastDot = s.LastIndexOf('.');
             return s.Substring(0, lastDot) + ".ТабличнаяЧасть." + s.Substring(lastDot + 1);
+        }
+        
+        private static string GetTableSectionIdColumnNameByTableName(string s)
+        {
+            var separator = s.LastIndexOf('_');
+            return s.Substring(0, separator) + "_idrref";
         }
     }
 }

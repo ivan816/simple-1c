@@ -13,7 +13,7 @@ namespace Simple1C.Tests.Sql
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
     from Справочник.Контрагенты as contractors";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
     from t1 as contractors";
@@ -25,7 +25,7 @@ namespace Simple1C.Tests.Sql
         {
             const string sourceSql = @"select contracts.ЭтоГруппа as IsFolder
     from справочник.ДоговорыКонтрагентов as contracts";
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ЭтоГруппа c1";
             const string expectedResult = @"select contracts.__nested_field0 as IsFolder
     from (select
@@ -39,7 +39,7 @@ from t1 as __nested_table0) as contracts";
         {
             const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contractors.ИНН) as CounterpartyInn
     from Справочник.Контрагенты as contractors";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
     from t1 as contractors";
@@ -64,10 +64,10 @@ union
 select ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as Type
 from Справочник.Контрагенты as contractors
 where contractors.ИНН = ""test-inn3""";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1
     ЮридическоеФизическоеЛицо c2 Перечисление.ЮридическоеФизическоеЛицо
-Перечисление.ЮридическоеФизическоеЛицо t2
+Перечисление.ЮридическоеФизическоеЛицо t2 Main
     Ссылка c3
     Порядок c4 ";
             const string expectedResult = @"select contractors.__nested_field0 as Type
@@ -108,7 +108,7 @@ where contractors.c1 = 'test-inn3'";
         {
             const string sourceSql = @"select ГОД(contracts.Дата) as ContractDate
     from Справочник.ДоговорыКонтрагентов as contracts";
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата c1";
             const string expectedResult = @"select date_part('year', contracts.c1) as ContractDate
     from t1 as contracts";
@@ -121,7 +121,7 @@ where contractors.c1 = 'test-inn3'";
             const string sourceSql = @"выбрать contractors.ИНН как CounterpartyInn
     из Справочник.Контрагенты как contractors
     ГДЕ contractors.наименование =""test-name"" и contractors.ИНН <> ""test-inn""";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1
     Наименование c2";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
@@ -135,7 +135,7 @@ where contractors.c1 = 'test-inn3'";
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
     from Справочник.Контрагенты as Contractors";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
     from t1 as Contractors";
@@ -147,7 +147,7 @@ where contractors.c1 = 'test-inn3'";
         {
             const string sourceSql = @"select (contractors.ИНН) as CounterpartyInn
     from Справочник.Контрагенты as contractors";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1";
             const string expectedResult = @"select (contractors.c1) as CounterpartyInn
     from t1 as contractors";
@@ -160,7 +160,7 @@ where contractors.c1 = 'test-inn3'";
             const string sourceSql = @"select contractors.Наименование as CounterpartyInn
     from Справочник.Контрагенты as contractors
     where contractors.ИНН=""test-inn""";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1
     Наименование c2";
             const string expectedResult = @"select contractors.c2 as CounterpartyInn
@@ -174,10 +174,10 @@ where contractors.c1 = 'test-inn3'";
         {
             const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contracts.ВалютаВзаиморасчетов) as Currency
     from Справочник.ДоговорыКонтрагентов as contracts";
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ВалютаВзаиморасчетов c1 Справочник.Валюты
     ОбластьДанныхОсновныеДанные d1
-Справочник.Валюты t2
+Справочник.Валюты t2 Main
     Ссылка с2
     Наименование c3
     ОбластьДанныхОсновныеДанные d2";
@@ -194,9 +194,9 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         {
             const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(testRef.Договор) as TestContract
     from Справочник.Тестовый as testRef";
-            const string mappings = @"Справочник.Тестовый t1
+            const string mappings = @"Справочник.Тестовый t1 Main
     Договор с1 Документ.ПоступлениеТоваровУслуг
-Документ.ПоступлениеТоваровУслуг t2
+Документ.ПоступлениеТоваровУслуг t2 Main
     Ссылка с2
     Наименование c3";
             
@@ -210,7 +210,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
                 from Справочник.Контрагенты as contractors";
-            const string mappings = @"Справочник.Контрагенты T1
+            const string mappings = @"Справочник.Контрагенты T1 Main
     ИНН C1";
             const string expectedResult = @"select contractors.C1 as CounterpartyInn
                 from T1 as contractors";
@@ -223,7 +223,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             const string sourceSql = @"select contracts.ВидДоговора as Kind1, otherContracts.ВидДоговора as Kind2
 from справочник.ДоговорыКонтрагентов as contracts
 left outer join справочник.ДоговорыКонтрагентов as otherContracts";
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ВидДоговора c1";
             const string expectedResult = @"select contracts.c1 as Kind1, otherContracts.c1 as Kind2
 from t1 as contracts
@@ -237,7 +237,7 @@ left outer join t1 as otherContracts";
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
     from Справочник.Контрагенты as contractors
     where contractors.Наименование = ""test-name""";
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН c1
     Наименование c2";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
@@ -252,11 +252,11 @@ left outer join t1 as otherContracts";
             const string sourceSql = @"select contracts.наименование, contracts.владелец.ИНН as ContractorInn
 from справочник.ДоговорыКонтрагентов as contracts";
 
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     владелец f1 Справочник.Контрагенты
     наименование f4
     ОбластьДанныхОсновныеДанные d2
-Справочник.Контрагенты t2
+Справочник.Контрагенты t2 Main
     ССылка f2
     ИНН f3
     ОбластьДанныхОсновныеДанные d1";
@@ -272,22 +272,56 @@ left join t2 as __nested_table1 on __nested_table1.d1 = __nested_table0.d2 and _
         }
 
         [Test]
+        public void TableSectionsUsingReference()
+        {
+            const string sourceSql =
+                @"select docItems.номенклатура.наименование as name
+from Документ.ПоступлениеТоваровУслуг.Услуги as docItems
+where docItems.Ссылка.ПометкаУдаления = false";
+
+            const string mappings = @"Документ.ПоступлениеТоваровУслуг.Услуги t1 TableSection
+    Ссылка f1
+    номенклатура f2 Справочник.Номенклатура
+    ОбластьДанныхОсновныеДанные f3
+Справочник.Номенклатура t2 Main
+    Ссылка f4
+    наименование f56
+    ОбластьДанныхОсновныеДанные f5
+Документ.ПоступлениеТоваровУслуг t3 Main
+    ССылка f6
+    ПометкаУдаления f7
+    ОбластьДанныхОсновныеДанные f8";
+
+            const string expectedResult =
+                @"select docItems.__nested_field0 as name
+from (select
+    __nested_table1.f56 as __nested_field0,
+    __nested_table2.f7 as __nested_field1
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.f5 = __nested_table0.f3 and __nested_table1.f4 = __nested_table0.f2
+left join t3 as __nested_table2 on __nested_table2.f8 = __nested_table0.f3 and __nested_table2.f6 = __nested_table0.f1) as docItems
+where docItems.__nested_field1 = false";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void ManyLevelNesting()
         {
             const string sourceSql =
                 @"select contracts.Наименование as ContractName,contracts.владелец.ИНН as ContractorInn,contracts.владелец.ОсновнойБанковскийСчет.НомерСчета as AccountNumber
 from справочник.ДоговорыКонтрагентов as contracts";
 
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     владелец f1 Справочник.Контрагенты
     наименование f2
     ОбластьДанныхОсновныеДанные d1
-Справочник.Контрагенты t2
+Справочник.Контрагенты t2 Main
     ССылка f3
     ИНН f4
     ОсновнойБанковскийСчет f5 Справочник.БанковскиеСчета
     ОбластьДанныхОсновныеДанные d2
-Справочник.БанковскиеСчета t3
+Справочник.БанковскиеСчета t3 Main
     ССылка f6
     НомерСчета f7
     ОбластьДанныхОсновныеДанные d3";
@@ -312,10 +346,10 @@ left join t3 as __nested_table2 on __nested_table2.d3 = __nested_table1.d2 and _
                 @"select contractors.НаименованиеПолное as ContractorFullname,contractors.ЮридическоеФизическоеЛицо as ContractorType
 from справочник.Контрагенты as contractors";
 
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     наименованиеполное f1
     ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
-Перечисление.ЮридическоеФизическоеЛицо t2
+Перечисление.ЮридическоеФизическоеЛицо t2 Main
     ССылка f3
     Порядок f4";
 
@@ -333,10 +367,10 @@ from t1 as contractors";
 from справочник.Контрагенты as contractors
 where contractors.ЮридическоеФизическоеЛицо = Значение(Перечисление.ЮридическоеФизическоеЛицо.СПокупателем)";
 
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     наименованиеполное f1
     ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
-Перечисление.ЮридическоеФизическоеЛицо t2
+Перечисление.ЮридическоеФизическоеЛицо t2 Main
     ССылка f3
     Порядок f4";
 
@@ -358,10 +392,10 @@ where __nested_table1.enumValueName = 'СПокупателем')";
                 @"select contractors.НаименованиеПолное as ContractorFullname,ПРЕДСТАВЛЕНИЕ(contractors.ЮридическоеФизическоеЛицо) as ContractorTypeText,contractors.ЮридическоеФизическоеЛицо as ContractorType
 from справочник.Контрагенты as contractors";
 
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     наименованиеполное f1
     ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
-Перечисление.ЮридическоеФизическоеЛицо t2
+Перечисление.ЮридическоеФизическоеЛицо t2 Main
     ССылка f3
     Порядок f4";
 
@@ -386,9 +420,9 @@ left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName 
 from справочник.Контрагенты as contractors
 group by contractors.ЮридическоеФизическоеЛицо";
 
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ЮридическоеФизическоеЛицо f2 Перечисление.ЮридическоеФизическоеЛицо
-Перечисление.ЮридическоеФизическоеЛицо t2
+Перечисление.ЮридическоеФизическоеЛицо t2 Main
     ССылка f3
     Порядок f4";
 
@@ -411,7 +445,7 @@ group by contractors.__nested_field0";
                 @"select contractors.ИНН as Inn,contractors.Родитель.ИНН as ParentInn,contractors.ГоловнойКонтрагент.ИНН as HeadInn
 from справочник.Контрагенты as contractors";
 
-            const string mappings = @"Справочник.Контрагенты t1
+            const string mappings = @"Справочник.Контрагенты t1 Main
     ССылка f1
     ИНН f2
     Родитель f3 Справочник.Контрагенты
@@ -438,10 +472,10 @@ left join t1 as __nested_table2 on __nested_table2.d1 = __nested_table0.d1 and _
                 @"select contracts.владелец.ИНН as ContractorInn,contracts.владелец.Наименование as ContractorName
 from справочник.ДоговорыКонтрагентов as contracts";
 
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     владелец f1 Справочник.Контрагенты
     ОбластьДанныхОсновныеДанные d1
-Справочник.Контрагенты t2
+Справочник.Контрагенты t2 Main
     ССылка f2
     ИНН f3
     Наименование f4
@@ -478,6 +512,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             var columnMappings = new List<PropertyMapping>();
             string queryTableName = null;
             string dbTableName = null;
+            TableType? tableType = null;
             foreach (var s in items)
             {
                 if (s[0] == '\t')
@@ -485,17 +520,20 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
                 else
                 {
                     if (queryTableName != null)
-                        tableMappings.Add(queryTableName,
-                            new TableMapping(queryTableName, dbTableName, columnMappings.ToArray()));
+                    {
+                        var tableMapping = new TableMapping(queryTableName, dbTableName, tableType.Value, columnMappings.ToArray());
+                        tableMappings.Add(queryTableName, tableMapping);
+                    }
                     var tableNames = s.Split(new[] {" "}, StringSplitOptions.None);
                     queryTableName = tableNames[0];
                     dbTableName = tableNames[1];
+                    tableType = TableMapping.ParseTableType(tableNames[2]);
                     columnMappings.Clear();
                 }
             }
             if (queryTableName != null)
                 tableMappings.Add(queryTableName,
-                    new TableMapping(queryTableName, dbTableName, columnMappings.ToArray()));
+                    new TableMapping(queryTableName, dbTableName, tableType.Value, columnMappings.ToArray()));
             return new InMemoryMappingStore(tableMappings);
         }
 
