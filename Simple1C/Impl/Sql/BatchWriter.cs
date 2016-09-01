@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using Npgsql;
 using Simple1C.Impl.Sql.SqlAccess;
 
@@ -34,22 +33,20 @@ namespace Simple1C.Impl.Sql
                 if (columns != null)
                     return;
                 //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
-                var schemaTable = reader.GetSchemaTable();
-
-                if (schemaTable == null)
-                    throw new InvalidOperationException("assertion failure");
-                columns = schemaTable.Rows
-                    .Cast<DataRow>()
-                    .Select(r => new DataColumn
+                //reader.GetSchemaTable() какую-то хрень в ColumnSize возвращает
+                var npgsqlColumns = reader.GetColumnSchema();
+                columns = new DataColumn[npgsqlColumns.Count];
+                for (var i = 0; i < columns.Length; i++)
+                {
+                    var c = npgsqlColumns[i];
+                    columns[i] = new DataColumn
                     {
-                        ColumnName = (string) r["ColumnName"],
-                        AllowDBNull = (bool) r["AllowDBNull"],
-                        DataType = (Type) r["DataType"],
-
-                        //ебнутый Npgsql на четыре символа меньше возрващает почему-то
-                        MaxLength = (int) r["ColumnSize"] + 4
-                    })
-                    .ToArray();
+                        ColumnName = reader.GetName(i),
+                        AllowDBNull = c.AllowDBNull.GetValueOrDefault(),
+                        DataType = c.DataType,
+                        MaxLength = c.ColumnSize.GetValueOrDefault(-1)
+                    };
+                }
                 if (target.TableExists(tableName))
                     target.DropTable("dbo." + tableName);
                 target.CreateTable(tableName, columns);

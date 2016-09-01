@@ -105,6 +105,7 @@ namespace Simple1C.Impl.Sql
             {
                 x.QueryTableName,
                 x.DbTableName,
+                x.Type.ToString(),
                 x.Properties.Select(p => p.Serialize()).JoinStrings("\r\n")
             });
         }
@@ -136,7 +137,7 @@ namespace Simple1C.Impl.Sql
                 r => new TableMapping(r.GetString(0),
                     r.GetString(1),
                     TableMapping.ParseTableType(r.GetString(2)),
-                    r.GetString(2)
+                    r.GetString(3)
                         .Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries)
                         .Select(PropertyMapping.Parse).ToArray()))
                 .SingleOrDefault();
@@ -147,9 +148,17 @@ namespace Simple1C.Impl.Sql
             if (database.TableExists(tableDesc.tableName))
                 database.DropTable(tableDesc.tableName);
             database.CreateTable("public." + tableDesc.tableName, tableDesc.columns);
-            database.BulkCopy(data.Select(getColumnValues),
-                tableDesc.tableName,
-                tableDesc.columns);
+            database.BulkCopy(data.Select(delegate(T x)
+            {
+                var columnValues = getColumnValues(x);
+                if (columnValues.Length != tableDesc.columns.Length)
+                {
+                    const string messageFormat = "invalid values, expected length [{0}], actual length [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        tableDesc.columns.Length, columnValues.Length));
+                }
+                return columnValues;
+            }), tableDesc.tableName, tableDesc.columns);
             database.ExecuteNonQuery(tableDesc.createIndexesSql);
         }
 

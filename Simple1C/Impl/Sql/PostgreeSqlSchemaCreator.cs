@@ -118,14 +118,17 @@ namespace Simple1C.Impl.Sql
                 if (purpose == "Основная")
                 {
                     var configurationName = ConfigurationName.ParseOrNull(queryTableName);
-                    if(!configurationName.HasValue)
+                    if (!configurationName.HasValue)
                         continue;
-                    descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
-                    if(descriptor == null)
-                        continue;
-                    var configurationItem = globalContext.FindByName(configurationName.Value);
-                    comObject = configurationItem.ComObject;
                     tableType = TableType.Main;
+                    descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
+                    if (descriptor == null)
+                        comObject = null;
+                    else
+                    {
+                        var configurationItem = globalContext.FindByName(configurationName.Value);
+                        comObject = configurationItem.ComObject;
+                    }
                 }
                 else if (purpose == "ТабличнаяЧасть")
                 {
@@ -148,7 +151,9 @@ namespace Simple1C.Impl.Sql
                 }
                 else
                     continue;
-                var propertyTypes = GetPropertyTypes(comObject, descriptor);
+                var propertyTypes = comObject == null
+                    ? new Dictionary<string, string>()
+                    : GetPropertyTypes(comObject, descriptor);
                 var columnRows = new ValueTable(tableRow["Поля"]);
                 foreach (var m in columnRows)
                 {
@@ -161,10 +166,10 @@ namespace Simple1C.Impl.Sql
                     var propertyMapping = new PropertyMapping(queryColumnName, dbColumnName, typeName);
                     propertyMappings.Add(propertyMapping);
                 }
-                if (descriptor.HasTableSections)
+                if (descriptor != null && descriptor.HasTableSections)
                 {
                     var tableSections = ComHelpers.GetProperty(comObject, "ТабличныеЧасти");
-                    foreach (var tableSection in (IEnumerable)tableSections)
+                    foreach (var tableSection in (IEnumerable) tableSections)
                     {
                         var tableFullname = Call.ПолноеИмя(tableSection);
                         var tableQueryTable = TableSectionFullNameToQueryName(tableFullname);
