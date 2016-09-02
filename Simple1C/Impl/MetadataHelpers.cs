@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Com;
@@ -9,6 +10,26 @@ namespace Simple1C.Impl
 {
     internal static class MetadataHelpers
     {
+        public static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
+        {
+            {"Строка", "string"},
+            {"Булево", "bool"},
+            {"Дата", "DateTime?"},
+            {"Уникальный идентификатор", "Guid?"},
+            {"Хранилище значения", null},
+            {"Описание типов", "Type[]"}
+        };
+
+        public static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
+        {
+            AttributePropertyNames = new[] { "Реквизиты" }
+        };
+
+        public static readonly ConfigurationItemDescriptor standardTableSectionDescriptor = new ConfigurationItemDescriptor
+        {
+            AttributePropertyNames = new string[0]
+        };
+
         private static readonly string[] standardPropertiesToExclude =
         {
             "ИмяПредопределенныхДанных",
@@ -17,7 +38,19 @@ namespace Simple1C.Impl
 
         public static ConfigurationItemDescriptor GetDescriptor(ConfigurationScope scope)
         {
-            return descriptors[scope];
+            var result = GetDescriptorOrNull(scope);
+            if (result == null)
+            {
+                const string messageFormat = "no descriptor defined for [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, scope));
+            }
+            return result;
+        }
+        
+        public static ConfigurationItemDescriptor GetDescriptorOrNull(ConfigurationScope scope)
+        {
+            ConfigurationItemDescriptor result;
+            return descriptors.TryGetValue(scope, out result) ? result : null;
         }
 
         public static IEnumerable<object> GetAttributes(object comObject, ConfigurationItemDescriptor descriptor)

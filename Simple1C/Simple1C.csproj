@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Npgsql">
+      <HintPath>..\packages\Npgsql.3.1.7\lib\net45\Npgsql.dll</HintPath>
+    </Reference>
     <Reference Include="Remotion.Linq">
       <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
     </Reference>
@@ -67,6 +70,7 @@
     <Compile Include="Impl\Call.cs" />
     <Compile Include="Impl\Generation\Rendering\PropertyModel.cs" />
     <Compile Include="Impl\Helpers\AttributesCache.cs" />
+    <Compile Include="Impl\Helpers\LogHelpers.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\BoxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\Caster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\FieldAccessorFactory.cs" />
@@ -80,6 +84,7 @@
     <Compile Include="Impl\Helpers\MemberAccessor\UnboxingCaster.cs" />
     <Compile Include="Impl\Helpers\MemberAccessor\UntypedMemberAccessor.cs" />
     <Compile Include="Impl\Helpers\NameValueCollectionHelpers.cs" />
+    <Compile Include="Impl\Helpers\StringHelpers.cs" />
     <Compile Include="Impl\InMemoryDataContext.cs" />
     <Compile Include="Impl\MappingSource.cs" />
     <Compile Include="Impl\Metadata.cs" />
@@ -105,6 +110,25 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\Sql\BatchWriter.cs" />
+    <Compile Include="Impl\Sql\EnumMapping.cs" />
+    <Compile Include="Impl\Sql\IMappingSource.cs" />
+    <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
+    <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
+    <Compile Include="Impl\Sql\PropertyMapping.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\EqCondition.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectColumn.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlHelpers.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
+    <Compile Include="Impl\Sql\QueryExecuter.cs" />
+    <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
+    <Compile Include="Impl\Sql\TableMapping.cs" />
+    <Compile Include="Impl\Sql\TableType.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />
