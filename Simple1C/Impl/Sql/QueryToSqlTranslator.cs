@@ -11,7 +11,7 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryToSqlTranslator
     {
-        private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+([^\s]+)\s+as\s+(\S+)",
+        private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+(\S+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
         private static readonly Dictionary<string, string> keywordsMap =
@@ -33,7 +33,7 @@ namespace Simple1C.Impl.Sql
         {
             {"select", SelectPart.Select},
             {"where", SelectPart.Where},
-            {"group by", SelectPart.GroupBy}
+            {"group\\s+by", SelectPart.GroupBy}
         };
 
         private static readonly Dictionary<string, Regex> selectPartsRegexes = selectParts.Keys
@@ -153,7 +153,7 @@ namespace Simple1C.Impl.Sql
             return result;
         }
 
-        private SelectPart GetSelectPart(int index, List<SelectPartPosition> positions)
+        private static SelectPart GetSelectPart(int index, List<SelectPartPosition> positions)
         {
             for (var i = positions.Count - 1; i >= 0; i--)
             {
@@ -308,16 +308,16 @@ namespace Simple1C.Impl.Sql
         private void BuildSubQuery(QueryEntity entity, SelectClause target)
         {
             foreach (var f in entity.properties)
-                AddPropertyToSubquery(entity, f, target);
+                AddPropertyToSubquery(f, target);
         }
 
-        private void AddPropertyToSubquery(QueryEntity entity, QueryEntityProperty property, SelectClause target)
+        private void AddPropertyToSubquery(QueryEntityProperty property, SelectClause target)
         {
             if (property.referenced)
             {
-                if (entity.mapping.IsEnum())
+                if (property.owner.mapping.IsEnum())
                 {
-                    var enumMappingsJoinClause = CreateEnumMappingsJoinClause(entity);
+                    var enumMappingsJoinClause = CreateEnumMappingsJoinClause(property.owner);
                     target.JoinClauses.Add(enumMappingsJoinClause);
                     target.Columns.Add(new SelectColumn
                     {
@@ -331,7 +331,7 @@ namespace Simple1C.Impl.Sql
                 {
                     Name = property.mapping.ColumnName,
                     Alias = property.alias,
-                    TableName = GetQueryEntityAlias(entity),
+                    TableName = GetQueryEntityAlias(property.owner),
                     FunctionName = property.functionName
                 });
             }
@@ -348,15 +348,15 @@ namespace Simple1C.Impl.Sql
                     {
                         ColumnName = property.nestedEntity.GetAreaColumnName(),
                         ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
-                        ComparandColumnName = entity.GetAreaColumnName(),
-                        ComparandTableName = GetQueryEntityAlias(entity)
+                        ComparandColumnName = property.owner.GetAreaColumnName(),
+                        ComparandTableName = GetQueryEntityAlias(property.owner)
                     });
                 joinClause.EqConditions.Add(new EqCondition
                 {
                     ColumnName = property.nestedEntity.GetIdColumnName(),
                     ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
                     ComparandColumnName = property.mapping.ColumnName,
-                    ComparandTableName = GetQueryEntityAlias(entity)
+                    ComparandTableName = GetQueryEntityAlias(property.owner)
                 });
                 target.JoinClauses.Add(joinClause);
                 BuildSubQuery(property.nestedEntity, target);

@@ -13,7 +13,7 @@ namespace Simple1C.Impl.Sql
         private readonly bool dumpSql;
         private volatile bool errorOccured;
         private readonly string queryText;
-        private readonly string tableName;
+        private readonly string targetTableName;
 
         public QueryExecuter(PostgreeSqlDatabase[] sources, MsSqlDatabase target, string queryFileName, bool dumpSql)
         {
@@ -21,14 +21,14 @@ namespace Simple1C.Impl.Sql
             this.target = target;
             this.dumpSql = dumpSql;
             queryText = File.ReadAllText(queryFileName);
-            tableName = Path.GetFileNameWithoutExtension(queryFileName);
+            targetTableName = Path.GetFileNameWithoutExtension(queryFileName);
         }
 
         public bool Execute()
         {
             var s = Stopwatch.StartNew();
             var sourceThreads = new Thread[sources.Length];
-            using (var writer = new BatchWriter(target, tableName, 1000))
+            using (var writer = new BatchWriter(target, targetTableName, 1000))
             {
                 var w = writer;
                 for (var i = 0; i < sourceThreads.Length; i++)

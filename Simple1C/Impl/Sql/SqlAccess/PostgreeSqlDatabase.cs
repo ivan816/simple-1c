@@ -25,7 +25,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             ((NpgsqlCommand) command).Parameters.AddWithValue(name, value);
         }
 
-        public void BulkCopy(IEnumerable<object[]> data, string tableName, DataColumn[] columns)
+        public void BulkCopy(string tableName, DataColumn[] columns, IEnumerable<object[]> data)
         {
             using (var connection = new NpgsqlConnection(ConnectionString))
             {

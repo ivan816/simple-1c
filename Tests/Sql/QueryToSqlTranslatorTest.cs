@@ -19,6 +19,22 @@ namespace Simple1C.Tests.Sql
     from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+
+        [Test]
+        public void SimpleSelfReference()
+        {
+            const string sourceSql = @"select contractors.Ссылка.ИНН as CounterpartyInn,contractors.Ссылка as CounterpartyReference
+    from Справочник.Контрагенты as contractors";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    Ссылка f1
+    ИНН f2";
+            const string expectedResult = @"select contractors.__nested_field0 as CounterpartyInn,contractors.f1 as CounterpartyReference
+    from (select
+    __nested_table0.f1,
+    __nested_table0.f2 as __nested_field0
+from t1 as __nested_table0) as contractors";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
         
         [Test]
         public void InvertIsFolder()
@@ -190,7 +206,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         }
         
         [Test]
-        public void CorrectCrashForInvalidUseIfPresentationFunction()
+        public void CorrectCrashForInvalidUseOfPresentationFunction()
         {
             const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(testRef.Договор) as TestContract
     from Справочник.Тестовый as testRef";
@@ -206,28 +222,16 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         }
 
         [Test]
-        public void SimpleWithAlias()
-        {
-            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
-                from Справочник.Контрагенты as contractors";
-            const string mappings = @"Справочник.Контрагенты T1 Main
-    ИНН C1";
-            const string expectedResult = @"select contractors.C1 as CounterpartyInn
-                from T1 as contractors";
-            CheckTranslate(mappings, sourceSql, expectedResult);
-        }
-
-        [Test]
         public void Join()
         {
             const string sourceSql = @"select contracts.ВидДоговора as Kind1, otherContracts.ВидДоговора as Kind2
 from справочник.ДоговорыКонтрагентов as contracts
-left outer join справочник.ДоговорыКонтрагентов as otherContracts";
+left outer join справочник.ДоговорыКонтрагентов as otherContracts on 1=1";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ВидДоговора c1";
             const string expectedResult = @"select contracts.c1 as Kind1, otherContracts.c1 as Kind2
 from t1 as contracts
-left outer join t1 as otherContracts";
+left outer join t1 as otherContracts on 1=1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 

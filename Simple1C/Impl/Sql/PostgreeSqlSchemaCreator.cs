@@ -187,14 +187,14 @@ namespace Simple1C.Impl.Sql
             return result.ToArray();
         }
 
-        private static string PatchColumnName(string fieldName, string testedTableName)
+        private static string PatchColumnName(string fieldName, string typeName)
         {
             if (fieldName == "ID")
                 return "_idrref";
             var b = new StringBuilder(fieldName);
             b[0] = char.ToLower(b[0]);
             b.Insert(0, '_');
-            if (!string.IsNullOrEmpty(testedTableName))
+            if (!string.IsNullOrEmpty(typeName))
                 b.Append("rref");
             return b.ToString();
         }

@@ -148,7 +148,7 @@ namespace Simple1C.Impl.Sql
             if (database.TableExists(tableDesc.tableName))
                 database.DropTable(tableDesc.tableName);
             database.CreateTable("public." + tableDesc.tableName, tableDesc.columns);
-            database.BulkCopy(data.Select(delegate(T x)
+            database.BulkCopy(tableDesc.tableName, tableDesc.columns, data.Select(delegate(T x)
             {
                 var columnValues = getColumnValues(x);
                 if (columnValues.Length != tableDesc.columns.Length)
@@ -158,7 +158,7 @@ namespace Simple1C.Impl.Sql
                         tableDesc.columns.Length, columnValues.Length));
                 }
                 return columnValues;
-            }), tableDesc.tableName, tableDesc.columns);
+            }));
             database.ExecuteNonQuery(tableDesc.createIndexesSql);
         }
 

@@ -60,7 +60,7 @@ namespace Simple1C.Impl.Sql
             if (!byPropertyName.TryGetValue(queryName, out result))
             {
                 const string messagFormat = "can't find field [{0}] for table [{1}]";
-                throw new InvalidOperationException(String.Format(messagFormat, queryName, QueryTableName));
+                throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
             }
             return result;
         }
