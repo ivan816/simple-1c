@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using Simple1C.Impl;
+using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
 
 namespace Simple1C.Tests.Helpers
@@ -9,8 +10,8 @@ namespace Simple1C.Tests.Helpers
     {
         private static GlobalContext globalContext;
         private static GlobalContext tempGlobalContext;
-        private static readonly string defaultDatabaseFullPath = Path.GetFullPath("base");
-        private static readonly string tempDatabaseFullPath = Path.GetFullPath("temp-base");
+        private static readonly string defaultDatabaseFullPath = PathHelpers.AppendBasePath("base");
+        private static readonly string tempDatabaseFullPath = PathHelpers.AppendBasePath("temp-base");
         private const string etalonDatabaseFullPath = @"\\host\dev\testBases\houseStark";
         private const string etalonDatabaseLocalCacheFullPath = @"c:\testBases\houseStark";
 
@@ -68,8 +69,8 @@ namespace Simple1C.Tests.Helpers
 
         private static void SyncDbDataWithEtalon(string databaseFullPath)
         {
-            Robocopy.Execute(etalonDatabaseFullPath, etalonDatabaseLocalCacheFullPath, true);
-            Robocopy.Execute(etalonDatabaseLocalCacheFullPath, databaseFullPath, false);
+            //Robocopy.Execute(etalonDatabaseFullPath, etalonDatabaseLocalCacheFullPath, true);
+            //Robocopy.Execute(etalonDatabaseLocalCacheFullPath, databaseFullPath, false);
         }
     }
 }

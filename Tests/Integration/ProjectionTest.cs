@@ -411,6 +411,93 @@ namespace Simple1C.Tests.Integration
         }
 
         [Test]
+        public void TakeThenSelectMany()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "test1",
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "стул"}
+                    },
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "стол"}
+                    }
+                }
+            }, new ПоступлениеТоваровУслуг
+            {
+                Комментарий = "test2",
+                Дата = new DateTime(2016, 6, 1),
+                Контрагент = контрагент,
+                Услуги = new List<ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги>
+                {
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "яблоко"}
+                    },
+                    new ПоступлениеТоваровУслуг.ТабличнаяЧастьУслуги
+                    {
+                        Номенклатура = new Номенклатура {Наименование = "апельсин"}
+                    }
+                }
+            });
+            var selected = dataContext.Select<ПоступлениеТоваровУслуг>()
+                .OrderBy(x => x.Комментарий)
+                .Take(1)
+                .Select(x => new
+                {
+                    comment = x.Комментарий,
+                    services = x.Услуги
+                })
+                .SelectMany(x => x.services.Select(y => new
+                {
+                    x.comment,
+                    nomenclature = y.Номенклатура.Наименование
+                }))
+                .OrderBy(x => x.nomenclature)
+                .ToArray();
+
+            Assert.That(selected.Length, Is.EqualTo(2));
+            Assert.That(selected[0].comment, Is.EqualTo("test1"));
+            Assert.That(selected[0].nomenclature, Is.EqualTo("стол"));
+            Assert.That(selected[1].comment, Is.EqualTo("test2"));
+            Assert.That(selected[1].nomenclature, Is.EqualTo("стул"));
+        }
+
+        [Test]
+        public void ProjectionFilter()
+        {
+            var contractor1 = new Контрагенты
+            {
+                Наименование = "test-name",
+                ИНН = "inn1",
+                КПП = "kpp1"
+            };
+            dataContext.Save(contractor1);
+
+            var selected = dataContext.Select<Контрагенты>()
+                .Select(x => new
+                {
+                    name = x.Наименование,
+                    inn = x.ИНН
+                })
+                .Where(x => x.inn == "inn1")
+                .ToArray();
+            Assert.That(selected.Length, Is.EqualTo(1));
+            Assert.That(selected[0].name, Is.EqualTo("test-name"));
+        }
+
+        [Test]
         public void CanUseContainsMethod()
         {
             var contractor1 = new Контрагенты
