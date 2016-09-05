@@ -34,6 +34,7 @@ namespace Simple1C.Impl.Sql
                     return;
                 //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
                 //reader.GetSchemaTable() какую-то хрень в ColumnSize возвращает
+                //reader.GetColumnSchema().AllowDBNull пиздит (возвращает false, а потом DBNull.Value приезжает)
                 var npgsqlColumns = reader.GetColumnSchema();
                 columns = new DataColumn[npgsqlColumns.Count];
                 for (var i = 0; i < columns.Length; i++)
@@ -42,7 +43,7 @@ namespace Simple1C.Impl.Sql
                     columns[i] = new DataColumn
                     {
                         ColumnName = reader.GetName(i),
-                        AllowDBNull = c.AllowDBNull.GetValueOrDefault(),
+                        AllowDBNull = true,
                         DataType = c.DataType,
                         MaxLength = c.ColumnSize.GetValueOrDefault(-1)
                     };

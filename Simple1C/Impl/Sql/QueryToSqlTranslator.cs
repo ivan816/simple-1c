@@ -17,6 +17,9 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private static readonly Regex ofTypeRegex = new Regex(@"OfType\(([a-zA-Z]+\.[а-яА-Я\.]+)\s+as\s([а-яА-Я\.]+)\)",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -120,6 +123,20 @@ namespace Simple1C.Impl.Sql
                 match = match.NextMatch();
             }
             queryText = joinRegex.Replace(queryText, m => PatchJoin(m.Value, m.Index, m.Groups[1].Value));
+            queryText = ofTypeRegex.Replace(queryText, m =>
+            {
+                var properyPath = m.Groups[1].Value.Split('.');
+                var queryName = m.Groups[2].Value;
+                var lastEntity = GetQueryEntity(properyPath[0]);
+                for (var i = 1; i < properyPath.Length - 1; i++)
+                {
+                    var lastProperty = lastEntity.GetOrCreateProperty(properyPath[i]);
+                    lastEntity = GetOrCreateQueryEntity(lastProperty, properyPath);
+                }
+                var queryEntityProperty = lastEntity.GetOrCreateProperty(properyPath[properyPath.Length - 1]);
+                queryEntityProperty.nestedType = queryName;
+                return m.Groups[1].Value;
+            });
             var partsPositions = new List<SelectPartPosition>();
             foreach (var selectPart in selectParts)
             {
@@ -298,6 +315,8 @@ namespace Simple1C.Impl.Sql
                     var ownerTableName = property.owner.mapping.QueryTableName;
                     nestedTableName = TableMapping.GetMainQueryNameByTableSectionQueryName(ownerTableName);
                 }
+                else if (!string.IsNullOrEmpty(property.nestedType))
+                    nestedTableName = property.nestedType;
                 else
                     nestedTableName = property.mapping.NestedTableName;
                 if (string.IsNullOrEmpty(nestedTableName))
@@ -332,6 +351,7 @@ namespace Simple1C.Impl.Sql
                         ColumnTableName = GetQueryEntityAlias(mainEntity),
                         ComparandConstantValues = areas
                     });
+                mainEntity.GetOrCreateProperty("ОбластьДанныхОсновныеДанные").referenced = true;
                 BuildSubQuery(mainEntity, selectClause);
                 sql = selectClause.GetSql();
             }
@@ -386,11 +406,14 @@ namespace Simple1C.Impl.Sql
                         ComparandColumnName = property.owner.GetAreaColumnName(),
                         ComparandTableName = GetQueryEntityAlias(property.owner)
                     });
+                var refColumnName = string.IsNullOrEmpty(property.nestedType)
+                    ? property.mapping.ColumnName
+                    : property.mapping.ColumnName + "_rrref";
                 joinClause.EqConditions.Add(new ColumnFilter
                 {
                     ColumnName = property.nestedEntity.GetIdColumnName(),
                     ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
-                    ComparandColumnName = property.mapping.ColumnName,
+                    ComparandColumnName = refColumnName,
                     ComparandTableName = GetQueryEntityAlias(property.owner)
                 });
                 target.JoinClauses.Add(joinClause);
@@ -463,6 +486,7 @@ namespace Simple1C.Impl.Sql
             public QueryEntity nestedEntity;
             public string functionName;
             public readonly List<SelectPart> parts = new List<SelectPart>();
+            public string nestedType;
         }
 
         private JoinClause CreateEnumMappingsJoinClause(QueryEntity enumEntity)

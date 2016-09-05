@@ -149,6 +149,42 @@ where contractors.c1 = 'test-inn3'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
+//        [Test]
+//        public void PatchDateTimeFunction()
+//        {
+//            const string sourceSql = @"select *
+//    from Справочник.ДоговорыКонтрагентов as contracts
+//    where c1 >= ДАТАВРЕМЯ()";
+//            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+//    Дата c1";
+//            const string expectedResult = @"select date_part('year', contracts.c1) as ContractDate
+//    from t1 as contracts";
+//            CheckTranslate(mappings, sourceSql, expectedResult);
+//        }
+
+        [Test]
+        public void OfType()
+        {
+            const string sourceSql = @"выбрать payOut.Наименование as Name из Документ.СписаниеСРасчетногоСчета as payOut
+    где OfType(payOut.Контрагент as Справочник.Контрагенты).ИНН = ""123""";
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
+    ИНН c1
+    Наименование c2
+    ОбластьДанныхОсновныеДанные c3
+    Контрагент c7
+Справочник.Контрагенты t2 Main
+    Ссылка c4
+    ИНН c5
+    ОбластьДанныхОсновныеДанные c6";
+            const string expectedResult = @"select payOut.c2 as Name from (select
+    __nested_table1.c5 as __nested_field0,
+    __nested_table0.c2
+from t1 as __nested_table0
+left join t2 as __nested_table1 on __nested_table1.c6 = __nested_table0.c3 and __nested_table1.c4 = __nested_table0.c7) as payOut
+    where payOut.__nested_field0 = '123'";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
         [Test]
         public void CanUseRussianSyntax()
         {
