@@ -119,23 +119,23 @@ namespace Generator
         private static int RunSql(NameValueCollection parameters)
         {
             var connectionStrings = parameters["connection-strings"];
-            var connectionStringFile = parameters["connection-string-file"];
+            var connectionStringsFile = parameters["connection-strings-file"];
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
             var dumpSql = parameters["dump-sql"];
             var parametersAreValid =
-                (!string.IsNullOrEmpty(connectionStrings) || !string.IsNullOrEmpty(connectionStringFile)) &&
+                (!string.IsNullOrEmpty(connectionStrings) || !string.IsNullOrEmpty(connectionStringsFile)) &&
                 !string.IsNullOrEmpty(queryFile) &&
                 !string.IsNullOrEmpty(resultConnectionString);
             if (!parametersAreValid)
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql [-connection-strings <1c db connection strings comma delimited> | -connection-string-file <connection strings with areas>]-query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
+                    "Usage: Generator.exe -cmd run-sql [-connection-strings <1c db connection strings comma delimited> | -connection-strings-file <connection strings with areas>] -query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
                 return -1;
             }
             var querySources = string.IsNullOrEmpty(connectionStrings)
-                ? StringHelpers.ParseLinesWithTabs(File.ReadAllText(connectionStringFile),
+                ? StringHelpers.ParseLinesWithTabs(File.ReadAllText(connectionStringsFile),
                     (s, items) => new QuerySource
                     {
                         db = new PostgreeSqlDatabase(s),

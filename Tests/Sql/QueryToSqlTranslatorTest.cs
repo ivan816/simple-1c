@@ -240,16 +240,20 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         }
 
         [Test]
-        public void Join()
+        public void AddAreaToJoin()
         {
-            const string sourceSql = @"select contracts.ВидДоговора as Kind1, otherContracts.ВидДоговора as Kind2
-from справочник.ДоговорыКонтрагентов as contracts
-left outer join справочник.ДоговорыКонтрагентов as otherContracts on 1=1";
-            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
-    ВидДоговора c1";
-            const string expectedResult = @"select contracts.c1 as Kind1, otherContracts.c1 as Kind2
-from t1 as contracts
-left outer join t1 as otherContracts on 1=1";
+            const string sourceSql = @"выбрать contractors.Наименование as ContractorName из
+Справочник.Контрагенты as contractors
+left join Справочник.КонтактныеЛица as contacts on contractors.ОсновноеКонтактноеЛицо = contacts.Ссылка";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    Наименование c1
+    ОбластьДанныхОсновныеДанные c2
+    ОсновноеКонтактноеЛицо c3
+Справочник.КонтактныеЛица t2 Main
+    Ссылка c4
+    ОбластьДанныхОсновныеДанные c5";
+            const string expectedResult = @"select contractors.c1 as ContractorName from t1 as contractors
+left join t2 as contacts on contractors.c2 = contacts.c5 and contractors.c3 = contacts.c4";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 

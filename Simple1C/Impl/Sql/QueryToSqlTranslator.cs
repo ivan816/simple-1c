@@ -14,6 +14,9 @@ namespace Simple1C.Impl.Sql
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+(\S+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
+        private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -33,7 +36,8 @@ namespace Simple1C.Impl.Sql
         {
             {"select", SelectPart.Select},
             {"where", SelectPart.Where},
-            {"group\\s+by", SelectPart.GroupBy}
+            {"group\\s+by", SelectPart.GroupBy},
+            {"join", SelectPart.Join}
         };
 
         private static readonly Dictionary<string, Regex> selectPartsRegexes = selectParts.Keys
@@ -70,6 +74,7 @@ namespace Simple1C.Impl.Sql
         private readonly NameGenerator nameGenerator = new NameGenerator();
         private readonly IMappingSource mappingSource;
         private readonly string[] areas;
+        private string queryText;
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
@@ -100,13 +105,13 @@ namespace Simple1C.Impl.Sql
 
         private string TranslateSingleSelect(string source)
         {
+            queryText = source;
             nameGenerator.Reset();
             queryTables.Clear();
 
-            var result = source;
-            result = result.Replace("\"", "'");
-            result = keywordsRegex.Replace(result, m => keywordsMap[m.Groups[1].Value]);
-            var match = tableNameRegex.Match(result);
+            queryText = queryText.Replace("\"", "'");
+            queryText = keywordsRegex.Replace(queryText, m => keywordsMap[m.Groups[1].Value]);
+            var match = tableNameRegex.Match(queryText);
             while (match.Success)
             {
                 var queryName = match.Groups[2].Value;
@@ -114,10 +119,11 @@ namespace Simple1C.Impl.Sql
                 queryTables.Add(alias, CreateQueryEntity(queryName));
                 match = match.NextMatch();
             }
+            queryText = joinRegex.Replace(queryText, m => PatchJoin(m.Value, m.Index, m.Groups[1].Value));
             var partsPositions = new List<SelectPartPosition>();
             foreach (var selectPart in selectParts)
             {
-                var m = selectPartsRegexes[selectPart.Key].Match(result);
+                var m = selectPartsRegexes[selectPart.Key].Match(queryText);
                 if (m.Success)
                     partsPositions.Add(new SelectPartPosition
                     {
@@ -126,7 +132,7 @@ namespace Simple1C.Impl.Sql
                     });
             }
             partsPositions.Sort((x, y) => x.index.CompareTo(y.index));
-            result = propertiesRegex.Replace(result, delegate(Match m)
+            queryText = propertiesRegex.Replace(queryText, delegate(Match m)
             {
                 var properyPath = m.Groups["prop"].Value;
                 var properties = properyPath.Split('.');
@@ -150,11 +156,11 @@ namespace Simple1C.Impl.Sql
                 }
                 return GetColumnName(properties, functionName, GetSelectPart(m.Index, partsPositions));
             });
-            result = tableNameRegex.Replace(result,
+            queryText = tableNameRegex.Replace(queryText,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
-            result = functions.Aggregate(result, (s, f) => functionRegexes[f.Key]
+            queryText = functions.Aggregate(queryText, (s, f) => functionRegexes[f.Key]
                 .Replace(s, m => f.Value(this, m.Groups[1].Value)));
-            return result;
+            return queryText;
         }
 
         private static SelectPart GetSelectPart(int index, List<SelectPartPosition> positions)
@@ -198,6 +204,23 @@ namespace Simple1C.Impl.Sql
                 throw new InvalidOperationException(string.Format(messageFormat, alias));
             }
             return mainEntity;
+        }
+
+        private string PatchJoin(string joinText, int joinPosition, string alias)
+        {
+            var fromPosition = queryText.LastIndexOf("from", joinPosition, StringComparison.OrdinalIgnoreCase);
+            if (fromPosition < 0)
+                throw new InvalidOperationException("assertion failure");
+            var tableMatch = tableNameRegex.Match(queryText, fromPosition);
+            if (!tableMatch.Success)
+                throw new InvalidOperationException("assertion failure");
+            var mainTableAlias = tableMatch.Groups[3].Value;
+            var mainTableEntity = GetQueryEntity(mainTableAlias);
+            var joinTableEntity = GetQueryEntity(alias);
+            var condition = string.Format("{0}.{1} = {2}.{3} and ",
+                mainTableAlias, mainTableEntity.GetAreaColumnName(),
+                alias, joinTableEntity.GetAreaColumnName());
+            return joinText + condition;
         }
 
         private string GetColumnName(string[] properties, FunctionName? functionName, SelectPart selectPart)
@@ -473,7 +496,8 @@ namespace Simple1C.Impl.Sql
         {
             Select,
             Where,
-            GroupBy
+            GroupBy,
+            Join
         }
 
         private class SelectPartPosition
