@@ -5,22 +5,28 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal static class SqlHelpers
     {
-        public static void WriteEqConditions(StringBuilder builder, IEnumerable<EqCondition> eqConditions)
+        public static void WriteFilters(StringBuilder builder, List<ColumnFilter> filters)
+        {
+            WriteElements(filters, " and ", builder);
+        }
+
+        public static void WriteElements<T>(List<T> elements, string delimiter, StringBuilder builder)
+            where T: ISqlElement
         {
             var isFirst = true;
-            foreach (var eq in eqConditions)
+            foreach (var e in elements)
             {
                 if (isFirst)
                     isFirst = false;
                 else
-                    builder.Append(" and ");
-                WriteReference(builder, eq.ColumnTableName, eq.ColumnName);
-                builder.Append(" = ");
-                if (eq.ComparandConstantValue != null)
-                    builder.Append("'" + eq.ComparandConstantValue + "'");
-                else
-                    WriteReference(builder, eq.ComparandTableName, eq.ComparandColumnName);
+                    builder.Append(delimiter);
+                e.WriteTo(builder);
             }
+        }
+
+        public static string QuoteSql(this string s)
+        {
+            return "'" + s + "'";
         }
 
         public static void WriteReference(StringBuilder builder, string objName, string itemName)

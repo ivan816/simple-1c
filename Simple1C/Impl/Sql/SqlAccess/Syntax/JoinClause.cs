@@ -3,26 +3,30 @@ using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class JoinClause
+    internal interface ISqlElement
+    {
+        void WriteTo(StringBuilder b);
+    }
+
+    internal class JoinClause : ISqlElement
     {
         public string TableName { get; set; }
         public string TableAlias { get; set; }
         public string JoinKind { get; set; }
-        public List<EqCondition> EqConditions { get; private set; }
+        public List<ColumnFilter> EqConditions { get; private set; }
 
         public JoinClause()
         {
-            EqConditions = new List<EqCondition>();
+            EqConditions = new List<ColumnFilter>();
         }
 
         public void WriteTo(StringBuilder b)
         {
-            b.Append("\r\n");
             b.Append(JoinKind);
             b.Append(" join ");
             SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
             b.Append(" on ");
-            SqlHelpers.WriteEqConditions(b, EqConditions);
+            SqlHelpers.WriteFilters(b, EqConditions);
         }
     }
 }

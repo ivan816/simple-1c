@@ -8,14 +8,14 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryExecuter
     {
-        private readonly PostgreeSqlDatabase[] sources;
+        private readonly QuerySource[] sources;
         private readonly MsSqlDatabase target;
         private readonly bool dumpSql;
         private volatile bool errorOccured;
         private readonly string queryText;
         private readonly string targetTableName;
 
-        public QueryExecuter(PostgreeSqlDatabase[] sources, MsSqlDatabase target, string queryFileName, bool dumpSql)
+        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryFileName, bool dumpSql)
         {
             this.sources = sources;
             this.target = target;
@@ -38,13 +38,13 @@ namespace Simple1C.Impl.Sql
                     {
                         try
                         {
-                            var mappingSchema = new PostgreeSqlSchemaStore(source);
-                            var translator = new QueryToSqlTranslator(mappingSchema);
+                            var mappingSchema = new PostgreeSqlSchemaStore(source.db);
+                            var translator = new QueryToSqlTranslator(mappingSchema, source.areas);
                             var sql = translator.Translate(queryText);
                             if (dumpSql)
                                 Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
-                                    source.ConnectionString, queryText, sql);
-                            source.Execute(sql, new object[0], c =>
+                                    source.db.ConnectionString, queryText, sql);
+                            source.db.Execute(sql, new object[0], c =>
                             {
                                 using (var reader = c.ExecuteReader())
                                 {
@@ -64,7 +64,7 @@ namespace Simple1C.Impl.Sql
                         catch (Exception e)
                         {
                             errorOccured = true;
-                            Console.Out.WriteLine("error for [{0}]\r\n{1}", source.ConnectionString, e);
+                            Console.Out.WriteLine("error for [{0}]\r\n{1}", source.db.ConnectionString, e);
                         }
                     });
                     sourceThreads[i].Start();

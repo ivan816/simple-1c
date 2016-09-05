@@ -11,45 +11,31 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             TableAlias = tableAlias;
             JoinClauses = new List<JoinClause>();
             Columns = new List<SelectColumn>();
-            WhereEqConditions = new List<EqCondition>();
+            WhereFilters = new List<ColumnFilter>();
         }
 
         public List<SelectColumn> Columns { get; private set; }
         public List<JoinClause> JoinClauses { get; private set; }
-        public List<EqCondition> WhereEqConditions { get; private set; }
+        public List<ColumnFilter> WhereFilters { get; private set; }
         public string TableName { get; private set; }
         public string TableAlias { get; private set; }
 
         public string GetSql()
         {
             var b = new StringBuilder();
-            b.Append("(select");
-            var isFirst = true;
-            foreach (var f in Columns)
-            {
-                if (isFirst)
-                    isFirst = false;
-                else
-                    b.Append(",");
-                b.Append("\r\n\t");
-                if (!string.IsNullOrEmpty(f.FunctionName))
-                {
-                    b.Append(f.FunctionName);
-                    b.Append('(');
-                }
-                SqlHelpers.WriteReference(b, f.TableName, f.Name);
-                if (!string.IsNullOrEmpty(f.FunctionName))
-                    b.Append(')');
-                SqlHelpers.WriteAlias(b, f.Alias);
-            }
+            b.Append("(select\r\n\t");
+            SqlHelpers.WriteElements(Columns, ",\r\n\t", b);
             b.Append("\r\nfrom ");
             SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
-            foreach (var join in JoinClauses)
-                join.WriteTo(b);
-            if (WhereEqConditions.Count > 0)
+            if (JoinClauses.Count > 0)
+            {
+                b.Append("\r\n");
+                SqlHelpers.WriteElements(JoinClauses, "\r\n", b);    
+            }
+            if (WhereFilters.Count > 0)
             {
                 b.Append("\r\nwhere ");
-                SqlHelpers.WriteEqConditions(b, WhereEqConditions);
+                SqlHelpers.WriteFilters(b, WhereFilters);
             }
             b.Append(")");
             return b.ToString();

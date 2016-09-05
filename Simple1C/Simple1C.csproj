@@ -116,10 +116,12 @@
     <Compile Include="Impl\Sql\PostgreeSqlSchemaCreator.cs" />
     <Compile Include="Impl\Sql\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\PropertyMapping.cs" />
+    <Compile Include="Impl\Sql\QuerySource.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\EqCondition.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnFilter.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnFilterType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectColumn.cs" />

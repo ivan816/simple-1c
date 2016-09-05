@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NUnit.Framework;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql;
 using Simple1C.Tests.Helpers;
 
@@ -18,6 +20,22 @@ namespace Simple1C.Tests.Sql
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
     from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void SimpleWithAreas()
+        {
+            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
+    from Справочник.Контрагенты as contractors";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН c1
+    ОбластьДанныхОсновныеДанные c2";
+            const string expectedResult = @"select contractors.__nested_field0 as CounterpartyInn
+    from (select
+    __nested_table0.c1 as __nested_field0
+from t1 as __nested_table0
+where __nested_table0.c2 in (10,200)) as contractors";
+            CheckTranslate(mappings, sourceSql, expectedResult, 10, 200);
         }
 
         [Test]
@@ -496,10 +514,10 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
-        private static void CheckTranslate(string mappings, string sql, string expectedTranslated)
+        private static void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
-            var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore);
+            var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore, areas);
             var actualTranslated = sqlTranslator.Translate(sql);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
         }
@@ -511,34 +529,15 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
 
         private static InMemoryMappingStore Parse(string source)
         {
-            var items = source.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
-            var tableMappings = new Dictionary<string, TableMapping>(StringComparer.OrdinalIgnoreCase);
-            var columnMappings = new List<PropertyMapping>();
-            string queryTableName = null;
-            string dbTableName = null;
-            TableType? tableType = null;
-            foreach (var s in items)
+            var tableMappings = StringHelpers.ParseLinesWithTabs(source, delegate(string s, List<string> list)
             {
-                if (s[0] == '\t')
-                    columnMappings.Add(PropertyMapping.Parse(s.Substring(1)));
-                else
-                {
-                    if (queryTableName != null)
-                    {
-                        var tableMapping = new TableMapping(queryTableName, dbTableName, tableType.Value, columnMappings.ToArray());
-                        tableMappings.Add(queryTableName, tableMapping);
-                    }
-                    var tableNames = s.Split(new[] {" "}, StringSplitOptions.None);
-                    queryTableName = tableNames[0];
-                    dbTableName = tableNames[1];
-                    tableType = TableMapping.ParseTableType(tableNames[2]);
-                    columnMappings.Clear();
-                }
-            }
-            if (queryTableName != null)
-                tableMappings.Add(queryTableName,
-                    new TableMapping(queryTableName, dbTableName, tableType.Value, columnMappings.ToArray()));
-            return new InMemoryMappingStore(tableMappings);
+                var tableNames = s.Split(new[] {" "}, StringSplitOptions.None);
+                return new TableMapping(tableNames[0], tableNames[1],
+                    TableMapping.ParseTableType(tableNames[2]),
+                    list.Select(PropertyMapping.Parse).ToArray());
+            });
+            return new InMemoryMappingStore(tableMappings.ToDictionary(x => x.QueryTableName,
+                StringComparer.OrdinalIgnoreCase));
         }
 
         internal class InMemoryMappingStore : IMappingSource

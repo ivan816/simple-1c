@@ -119,25 +119,37 @@ namespace Generator
         private static int RunSql(NameValueCollection parameters)
         {
             var connectionStrings = parameters["connection-strings"];
+            var connectionStringFile = parameters["connection-string-file"];
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
             var dumpSql = parameters["dump-sql"];
             var parametersAreValid =
-                !string.IsNullOrEmpty(connectionStrings) &&
+                (!string.IsNullOrEmpty(connectionStrings) || !string.IsNullOrEmpty(connectionStringFile)) &&
                 !string.IsNullOrEmpty(queryFile) &&
                 !string.IsNullOrEmpty(resultConnectionString);
             if (!parametersAreValid)
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql -connection-strings <1c db connection strings comma delimited> -query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
+                    "Usage: Generator.exe -cmd run-sql [-connection-strings <1c db connection strings comma delimited> | -connection-string-file <connection strings with areas>]-query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
                 return -1;
             }
-            var sources = connectionStrings.Split(',')
-                .Select(x => new PostgreeSqlDatabase(x))
-                .ToArray();
+            var querySources = string.IsNullOrEmpty(connectionStrings)
+                ? StringHelpers.ParseLinesWithTabs(File.ReadAllText(connectionStringFile),
+                    (s, items) => new QuerySource
+                    {
+                        db = new PostgreeSqlDatabase(s),
+                        areas = items.Select(int.Parse).ToArray()
+                    })
+                : connectionStrings.Split(',')
+                    .Select(x => new QuerySource
+                    {
+                        db = new PostgreeSqlDatabase(x),
+                        areas = new int[0]
+                    });
             var target = new MsSqlDatabase(resultConnectionString);
-            var sqlExecuter = new QueryExecuter(sources, target, queryFile, dumpSql == "true");
+            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target,
+                queryFile, dumpSql == "true");
             var succeeded = sqlExecuter.Execute();
             return succeeded ? 0 : -1;
         }
@@ -157,7 +169,7 @@ namespace Generator
             }
             var db = new PostgreeSqlDatabase(connectionString);
             var mappingSchema = new PostgreeSqlSchemaStore(db);
-            var translator = new QueryToSqlTranslator(mappingSchema);
+            var translator = new QueryToSqlTranslator(mappingSchema, new int[0]);
             var query = File.ReadAllText(queryFile);
             var sql = translator.Translate(query);
             Console.Out.WriteLine(sql);

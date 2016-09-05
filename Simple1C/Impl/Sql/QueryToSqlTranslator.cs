@@ -69,10 +69,14 @@ namespace Simple1C.Impl.Sql
 
         private readonly NameGenerator nameGenerator = new NameGenerator();
         private readonly IMappingSource mappingSource;
+        private readonly string[] areas;
 
-        public QueryToSqlTranslator(IMappingSource mappingSource)
+        public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
             this.mappingSource = mappingSource;
+            this.areas = new string[areas.Length];
+            for (var i = 0; i < areas.Length; i++)
+                this.areas[i] = areas[i].ToString();
         }
 
         public string Translate(string source)
@@ -176,11 +180,11 @@ namespace Simple1C.Impl.Sql
             });
             var enumMappingsJoinClause = CreateEnumMappingsJoinClause(table);
             selectClause.JoinClauses.Add(enumMappingsJoinClause);
-            selectClause.WhereEqConditions.Add(new EqCondition
+            selectClause.WhereFilters.Add(new ColumnFilter
             {
                 ColumnName = "enumValueName",
                 ColumnTableName = enumMappingsJoinClause.TableAlias,
-                ComparandConstantValue = enumValueItems[2]
+                ComparandConstantValue = enumValueItems[2].QuoteSql()
             });
             return selectClause.GetSql();
         }
@@ -201,7 +205,7 @@ namespace Simple1C.Impl.Sql
             var mainEntity = GetQueryEntity(properties[0]);
             var lastEntity = mainEntity;
             QueryEntityProperty lastProperty;
-            var subqueryRequired = false;
+            var subqueryRequired = areas.Length > 0;
             for (var i = 1; i < properties.Length - 1; i++)
             {
                 lastProperty = lastEntity.GetOrCreateProperty(properties[i]);
@@ -297,6 +301,14 @@ namespace Simple1C.Impl.Sql
             if (mainEntity.subqueryRequired)
             {
                 var selectClause = CreateSelectClause(mainEntity);
+                if (areas.Length > 0)
+                    selectClause.WhereFilters.Add(new ColumnFilter
+                    {
+                        Type = ColumnFilterType.In,
+                        ColumnName = mainEntity.GetAreaColumnName(),
+                        ColumnTableName = GetQueryEntityAlias(mainEntity),
+                        ComparandConstantValues = areas
+                    });
                 BuildSubQuery(mainEntity, selectClause);
                 sql = selectClause.GetSql();
             }
@@ -344,14 +356,14 @@ namespace Simple1C.Impl.Sql
                     JoinKind = "left"
                 };
                 if (!property.nestedEntity.mapping.IsEnum())
-                    joinClause.EqConditions.Add(new EqCondition
+                    joinClause.EqConditions.Add(new ColumnFilter
                     {
                         ColumnName = property.nestedEntity.GetAreaColumnName(),
                         ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
                         ComparandColumnName = property.owner.GetAreaColumnName(),
                         ComparandTableName = GetQueryEntityAlias(property.owner)
                     });
-                joinClause.EqConditions.Add(new EqCondition
+                joinClause.EqConditions.Add(new ColumnFilter
                 {
                     ColumnName = property.nestedEntity.GetIdColumnName(),
                     ColumnTableName = GetQueryEntityAlias(property.nestedEntity),
@@ -441,13 +453,13 @@ namespace Simple1C.Impl.Sql
             };
             if (!enumEntity.mapping.ObjectName.HasValue)
                 throw new InvalidOperationException("assertion failure");
-            result.EqConditions.Add(new EqCondition
+            result.EqConditions.Add(new ColumnFilter
             {
                 ColumnName = "enumName",
                 ColumnTableName = tableAlias,
-                ComparandConstantValue = enumEntity.mapping.ObjectName.Value.Name
+                ComparandConstantValue = enumEntity.mapping.ObjectName.Value.Name.QuoteSql()
             });
-            result.EqConditions.Add(new EqCondition
+            result.EqConditions.Add(new ColumnFilter
             {
                 ColumnName = "orderIndex",
                 ColumnTableName = tableAlias,
