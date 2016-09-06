@@ -63,7 +63,7 @@ namespace Simple1C.Impl.Sql
 
         private static string GetPropertiesRegex()
         {
-            const string propRegex = @"[a-zA-Z]+\.[а-яА-Я\.]+";
+            const string propRegex = @"[a-zA-Z]+\.[а-яА-Яa-zA-Z0-9\.]+";
             return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
                 propRegex);
         }
