@@ -1,13 +1,19 @@
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.SqlAccess.Syntax
+namespace Simple1C.Impl.Sql.SqlAccess
 {
     internal static class SqlHelpers
     {
-        public static void WriteFilters(StringBuilder builder, List<ColumnFilter> filters)
+        public static ISqlElement Combine(this List<ISqlElement> items)
         {
-            WriteElements(filters, " and ", builder);
+            return items.Aggregate((left, right) => new AndExpression
+            {
+                Left = left,
+                Right = right
+            });
         }
 
         public static void WriteElements<T>(List<T> elements, string delimiter, StringBuilder builder)
@@ -22,18 +28,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
                     builder.Append(delimiter);
                 e.WriteTo(builder);
             }
-        }
-
-        public static string QuoteSql(this string s)
-        {
-            return "'" + s + "'";
-        }
-
-        public static void WriteReference(StringBuilder builder, string objName, string itemName)
-        {
-            builder.Append(objName);
-            builder.Append(".");
-            builder.Append(itemName);
         }
 
         public static void WriteAlias(StringBuilder b, string alias)

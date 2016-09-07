@@ -5,20 +5,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class SelectClause
     {
-        public SelectClause(string tableName, string tableAlias)
+        public SelectClause()
         {
-            TableName = tableName;
-            TableAlias = tableAlias;
             JoinClauses = new List<JoinClause>();
             Columns = new List<SelectColumn>();
-            WhereFilters = new List<ColumnFilter>();
         }
 
         public List<SelectColumn> Columns { get; private set; }
         public List<JoinClause> JoinClauses { get; private set; }
-        public List<ColumnFilter> WhereFilters { get; private set; }
-        public string TableName { get; private set; }
-        public string TableAlias { get; private set; }
+        public ISqlElement WhereExpression { get; set; }
+        public DeclarationClause Table { get; set; }
 
         public string GetSql()
         {
@@ -26,16 +22,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             b.Append("(select\r\n\t");
             SqlHelpers.WriteElements(Columns, ",\r\n\t", b);
             b.Append("\r\nfrom ");
-            SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
+            Table.WriteTo(b);
             if (JoinClauses.Count > 0)
             {
                 b.Append("\r\n");
                 SqlHelpers.WriteElements(JoinClauses, "\r\n", b);    
             }
-            if (WhereFilters.Count > 0)
+            if (WhereExpression != null)
             {
                 b.Append("\r\nwhere ");
-                SqlHelpers.WriteFilters(b, WhereFilters);
+                WhereExpression.WriteTo(b);
             }
             b.Append(")");
             return b.ToString();

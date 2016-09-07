@@ -143,10 +143,11 @@ namespace Simple1C.Impl.Sql
                         continue;
                     if(!mainTableMapping.HasProperty("ОбластьДанныхОсновныеДанные"))
                         continue;
-                    propertyMappings.Add(new PropertyMapping("Ссылка",
-                        GetTableSectionIdColumnNameByTableName(dbTableName), null));
-                    propertyMappings.Add(new PropertyMapping("ОбластьДанныхОсновныеДанные",
-                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").ColumnName, null));
+                    //todo
+                    //propertyMappings.Add(new PropertyMapping("Ссылка",
+                    //    GetTableSectionIdColumnNameByTableName(dbTableName), null));
+                    //propertyMappings.Add(new PropertyMapping("ОбластьДанныхОсновныеДанные",
+                    //    mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").ColumnName, null));
                     tableType = TableType.TableSection;
                 }
                 else
@@ -163,8 +164,9 @@ namespace Simple1C.Impl.Sql
                         continue;
                     var typeName = propertyTypes.GetOrDefault(queryColumnName);
                     dbColumnName = PatchColumnName(dbColumnName, typeName);
-                    var propertyMapping = new PropertyMapping(queryColumnName, dbColumnName, typeName);
-                    propertyMappings.Add(propertyMapping);
+                    //todo
+                    //var propertyMapping = new PropertyMapping(queryColumnName, dbColumnName, typeName);
+                    //propertyMappings.Add(propertyMapping);
                 }
                 if (descriptor != null && descriptor.HasTableSections)
                 {
@@ -173,8 +175,9 @@ namespace Simple1C.Impl.Sql
                     {
                         var tableFullname = Call.ПолноеИмя(tableSection);
                         var tableQueryTable = TableSectionFullNameToQueryName(tableFullname);
-                        var propertyMapping = new PropertyMapping(Call.Имя(tableSection), null, tableQueryTable);
-                        propertyMappings.Add(propertyMapping);
+                        //todo
+                        //var propertyMapping = new PropertyMapping(Call.Имя(tableSection), null, tableQueryTable);
+                        //propertyMappings.Add(propertyMapping);
                     }
                 }
                 var tableMapping = new TableMapping(queryTableName, dbTableName, tableType, propertyMappings.ToArray());

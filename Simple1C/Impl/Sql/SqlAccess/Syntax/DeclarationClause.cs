@@ -1,15 +1,15 @@
-﻿using System.Text;
+using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SelectColumn : ISqlElement
+    internal class DeclarationClause : ISqlElement
     {
-        public ISqlElement Expression { get; set; }
+        public string Name { get; set; }
         public string Alias { get; set; }
 
         public void WriteTo(StringBuilder b)
         {
-            Expression.WriteTo(b);
+            b.Append(Name);
             SqlHelpers.WriteAlias(b, Alias);
         }
     }

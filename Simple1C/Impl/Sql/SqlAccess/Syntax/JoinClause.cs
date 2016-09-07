@@ -1,32 +1,39 @@
-﻿using System.Collections.Generic;
+﻿using System;
 using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal interface ISqlElement
-    {
-        void WriteTo(StringBuilder b);
-    }
-
     internal class JoinClause : ISqlElement
     {
-        public string TableName { get; set; }
-        public string TableAlias { get; set; }
-        public string JoinKind { get; set; }
-        public List<ColumnFilter> EqConditions { get; private set; }
-
-        public JoinClause()
-        {
-            EqConditions = new List<ColumnFilter>();
-        }
+        public DeclarationClause Table { get; set; }
+        public JoinKind JoinKind { get; set; }
+        public ISqlElement Condition { get; set; }
 
         public void WriteTo(StringBuilder b)
         {
-            b.Append(JoinKind);
+            b.Append(GetJoinKindString());
             b.Append(" join ");
-            SqlHelpers.WriteDeclaration(b, TableName, TableAlias);
+            Table.WriteTo(b);
             b.Append(" on ");
-            SqlHelpers.WriteFilters(b, EqConditions);
+            Condition.WriteTo(b);
+        }
+
+        private string GetJoinKindString()
+        {
+            switch (JoinKind)
+            {
+                case JoinKind.Left:
+                    return "left";
+                case JoinKind.Right:
+                    return "right";
+                case JoinKind.Inner:
+                    return "inner";
+                case JoinKind.Outer:
+                    return "outer";
+                default:
+                    const string messageFormat = "unexpected join kind [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, JoinKind));
+            }
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql
@@ -8,6 +9,7 @@ namespace Simple1C.Impl.Sql
     {
         public string QueryTableName { get; private set; }
         public string DbTableName { get; private set; }
+        public int Index { get; private set; }
         public TableType Type { get; private set; }
         public PropertyMapping[] Properties { get; private set; }
         private ConfigurationName? objectName;
@@ -27,12 +29,21 @@ namespace Simple1C.Impl.Sql
         private readonly Dictionary<string, PropertyMapping> byPropertyName =
             new Dictionary<string, PropertyMapping>(StringComparer.OrdinalIgnoreCase);
 
+        private static readonly Regex tableIndexRegex = new Regex(@"(\d+)",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
         public TableMapping(string queryTableName, string dbName, TableType type, PropertyMapping[] properties)
         {
             QueryTableName = queryTableName;
             DbTableName = dbName;
             Type = type;
             Properties = properties;
+            var indexMatch = tableIndexRegex.Match(dbName);
+            if (!indexMatch.Success)
+            {
+                
+            }
+            Index= int.Parse(indexMatch.Groups[1].va)
             foreach (var p in Properties)
                 if (!byPropertyName.ContainsKey(p.PropertyName))
                 {
