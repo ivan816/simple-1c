@@ -2,7 +2,7 @@
 <package >
   <metadata>
     <id>Simple1C</id>
-    <version>1.0.42</version>
+    <version>1.0.43</version>
     <authors>gusev_p, ivan_816</authors>
     <owners>gusev_p, ivan_816</owners>
     <licenseUrl>https://github.com/gusev-p/simple-1c/blob/master/LICENSE.txt</licenseUrl>
@@ -10,7 +10,7 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Linq provider for 1C</description>
     <copyright>Copyright 2016</copyright>
-    <releaseNotes>CanQueryByReference - возможность фильтровать по равенству с экземпл€ром AbstractEntity</releaseNotes>
+    <releaseNotes>–еализована функци€ .Count()</releaseNotes>
   </metadata>
   <files>
     <file src="..\bin\Simple1C.dll" target="lib/net45" />

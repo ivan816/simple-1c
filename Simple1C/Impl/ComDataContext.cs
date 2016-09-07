@@ -405,7 +405,7 @@ namespace Simple1C.Impl
                     if (projection != null)
                         yield return projection(selection.ComObject);
                     else if (builtQuery.IsCount)
-                        yield return comObjectMapper.MapFrom1C(selection["src_Ссылка_Count"], typeof(int));
+                        yield return comObjectMapper.MapFrom1C(selection["src_Count"], typeof(int));
                     else
                         yield return comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
                 }

@@ -56,12 +56,17 @@ namespace Simple1C.Impl.Queriables
                 resultBuilder.Append(Take.Value);
                 resultBuilder.Append(" ");
             }
-            var selection = projection == null || isCount
-                ? ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*"
-                : projection.GetSelection();
+            string selection;
+            if (isCount)
+                selection = "*";
+            else if (projection == null)
+                selection = ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*";
+            else
+                selection = projection.GetSelection();
+
             resultBuilder.Append(selection);
             if (isCount)
-                resultBuilder.Append(") КАК src_Ссылка_Count");
+                resultBuilder.Append(") КАК src_Count");
             resultBuilder.Append(" ИЗ ");
             resultBuilder.Append(sourceName);
             if (TableSectionName != null)

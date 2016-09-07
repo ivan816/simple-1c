@@ -598,10 +598,17 @@ namespace Simple1C.Tests
         public class CountTest : QueryBuilderTest
         {
             [Test]
-            public void Test()
+            public void WithoutProjection()
             {
                 AssertQueryCount(SourceForCount<ДоговорыКонтрагентов>(),
-                    "ВЫБРАТЬ КОЛИЧЕСТВО(src.Ссылка) КАК src_Ссылка_Count ИЗ Справочник.ДоговорыКонтрагентов КАК src");
+                    "ВЫБРАТЬ КОЛИЧЕСТВО(*) КАК src_Count ИЗ Справочник.ДоговорыКонтрагентов КАК src");
+            }
+            
+            [Test]
+            public void WithProjection()
+            {
+                AssertQueryCount(SourceForCount<ДоговорыКонтрагентов>().Select(x => new {x.ВидДоговора}),
+                    "ВЫБРАТЬ КОЛИЧЕСТВО(*) КАК src_Count ИЗ Справочник.ДоговорыКонтрагентов КАК src");
             }
 
             [ConfigurationScope(ConfigurationScope.Справочники)]
