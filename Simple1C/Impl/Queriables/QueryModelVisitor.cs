@@ -125,6 +125,9 @@ namespace Simple1C.Impl.Queriables
                 var singleOperator = o as SingleResultOperator;
                 if (singleOperator != null)
                     queryBuilder.Take = 2;
+                var countOperator = o as CountResultOperator;
+                if (countOperator != null)
+                    queryBuilder.Count = true;
             }
             base.VisitResultOperators(resultOperators, queryModel);
         }

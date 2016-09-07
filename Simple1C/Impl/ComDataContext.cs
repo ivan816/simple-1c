@@ -401,9 +401,14 @@ namespace Simple1C.Impl
                     : null;
                 var selection = queryResult.Select();
                 while (selection.Next())
-                    yield return projection != null
-                        ? projection(selection.ComObject)
-                        : comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
+                {
+                    if (projection != null)
+                        yield return projection(selection.ComObject);
+                    else if (builtQuery.IsCount)
+                        yield return comObjectMapper.MapFrom1C(selection["src_Ссылка_Count"], typeof(int));
+                    else
+                        yield return comObjectMapper.MapFrom1C(selection["Ссылка"], builtQuery.EntityType);
+                }
             }
             else
             {

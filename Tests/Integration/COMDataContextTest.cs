@@ -495,5 +495,20 @@ namespace Simple1C.Tests.Integration
             Assert.That(queryResult.Length, Is.EqualTo(1));
             Assert.That(queryResult[0].ДоговорКонтрагента.Наименование, Is.EqualTo("test contract"));
         }
+
+        [Test]
+        public void Count()
+        {
+            var контрагент = new Контрагенты
+            {
+                Наименование = "test contractor name",
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+            var count = dataContext
+                .Select<Контрагенты>()
+                .Count(x => x.УникальныйИдентификатор == контрагент.УникальныйИдентификатор);
+            Assert.That(count, Is.EqualTo(1));
+        }
     }
 }

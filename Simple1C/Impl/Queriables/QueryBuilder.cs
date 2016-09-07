@@ -22,6 +22,7 @@ namespace Simple1C.Impl.Queriables
         public Ordering[] Orderings { get; set; }
         public string TableSectionName { get; set; }
         public int? Take { get; set; }
+        public bool? Count { get; set; }
 
         public void SetProjection(Projection newProjection)
         {
@@ -46,16 +47,21 @@ namespace Simple1C.Impl.Queriables
         {
             var resultBuilder = new StringBuilder();
             resultBuilder.Append("ВЫБРАТЬ ");
+            var isCount = Count.HasValue && Count.Value;
+            if (isCount)
+                resultBuilder.Append("КОЛИЧЕСТВО(");
             if (Take.HasValue)
             {
                 resultBuilder.Append("ПЕРВЫЕ ");
                 resultBuilder.Append(Take.Value);
                 resultBuilder.Append(" ");
             }
-            var selection = projection == null
+            var selection = projection == null || isCount
                 ? ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*"
                 : projection.GetSelection();
             resultBuilder.Append(selection);
+            if (isCount)
+                resultBuilder.Append(") КАК src_Ссылка_Count");
             resultBuilder.Append(" ИЗ ");
             resultBuilder.Append(sourceName);
             if (TableSectionName != null)
@@ -89,7 +95,7 @@ namespace Simple1C.Impl.Queriables
                         resultBuilder.Append(" УБЫВ");
                 }
             }
-            return new BuiltQuery(sourceType, resultBuilder.ToString(), parameters, projection);
+            return new BuiltQuery(sourceType, resultBuilder.ToString(), parameters, projection, isCount);
         }
 
         public void SetSource(Type type, string name)

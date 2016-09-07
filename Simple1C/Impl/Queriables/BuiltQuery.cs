@@ -11,12 +11,13 @@ namespace Simple1C.Impl.Queriables
         }
 
         public BuiltQuery(Type entityType, string queryText,
-            Dictionary<string, object> parameters, Projection projection)
+            Dictionary<string, object> parameters, Projection projection, bool isCount)
         {
             EntityType = entityType;
             QueryText = queryText;
             Parameters = parameters;
             Projection = projection;
+            IsCount = isCount;
         }
 
         public static BuiltQuery Constant(Type entityType)
@@ -28,6 +29,7 @@ namespace Simple1C.Impl.Queriables
         public string QueryText { get; private set; }
         public Dictionary<string, object> Parameters { get; private set; }
         public Projection Projection { get; private set; }
+        public bool IsCount { get; private set; }
         public bool IsQueryForConstant { get; private set; }
     }
 }

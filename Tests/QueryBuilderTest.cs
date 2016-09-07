@@ -595,6 +595,28 @@ namespace Simple1C.Tests
             }
         }
 
+        public class CountTest : QueryBuilderTest
+        {
+            [Test]
+            public void Test()
+            {
+                AssertQueryCount(SourceForCount<ДоговорыКонтрагентов>(),
+                    "ВЫБРАТЬ КОЛИЧЕСТВО(src.Ссылка) КАК src_Ссылка_Count ИЗ Справочник.ДоговорыКонтрагентов КАК src");
+            }
+
+            [ConfigurationScope(ConfigurationScope.Справочники)]
+            public class ДоговорыКонтрагентов
+            {
+                public ВидыДоговоровКонтрагентов? ВидДоговора { get; set; }
+            }
+
+            [ConfigurationScope(ConfigurationScope.Перечисления)]
+            public enum ВидыДоговоровКонтрагентов
+            {
+                СПоставщиком
+            }
+        }
+
         public class LikeFilterTest : QueryBuilderTest
         {
             [Test]
@@ -708,6 +730,17 @@ namespace Simple1C.Tests
             return new RelinqQueryable<T>(queryProvider, sourceName);
         }
 
+        protected IQueryable<T> SourceForCount<T>(string sourceName = null)
+        {
+            var queryProvider = RelinqHelpers.CreateQueryProvider(new TypeRegistry(typeof (Контрагенты).Assembly),
+                delegate(BuiltQuery query)
+                {
+                    lastQuery = query;
+                    return new int[1];
+                });
+            return new RelinqQueryable<T>(queryProvider, sourceName);
+        }
+
         protected KeyValuePair<string, object> P(string name, object value)
         {
             return new KeyValuePair<string, object>(name, value);
@@ -718,6 +751,17 @@ namespace Simple1C.Tests
         {
             lastQuery = null;
             Assert.That(query.ToArray().Length, Is.EqualTo(0));
+            Assert.IsNotNull(lastQuery);
+            Assert.That(lastQuery.QueryText, Is.EqualTo(expectedQueryText));
+            Assert.That(DumpParametersToString(lastQuery.Parameters),
+                Is.EqualTo(DumpParametersToString(expectedParameters)));
+        }
+
+        protected void AssertQueryCount<T>(IQueryable<T> query, string expectedQueryText,
+            params KeyValuePair<string, object>[] expectedParameters)
+        {
+            lastQuery = null;
+            Assert.That(query.Count(), Is.EqualTo(0));
             Assert.IsNotNull(lastQuery);
             Assert.That(lastQuery.QueryText, Is.EqualTo(expectedQueryText));
             Assert.That(DumpParametersToString(lastQuery.Parameters),
