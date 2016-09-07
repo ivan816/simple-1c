@@ -1,8 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Linq;
 using Npgsql;
+using Npgsql.Schema;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql
@@ -30,11 +34,20 @@ namespace Simple1C.Impl.Sql
             var reader = (NpgsqlDataReader) dbReader;
             lock (lockObject)
             {
-                if (columns != null)
-                    return;
                 //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
                 //reader.GetSchemaTable() какую-то хрень в ColumnSize возвращает
                 var npgsqlColumns = reader.GetColumnSchema();
+                if (columns != null)
+                {
+                    if (!CheckColumnsConsistent(npgsqlColumns))
+                    {
+                        const string messageFormat = "inconsistent columns, original [{0}], current [{1}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            columns.Select(x => x.ColumnName + ":" + x.DataType.FormatName()).JoinStrings(","),
+                            npgsqlColumns.Select(x => x.ColumnName + ":" + x.DataType.FormatName()).JoinStrings(",")));
+                    }
+                    return;
+                }
                 columns = new DataColumn[npgsqlColumns.Count];
                 for (var i = 0; i < columns.Length; i++)
                 {
@@ -51,6 +64,16 @@ namespace Simple1C.Impl.Sql
                     target.DropTable("dbo." + tableName);
                 target.CreateTable(tableName, columns);
             }
+        }
+
+        private bool CheckColumnsConsistent(ReadOnlyCollection<NpgsqlDbColumn> npgsqlColumns)
+        {
+            if (npgsqlColumns.Count != columns.Length)
+                return false;
+            for (var i = 0; i < columns.Length; i++)
+                if (npgsqlColumns[i].DataType != columns[i].DataType)
+                    return false;
+            return true;
         }
 
         public void InsertRow(DbDataReader dbReader)
@@ -79,9 +102,22 @@ namespace Simple1C.Impl.Sql
 
         private void Flush()
         {
+            for (var i = 0; i < filledRowsCount; i++)
+            {
+                var r = rows[i];
+                for (var j = 0; j < columns.Length; j++)
+                    r[j] = ConvertType(r[j], columns[j].DataType);
+            }
             var reader = new InMemoryDataReader(rows, filledRowsCount, columns.Length);
             target.BulkCopy(reader, tableName, columns.Length);
             filledRowsCount = 0;
+        }
+
+        private static object ConvertType(object source, Type targetType)
+        {
+            return source is string && targetType == typeof(decimal)
+                ? Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal))
+                : source;
         }
     }
 }
