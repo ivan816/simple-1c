@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class DeclarationClause : ISqlElement
@@ -7,10 +5,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public string Name { get; set; }
         public string Alias { get; set; }
 
-        public void WriteTo(StringBuilder b)
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            b.Append(Name);
-            SqlHelpers.WriteAlias(b, Alias);
+            return visitor.VisitDeclaration(this);
         }
     }
 }

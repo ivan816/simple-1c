@@ -1,5 +1,3 @@
-using System.Text;
-
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class ColumnReferenceExpression : ISqlElement
@@ -7,11 +5,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public string Name { get; set; }
         public string TableName { get; set; }
 
-        public void WriteTo(StringBuilder b)
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            b.Append(TableName);
-            b.Append(".");
-            b.Append(Name);
+            return visitor.VisitColumnReference(this);
         }
     }
 }

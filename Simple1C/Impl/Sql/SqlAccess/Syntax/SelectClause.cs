@@ -1,9 +1,8 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SelectClause
+    internal class SelectClause : ISqlElement
     {
         public SelectClause()
         {
@@ -16,25 +15,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public ISqlElement WhereExpression { get; set; }
         public DeclarationClause Table { get; set; }
 
-        public string GetSql()
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            var b = new StringBuilder();
-            b.Append("(select\r\n\t");
-            SqlHelpers.WriteElements(Columns, ",\r\n\t", b);
-            b.Append("\r\nfrom ");
-            Table.WriteTo(b);
-            if (JoinClauses.Count > 0)
-            {
-                b.Append("\r\n");
-                SqlHelpers.WriteElements(JoinClauses, "\r\n", b);    
-            }
-            if (WhereExpression != null)
-            {
-                b.Append("\r\nwhere ");
-                WhereExpression.WriteTo(b);
-            }
-            b.Append(")");
-            return b.ToString();
+            return visitor.VisitSelect(this);
         }
     }
 }

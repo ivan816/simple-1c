@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
@@ -8,13 +7,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public ISqlElement Expression { get; set; }
         public List<ISqlElement> Constant { get; set; }
 
-        public void WriteTo(StringBuilder b)
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            Expression.WriteTo(b);
-            b.Append(" in ");
-            b.Append('(');
-            SqlHelpers.WriteElements(Constant, ",", b);
-            b.Append(')');
+            return visitor.VisitIn(this);
         }
     }
 }

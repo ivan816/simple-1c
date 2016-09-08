@@ -206,7 +206,7 @@ namespace Simple1C.Impl.Sql
                     Value = enumValueItems[2]
                 }
             };
-            return selectClause.GetSql();
+            return SqlFormatter.Format(selectClause);
         }
 
         private MainQueryEntity GetMainQueryEntity(string alias)
@@ -441,7 +441,7 @@ namespace Simple1C.Impl.Sql
                     };
                 AddJoinClauses(mainEntity.queryEntity, selectClause);
                 AddColumns(mainEntity, selectClause);
-                sql = selectClause.GetSql();
+                sql = SqlFormatter.Format(selectClause);
             }
             else
                 sql = mainEntity.queryEntity.mapping.DbTableName;
@@ -454,7 +454,11 @@ namespace Simple1C.Impl.Sql
             {
                 var expression = GetFieldExpression(f, target);
                 if (f.functionName != null)
-                    expression = new UnaryFunctionExpression(f.functionName, expression);
+                    expression = new UnaryFunctionExpression
+                    {
+                        FunctionName = f.functionName,
+                        Argument = expression
+                    };
                 target.Columns.Add(new SelectColumn
                 {
                     Expression = expression,

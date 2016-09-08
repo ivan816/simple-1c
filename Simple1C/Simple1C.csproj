@@ -123,6 +123,7 @@
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AndExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\BinaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseElement.cs" />
@@ -141,7 +142,9 @@
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
     <Compile Include="Impl\Sql\QueryToSqlTranslator.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlBinaryOperator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlType.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\SqlVisitor.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryFunctionExpression.cs" />
     <Compile Include="Impl\Sql\TableMapping.cs" />
     <Compile Include="Impl\Sql\TableType.cs" />

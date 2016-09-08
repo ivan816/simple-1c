@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Text;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
@@ -13,24 +12,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             Elements = new List<CaseElement>();
         }
 
-        public void WriteTo(StringBuilder b)
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            b.Append("case");
-            foreach (var e in Elements)
-            {
-                b.Append("\r\n\t");
-                b.Append("when ");
-                e.Condition.WriteTo(b);
-                b.Append(" then ");
-                e.Value.WriteTo(b);
-            }
-            if (DefaultValue != null)
-            {
-                b.Append("\r\n\t");
-                b.Append("else ");
-                DefaultValue.WriteTo(b);
-            }
-            b.Append("end");
+            return visitor.VisitCase(this);
         }
     }
 }

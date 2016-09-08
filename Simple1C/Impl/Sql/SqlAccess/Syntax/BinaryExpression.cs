@@ -1,23 +1,19 @@
-using System.Text;
-
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal abstract class BinaryExpression : ISqlElement
     {
-        private readonly string operand;
+        public SqlBinaryOperator Op { get; private set; }
         public ISqlElement Left { get; set; }
         public ISqlElement Right { get; set; }
 
-        protected BinaryExpression(string operand)
+        protected BinaryExpression(SqlBinaryOperator op)
         {
-            this.operand = operand;
+            Op = op;
         }
 
-        public void WriteTo(StringBuilder b)
+        public ISqlElement Accept(SqlVisitor visitor)
         {
-            Left.WriteTo(b);
-            b.Append(operand);
-            Right.WriteTo(b);
+            return visitor.VisitBinary(this);
         }
     }
 }
