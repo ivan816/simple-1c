@@ -147,7 +147,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             if (value is string)
                 return "'" + value + "'";
             if (value is byte[])
-                return "E'\\\\x" + ((byte[]) value).ToHex();
+                return "E'\\\\x" + ((byte[]) value).ToHex() + "'";
             return value.ToString();
         }
 
