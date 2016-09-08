@@ -173,11 +173,7 @@ namespace Simple1C.Impl.Sql
                         if (propertyDescriptor == null || propertyDescriptor.propertyKind == PropertyKind.Single)
                         {
                             if (x.columns.Length != 1)
-                            {
-                                const string messageFormat = "unexpected db columns [{0}] for [{1}]";
-                                throw new InvalidOperationException(string.Format(messageFormat,
-                                    x.columns.JoinStrings(","), x.queryName));
-                            }
+                                return null;
                             var binding = new SingleColumnBinding(x.columns[0],
                                 propertyDescriptor == null ? null : propertyDescriptor.types.Single());
                             return new PropertyMapping(x.queryName, PropertyKind.Single, binding, null);
@@ -189,10 +185,11 @@ namespace Simple1C.Impl.Sql
                                 GetColumnBySuffixOrNull("_rtref", x.columns),
                                 GetColumnBySuffixOrNull("_rrref", x.columns),
                                 propertyDescriptor.types);
-                            return new PropertyMapping(x.queryName, PropertyKind.Single, null, binding);
+                            return new PropertyMapping(x.queryName, PropertyKind.UnionReferences, null, binding);
                         }
-                        return new PropertyMapping(x.queryName, PropertyKind.Union, null, null);
+                        return null;
                     })
+                    .NotNull()
                     .Union(additionalProperties)
                     .ToArray();
                 var tableMapping = new TableMapping(queryTableName, dbTableName, tableType, propertyMappings);

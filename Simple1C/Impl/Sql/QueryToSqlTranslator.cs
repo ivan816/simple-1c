@@ -12,6 +12,9 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryToSqlTranslator
     {
+        private static readonly Regex dateTimeRegex = new Regex(@"(?<year>\d+)[\,\s]+(?<month>\d+)[\,\s]+(?<day>\d+)",
+            RegexOptions.Compiled | RegexOptions.Singleline);
+
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+(\S+)\s+as\s+(\S+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
@@ -49,7 +52,8 @@ namespace Simple1C.Impl.Sql
             new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
             {
                 {"значение", (t, s) => t.GetEnumValueSql(s)},
-                {"год", (_, s) => string.Format("date_part('year', {0})", s)}
+                {"год", (_, s) => string.Format("date_part('year', {0})", s)},
+                {"датавремя", (_, s) => FormatDateTime(s)}
             };
 
         private static readonly Dictionary<string, Regex> functionRegexes = functions.Keys
@@ -644,6 +648,20 @@ namespace Simple1C.Impl.Sql
                     }
                 }
             };
+        }
+
+        private static string FormatDateTime(string s)
+        {
+            var match = dateTimeRegex.Match(s);
+            if (!match.Success)
+            {
+                const string messageFormat = "invalid ДАТАВРЕМЯ arguments [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, s));
+            }
+            var year = int.Parse(match.Groups["year"].Value);
+            var month = int.Parse(match.Groups["month"].Value);
+            var day = int.Parse(match.Groups["day"].Value);
+            return string.Format("'{0:00}-{1:00}-{2:00}'", year, month, day);
         }
 
         private string GetQueryEntityAlias(QueryEntity entity)

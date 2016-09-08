@@ -148,20 +148,20 @@ where contractors.c1 = 'test-inn3'";
     from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
-//TODO!!
-//        [Test]
-//        public void PatchDateTimeFunction()
-//        {
-//            const string sourceSql = @"select *
-//    from Справочник.ДоговорыКонтрагентов as contracts
-//    where c1 >= ДАТАВРЕМЯ()";
-//            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
-//    Дата c1";
-//            const string expectedResult = @"select date_part('year', contracts.c1) as ContractDate
-//    from t1 as contracts";
-//            CheckTranslate(mappings, sourceSql, expectedResult);
-//        }
+
+        [Test]
+        public void PatchDateTimeFunction()
+        {
+            const string sourceSql = @"select *
+    from Справочник.ДоговорыКонтрагентов as contracts
+    where c1 >= ДАТАВРЕМЯ(2010, 7, 10)";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+    Дата Single c1";
+            const string expectedResult = @"select *
+    from t1 as contracts
+    where c1 >= '2010-07-10'";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void CanUseRussianSyntax()

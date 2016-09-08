@@ -27,13 +27,10 @@ namespace Simple1C.Impl.Sql
                 case PropertyKind.Single:
                     b.Append(" ");
                     b.Append(SingleBinding.ColumnName);
-                    if (!string.IsNullOrEmpty(SingleBinding.NestedTableName))
-                    {
-                        b.Append(" ");
-                        b.Append(SingleBinding.NestedTableName);
-                    }
+                    b.Append(" ");
+                    b.Append(SingleBinding.NestedTableName);
                     break;
-                case PropertyKind.Union:
+                case PropertyKind.UnionReferences:
                     b.Append(" ");
                     b.Append(UnionBinding.TypeColumnName);
                     b.Append(" ");
