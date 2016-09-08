@@ -41,7 +41,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override ISqlElement VisitSelectColumn(SelectColumn clause)
         {
             Visit(clause.Expression);
-            WriteAlias(builder, clause.Alias);
+            WriteAlias(clause.Alias);
             return clause;
         }
 
@@ -85,7 +85,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override ISqlElement VisitDeclaration(DeclarationClause clause)
         {
             builder.Append(clause.Name);
-            WriteAlias(builder, clause.Alias);
+            WriteAlias(clause.Alias);
             return clause;
         }
 
@@ -190,12 +190,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             }
         }
 
-        public static void WriteAlias(StringBuilder b, string alias)
+        private void WriteAlias(string alias)
         {
             if (!string.IsNullOrEmpty(alias))
             {
-                b.Append(" as ");
-                b.Append(alias);
+                builder.Append(" as ");
+                builder.Append(alias);
             }
         }
 
