@@ -537,6 +537,15 @@ namespace Simple1C.Impl.Sql
                         });
                     if (p.mapping.Kind == PropertyKind.UnionReferences)
                         eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
+                    var referenceColumnName = p.mapping.Kind == PropertyKind.Single
+                        ? p.mapping.SingleBinding.ColumnName
+                        : p.mapping.UnionBinding.ReferenceColumnName;
+                    if (string.IsNullOrEmpty(referenceColumnName))
+                    {
+                        const string messageFormat = "ref column is not defined for [{0}.{1}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            p.referer.mapping.QueryTableName, p.mapping.PropertyName));
+                    }
                     eqConditions.Add(new EqualityExpression
                     {
                         Left = new ColumnReferenceExpression
@@ -546,9 +555,7 @@ namespace Simple1C.Impl.Sql
                         },
                         Right = new ColumnReferenceExpression
                         {
-                            Name = p.mapping.Kind == PropertyKind.Single
-                                ? p.mapping.SingleBinding.ColumnName
-                                : p.mapping.UnionBinding.ReferenceColumnName,
+                            Name = referenceColumnName,
                             TableName = GetQueryEntityAlias(p.referer)
                         }
                     });
@@ -594,13 +601,27 @@ namespace Simple1C.Impl.Sql
 
         private ISqlElement GetUnionCondition(QueryEntityProperty property, QueryEntity nestedEntity)
         {
+            var typeColumnName = property.mapping.UnionBinding.TypeColumnName;
+            if (string.IsNullOrEmpty(typeColumnName))
+            {
+                const string messageFormat = "type column is not defined for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
+            }
+            var tableIndexColumnName = property.mapping.UnionBinding.TableIndexColumnName;
+            if (string.IsNullOrEmpty(tableIndexColumnName))
+            {
+                const string messageFormat = "tableIndex column is not defined for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
+            }
             return new AndExpression
             {
                 Left = new EqualityExpression
                 {
                     Left = new ColumnReferenceExpression
                     {
-                        Name = property.mapping.UnionBinding.TypeColumnName,
+                        Name = typeColumnName,
                         TableName = GetQueryEntityAlias(property.referer)
                     },
                     Right = new LiteralExpression
@@ -613,7 +634,7 @@ namespace Simple1C.Impl.Sql
                 {
                     Left = new ColumnReferenceExpression
                     {
-                        Name = property.mapping.UnionBinding.TableIndexColumnName,
+                        Name = tableIndexColumnName,
                         TableName = GetQueryEntityAlias(property.referer)
                     },
                     Right = new LiteralExpression

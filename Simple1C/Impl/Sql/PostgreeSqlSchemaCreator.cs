@@ -185,9 +185,9 @@ namespace Simple1C.Impl.Sql
                         if (propertyDescriptor.propertyKind == PropertyKind.UnionReferences)
                         {
                             var binding = new UnionReferencesBinding(
-                                GetColumnBySuffix(queryTableName, x.queryName, "_type", x.columns),
-                                GetColumnBySuffix(queryTableName, x.queryName, "_rtref", x.columns),
-                                GetColumnBySuffix(queryTableName, x.queryName, "_rrref", x.columns),
+                                GetColumnBySuffixOrNull("_type", x.columns),
+                                GetColumnBySuffixOrNull("_rtref", x.columns),
+                                GetColumnBySuffixOrNull("_rrref", x.columns),
                                 propertyDescriptor.types);
                             return new PropertyMapping(x.queryName, PropertyKind.Single, null, binding);
                         }
@@ -205,17 +205,9 @@ namespace Simple1C.Impl.Sql
             return result.ToArray();
         }
 
-        private static string GetColumnBySuffix(string entityName, string propertyName,
-            string suffix, string[] candidates)
+        private static string GetColumnBySuffixOrNull(string suffix, string[] candidates)
         {
-            var result = candidates.SingleOrDefault(x => x.EndsWith(suffix));
-            if (result == null)
-            {
-                const string messageFormat = "can't find column with suffix [{0}] for [{1}.{2}], columns [{3}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    suffix, entityName, propertyName, candidates.JoinStrings(",")));
-            }
-            return result;
+            return candidates.SingleOrDefault(x => x.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
         private class PropertyDescriptor
