@@ -41,9 +41,10 @@ namespace Simple1C.Impl.Sql
             var indexMatch = tableIndexRegex.Match(dbName);
             if (!indexMatch.Success)
             {
-                
+                const string messageFormat = "can't extract table index, queryTableName [{0}], dbName [{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat, queryTableName, dbName));
             }
-            Index= int.Parse(indexMatch.Groups[1].va)
+            Index = int.Parse(indexMatch.Groups[1].Value);
             foreach (var p in Properties)
                 if (!byPropertyName.ContainsKey(p.PropertyName))
                 {

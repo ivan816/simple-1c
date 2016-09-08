@@ -10,6 +10,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public void WriteTo(StringBuilder b)
         {
+            Expression.WriteTo(b);
             b.Append(" in ");
             b.Append('(');
             SqlHelpers.WriteElements(Constant, ",", b);

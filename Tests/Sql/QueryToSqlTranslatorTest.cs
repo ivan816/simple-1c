@@ -30,9 +30,9 @@ namespace Simple1C.Tests.Sql
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     ОбластьДанныхОсновныеДанные Single c2";
-            const string expectedResult = @"select contractors.__nested_field0 as CounterpartyInn
+            const string expectedResult = @"select contractors.c1 as CounterpartyInn
     from (select
-    __nested_table0.c1 as __nested_field0
+    __nested_table0.c1
 from t1 as __nested_table0
 where __nested_table0.c2 in (10,200)) as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult, 10, 200);
@@ -48,8 +48,8 @@ where __nested_table0.c2 in (10,200)) as contractors";
     ИНН Single f2";
             const string expectedResult = @"select contractors.__nested_field0 as CounterpartyInn,contractors.f1 as CounterpartyReference
     from (select
-    __nested_table0.f1,
-    __nested_table0.f2 as __nested_field0
+    __nested_table0.f2 as __nested_field0,
+    __nested_table0.f1
 from t1 as __nested_table0) as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -163,29 +163,6 @@ where contractors.c1 = 'test-inn3'";
 //            CheckTranslate(mappings, sourceSql, expectedResult);
 //        }
 
-        [Test]
-        public void OfType()
-        {
-            const string sourceSql = @"выбрать payOut.Наименование as Name из Документ.СписаниеСРасчетногоСчета as payOut
-    где OfType(payOut.Контрагент as Справочник.Контрагенты).ИНН = ""123""";
-            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
-    ИНН Single c1
-    Наименование Single c2
-    ОбластьДанныхОсновныеДанные Single c3
-    Контрагент Single c7
-Справочник.Контрагенты t2 Main
-    Ссылка Single c4
-    ИНН Single c5
-    ОбластьДанныхОсновныеДанные Single c6";
-            const string expectedResult = @"select payOut.c2 as Name from (select
-    __nested_table1.c5 as __nested_field0,
-    __nested_table0.c2
-from t1 as __nested_table0
-left join t2 as __nested_table1 on __nested_table1.c6 = __nested_table0.c3 and __nested_table1.c4 = __nested_table0.c7) as payOut
-    where payOut.__nested_field0 = '123'";
-            CheckTranslate(mappings, sourceSql, expectedResult);
-        }
-        
         [Test]
         public void CanUseRussianSyntax()
         {
@@ -466,8 +443,8 @@ from справочник.Контрагенты as contractors";
                 @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorTypeText,contractors.f2 as ContractorType
 from (select
     __nested_table0.f1,
-    __nested_table0.f2,
-    __nested_table2.enumValueName as __nested_field0
+    __nested_table2.enumValueName as __nested_field0,
+    __nested_table0.f2
 from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f2
 left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors";

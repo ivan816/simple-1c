@@ -68,7 +68,8 @@ namespace Simple1C.Impl.Sql
             switch (propertyType)
             {
                 case PropertyType.Single:
-                    var singleInfo = new SingleColumnBinding(columnDesc[2], columnDesc[3]);
+                    var singleInfo = new SingleColumnBinding(columnDesc[2],
+                        columnDesc.Length >= 4 ? columnDesc[3] : null);
                     return new PropertyMapping(queryName, propertyType, singleInfo, null);
                 case PropertyType.UnionReferences:
                     var unionInfo = new UnionReferencesBinding(columnDesc[2],
