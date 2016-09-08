@@ -163,7 +163,7 @@ namespace Simple1C.Impl.Sql
                             functionNameString, properyPath));
                     }
                 }
-                return GetColumnName(properties, functionName, GetSelectPart(m.Index, partsPositions));
+                return SelectProperty(properties, functionName, GetSelectPart(m.Index, partsPositions));
             });
             queryText = tableNameRegex.Replace(queryText,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
@@ -233,6 +233,8 @@ namespace Simple1C.Impl.Sql
             if (!tableMatch.Success)
                 throw new InvalidOperationException("assertion failure");
             var mainTableAlias = tableMatch.Groups[3].Value;
+            SelectProperty(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, null, SelectPart.Join);
+            SelectProperty(new[] { alias, "ОбластьДанныхОсновныеДанные" }, null, SelectPart.Join);
             var condition = string.Format("{0}.ОбластьДанныхОсновныеДанные = {1}.ОбластьДанныхОсновныеДанные and ",
                 mainTableAlias, alias);
             return joinText + condition;
@@ -254,7 +256,7 @@ namespace Simple1C.Impl.Sql
             public readonly List<SelectPart> parts = new List<SelectPart>();
         }
 
-        private string GetColumnName(string[] propertyNames, FunctionName? functionName, SelectPart selectPart)
+        private string SelectProperty(string[] propertyNames, FunctionName? functionName, SelectPart selectPart)
         {
             var mainEntity = GetMainQueryEntity(propertyNames[0]);
             var keyWithoutFunction = string.Join(".", propertyNames);

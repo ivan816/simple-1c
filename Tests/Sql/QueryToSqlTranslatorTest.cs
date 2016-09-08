@@ -256,18 +256,26 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         [Test]
         public void AddAreaToJoin()
         {
-            const string sourceSql = @"выбрать contractors.Наименование as ContractorName из
+            const string sourceSql = @"выбрать contractors.Наименование as ContractorName,contractors.Родитель.Наименование as ParentName из
 Справочник.Контрагенты as contractors
 left join Справочник.КонтактныеЛица as contacts on contractors.ОсновноеКонтактноеЛицо = contacts.Ссылка";
             const string mappings = @"Справочник.Контрагенты t1 Main
+    Ссылка Single c6
     Наименование Single c1
     ОбластьДанныхОсновныеДанные Single c2
     ОсновноеКонтактноеЛицо Single c3
+    Родитель Single c4 Справочник.Контрагенты
 Справочник.КонтактныеЛица t2 Main
-    Ссылка Single c4
+    Ссылка Single c7
     ОбластьДанныхОсновныеДанные Single c5";
-            const string expectedResult = @"select contractors.c1 as ContractorName from t1 as contractors
-left join t2 as contacts on contractors.c2 = contacts.c5 and contractors.c3 = contacts.c4";
+            const string expectedResult = @"select contractors.c1 as ContractorName,contractors.__nested_field0 as ParentName from (select
+    __nested_table0.c2,
+    __nested_table0.c1,
+    __nested_table1.c1 as __nested_field0,
+    __nested_table0.c3
+from t1 as __nested_table0
+left join t1 as __nested_table1 on __nested_table1.c2 = __nested_table0.c2 and __nested_table1.c6 = __nested_table0.c4) as contractors
+left join t2 as contacts on contractors.c2 = contacts.c5 and contractors.c3 = contacts.c7";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
