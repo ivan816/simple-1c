@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql
 {
-    internal enum PropertyType
+    internal enum PropertyKind
     {
         Single,
         UnionReferences,

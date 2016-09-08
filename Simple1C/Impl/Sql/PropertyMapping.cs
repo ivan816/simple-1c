@@ -7,11 +7,11 @@ namespace Simple1C.Impl.Sql
 {
     internal class PropertyMapping
     {
-        public PropertyMapping(string propertyName, PropertyType type,
+        public PropertyMapping(string propertyName, PropertyKind kind,
             SingleColumnBinding singleBinding, UnionReferencesBinding unionBinding)
         {
             PropertyName = propertyName;
-            Type = type;
+            Kind = kind;
             SingleBinding = singleBinding;
             UnionBinding = unionBinding;
         }
@@ -21,10 +21,10 @@ namespace Simple1C.Impl.Sql
             var b = new StringBuilder();
             b.Append(PropertyName);
             b.Append(" ");
-            b.Append(Type);
-            switch (Type)
+            b.Append(Kind);
+            switch (Kind)
             {
-                case PropertyType.Single:
+                case PropertyKind.Single:
                     b.Append(" ");
                     b.Append(SingleBinding.ColumnName);
                     if (!string.IsNullOrEmpty(SingleBinding.NestedTableName))
@@ -33,7 +33,7 @@ namespace Simple1C.Impl.Sql
                         b.Append(SingleBinding.NestedTableName);
                     }
                     break;
-                case PropertyType.Union:
+                case PropertyKind.Union:
                     b.Append(" ");
                     b.Append(UnionBinding.TypeColumnName);
                     b.Append(" ");
@@ -47,7 +47,7 @@ namespace Simple1C.Impl.Sql
                     }
                     break;
                 default:
-                    throw new InvalidOperationException(string.Format("type [{0}] is not supported", Type));
+                    throw new InvalidOperationException(string.Format("type [{0}] is not supported", Kind));
             }
             return b.ToString();
         }
@@ -58,31 +58,31 @@ namespace Simple1C.Impl.Sql
             if (columnDesc.Length < 2)
                 throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
             var queryName = columnDesc[0];
-            PropertyType propertyType;
-            if (!Enum.TryParse(columnDesc[1], out propertyType))
+            PropertyKind propertyKind;
+            if (!Enum.TryParse(columnDesc[1], out propertyKind))
             {
                 const string messageFormat = "can't parse [{0}] from [{1}]";
                 throw new InvalidOperationException(string.Format(messageFormat,
-                    typeof(PropertyType).FormatName(), s));
+                    typeof(PropertyKind).FormatName(), s));
             }
-            switch (propertyType)
+            switch (propertyKind)
             {
-                case PropertyType.Single:
+                case PropertyKind.Single:
                     var singleInfo = new SingleColumnBinding(columnDesc[2],
                         columnDesc.Length >= 4 ? columnDesc[3] : null);
-                    return new PropertyMapping(queryName, propertyType, singleInfo, null);
-                case PropertyType.UnionReferences:
+                    return new PropertyMapping(queryName, propertyKind, singleInfo, null);
+                case PropertyKind.UnionReferences:
                     var unionInfo = new UnionReferencesBinding(columnDesc[2],
                         columnDesc[3], columnDesc[4],
                         columnDesc.Skip(5).ToArray());
-                    return new PropertyMapping(queryName, propertyType, null, unionInfo);
+                    return new PropertyMapping(queryName, propertyKind, null, unionInfo);
                 default:
-                    throw new InvalidOperationException(string.Format("type [{0}] is not supported", propertyType));
+                    throw new InvalidOperationException(string.Format("type [{0}] is not supported", propertyKind));
             }
         }
 
         public string PropertyName { get; private set; }
-        public PropertyType Type { get; private set; }
+        public PropertyKind Kind { get; private set; }
         public SingleColumnBinding SingleBinding { get; private set; }
         public UnionReferencesBinding UnionBinding { get; private set; }
     }

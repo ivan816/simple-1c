@@ -340,7 +340,7 @@ namespace Simple1C.Impl.Sql
                 return;
             if (index == propertyNames.Length - 1)
             {
-                if (property.mapping.Type != PropertyType.Single)
+                if (property.mapping.Kind != PropertyKind.Single)
                 {
                     const string messageFormat = "can't select field [{0}] in [{1}]";
                     throw new InvalidOperationException(string.Format(messageFormat,
@@ -349,7 +349,7 @@ namespace Simple1C.Impl.Sql
                 properties.Add(property);
                 return;
             }
-            if (property.mapping.Type == PropertyType.Single)
+            if (property.mapping.Kind == PropertyKind.Single)
             {
                 if (property.nestedEntities.Count == 0)
                 {
@@ -373,9 +373,9 @@ namespace Simple1C.Impl.Sql
                 return null;
             var propertyMapping = queryEntity.mapping.GetByPropertyName(name);
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
-            switch (propertyMapping.Type)
+            switch (propertyMapping.Kind)
             {
-                case PropertyType.Single:
+                case PropertyKind.Single:
                     if (name == "Ссылка")
                     {
                         if (queryEntity.mapping.Type == TableType.TableSection)
@@ -394,13 +394,13 @@ namespace Simple1C.Impl.Sql
                              AddQueryEntity(property, nestedTableName);
                     }
                     break;
-                case PropertyType.UnionReferences:
+                case PropertyKind.UnionReferences:
                     foreach (var t in propertyMapping.UnionBinding.NestedTables)
                         AddQueryEntity(property, t);
                     break;
                 default:
                     const string messageFormat = "type [{0}] is not supported";
-                    throw new InvalidOperationException(string.Format(messageFormat, propertyMapping.Type));
+                    throw new InvalidOperationException(string.Format(messageFormat, propertyMapping.Kind));
             }
             queryEntity.properties.Add(property);
             return property;
@@ -535,7 +535,7 @@ namespace Simple1C.Impl.Sql
                                 TableName = GetQueryEntityAlias(p.referer)
                             }
                         });
-                    if (p.mapping.Type == PropertyType.UnionReferences)
+                    if (p.mapping.Kind == PropertyKind.UnionReferences)
                         eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
                     eqConditions.Add(new EqualityExpression
                     {
@@ -546,7 +546,7 @@ namespace Simple1C.Impl.Sql
                         },
                         Right = new ColumnReferenceExpression
                         {
-                            Name = p.mapping.Type == PropertyType.Single
+                            Name = p.mapping.Kind == PropertyKind.Single
                                 ? p.mapping.SingleBinding.ColumnName
                                 : p.mapping.UnionBinding.ReferenceColumnName,
                             TableName = GetQueryEntityAlias(p.referer)
