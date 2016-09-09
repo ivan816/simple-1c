@@ -12,14 +12,17 @@ namespace Simple1C.Impl.Sql
 {
     internal class QueryToSqlTranslator
     {
+        private static readonly Regex nowMacroRegex = new Regex(@"&Now", 
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
         private static readonly Regex dateTimeRegex = new Regex(@"(?<year>\d+)[\,\s]+(?<month>\d+)[\,\s]+(?<day>\d+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
         private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+(\S+)\s+as\s+(\S+)",
-            RegexOptions.Compiled | RegexOptions.Singleline);
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
-            RegexOptions.Compiled | RegexOptions.Singleline);
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -121,8 +124,8 @@ namespace Simple1C.Impl.Sql
             queryTables.Clear();
 
             queryText = queryText.Replace("\"", "'");
-            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
-            queryText = queryText.Replace("&Now", currentDateString);
+            var currentDateString = string.Format("cast({0} as date)", FormatSqlDate(CurrentDate ?? DateTime.Today));
+            queryText = nowMacroRegex.Replace(queryText, currentDateString);
             queryText = keywordsRegex.Replace(queryText, m => keywordsMap[m.Groups[1].Value]);
             var match = tableNameRegex.Match(queryText);
             while (match.Success)

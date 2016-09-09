@@ -174,13 +174,14 @@ where contractors.c1 = 'test-inn3'";
         {
             const string sourceSql = @"select *
     from Справочник.ДоговорыКонтрагентов as contracts
-    where contracts.Дата >= &Now";
+    where contracts.ДатаНачала <= &NoW and contracts.ДатаКонца >= &Now";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
-    Дата Single c1";
+    ДатаНачала Single c1
+    ДатаКонца Single c2";
             currentDate = new DateTime(2016, 8, 9);
             const string expectedResult = @"select *
     from t1 as contracts
-    where contracts.c1 >= '2016-08-09'";
+    where contracts.c1 <= cast('2016-08-09' as date) and contracts.c2 >= cast('2016-08-09' as date)";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
