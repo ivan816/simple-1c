@@ -124,7 +124,7 @@ namespace Simple1C.Impl.Sql
             queryTables.Clear();
 
             queryText = queryText.Replace("\"", "'");
-            var currentDateString = string.Format("cast({0} as date)", FormatSqlDate(CurrentDate ?? DateTime.Today));
+            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
             queryText = nowMacroRegex.Replace(queryText, currentDateString);
             queryText = keywordsRegex.Replace(queryText, m => keywordsMap[m.Groups[1].Value]);
             var match = tableNameRegex.Match(queryText);
@@ -668,7 +668,7 @@ namespace Simple1C.Impl.Sql
 
         private static string FormatSqlDate(DateTime dateTime)
         {
-            return "'" + dateTime.ToString("yyyy-MM-dd") + "'";
+            return "cast('" + dateTime.ToString("yyyy-MM-dd") + "' as date)";
         }
 
         private string GetQueryEntityAlias(QueryEntity entity)

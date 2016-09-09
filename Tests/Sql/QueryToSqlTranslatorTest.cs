@@ -195,7 +195,7 @@ where contractors.c1 = 'test-inn3'";
     Дата Single c1";
             const string expectedResult = @"select *
     from t1 as contracts
-    where c1 >= '2010-07-10'";
+    where c1 >= cast('2010-07-10' as date)";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
