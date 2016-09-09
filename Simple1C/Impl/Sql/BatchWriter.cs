@@ -115,9 +115,14 @@ namespace Simple1C.Impl.Sql
 
         private static object ConvertType(object source, Type targetType)
         {
-            return source is string && targetType == typeof(decimal)
-                ? Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal))
-                : source;
+            if (source is string && targetType == typeof(decimal))
+                return Convert.ChangeType(((string)source).Replace('.', ','), typeof(decimal));
+            if (source is string && targetType == typeof(DateTime))
+            {
+                var dateTime = DateTime.ParseExact((string)source, "yyyy-MM-dd", null);
+                return dateTime == DateTime.MinValue ? (object)null : dateTime;
+            }
+            return source;
         }
     }
 }
