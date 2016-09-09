@@ -296,16 +296,7 @@ namespace Simple1C.Impl.Sql
                     fieldAlias = nameGenerator.GenerateColumnName();
                 }
                 foreach (var p in referencedProperties)
-                {
-                    if (p.nestedEntities.Count != 0)
-                    {
-                        const string messageFormat = "property [{0}] in [{1}] " +
-                                                     "can't be references because it has nested types [{2}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            property.mapping.PropertyName, propertyNames.JoinStrings(".")));
-                    }
                     p.referenced = true;
-                }
                 field = new QueryField(fieldAlias, referencedProperties.ToArray(), fieldFunctionName);
                 mainEntity.fields.Add(key, field);
             }
