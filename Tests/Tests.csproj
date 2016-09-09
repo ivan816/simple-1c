@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Irony">
+      <HintPath>..\packages\Irony.0.9.1\lib\net40\Irony.dll</HintPath>
+    </Reference>
     <Reference Include="Metadata1C, Version=0.0.0.0, Culture=neutral, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\Assemblies\Metadata1C.dll</HintPath>
@@ -58,6 +61,7 @@
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="Integration\СharacteristicsTest.cs" />
+    <Compile Include="Sql\ParserTest.cs" />
     <Compile Include="Sql\QueryToSqlTranslatorTest.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />

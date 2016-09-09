@@ -30,6 +30,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Irony">
+      <HintPath>..\packages\Irony.0.9.1\lib\net40\Irony.dll</HintPath>
+    </Reference>
     <Reference Include="Npgsql">
       <HintPath>..\packages\Npgsql.3.1.7\lib\net45\Npgsql.dll</HintPath>
     </Reference>
@@ -121,6 +124,11 @@
     <Compile Include="Impl\Sql\QuerySource.cs" />
     <Compile Include="Impl\Sql\SingleColumnBinding.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\ElementsHolder.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\Identifier.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\ParseHelpers.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryGrammar.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryParser.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />

@@ -1,8 +1,12 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
+using Irony.Ast;
+using Irony.Parsing;
+using Simple1C.Impl.Sql.SqlAccess.Parsing;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SelectClause : ISqlElement
+    internal class SelectClause : ISqlElement, IAstNodeInit
     {
         public SelectClause()
         {
@@ -18,6 +22,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public ISqlElement Accept(SqlVisitor visitor)
         {
             return visitor.VisitSelect(this);
+        }
+
+        public void Init(AstContext context, ParseTreeNode parseNode)
+        {
+            var elements = parseNode.Elements();
+            Columns = elements.OfType<SelectColumn>().ToList();
+            Table = elements.OfType<DeclarationClause>().Single();
+            foreach (var c in Columns)
+                ((ColumnReferenceExpression) c.Expression).TableName = Table.Name;
         }
     }
 }
