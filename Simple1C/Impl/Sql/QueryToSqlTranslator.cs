@@ -351,12 +351,6 @@ namespace Simple1C.Impl.Sql
                 return;
             if (index == propertyNames.Length - 1)
             {
-                if (property.mapping.Kind != PropertyKind.Single)
-                {
-                    const string messageFormat = "can't select field [{0}] in [{1}]";
-                    throw new InvalidOperationException(string.Format(messageFormat,
-                        property.mapping.PropertyName, propertyNames.JoinStrings(".")));
-                }
                 properties.Add(property);
                 return;
             }
