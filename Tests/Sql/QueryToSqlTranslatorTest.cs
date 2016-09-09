@@ -148,6 +148,18 @@ where contractors.c1 = 'test-inn3'";
     from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+        
+        [Test]
+        public void PatchQuarterFunction()
+        {
+            const string sourceSql = @"select КВАРТАЛ(contracts.Дата) as ContractDate
+    from Справочник.ДоговорыКонтрагентов as contracts";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+    Дата Single c1";
+            const string expectedResult = @"select date_trunc('quarter', contracts.c1) as ContractDate
+    from t1 as contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void PatchDateTimeFunction()

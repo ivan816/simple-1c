@@ -51,9 +51,10 @@ namespace Simple1C.Impl.Sql
         private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
             new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
             {
-                {"значение", (t, s) => t.GetEnumValueSql(s)},
+                {"датавремя", (_, s) => FormatDateTime(s)},
                 {"год", (_, s) => string.Format("date_part('year', {0})", s)},
-                {"датавремя", (_, s) => FormatDateTime(s)}
+                {"квартал", (_, s) => string.Format("date_trunc('quarter', {0})", s)},
+                {"значение", (t, s) => t.GetEnumValueSql(s)}
             };
 
         private static readonly Dictionary<string, Regex> functionRegexes = functions.Keys
