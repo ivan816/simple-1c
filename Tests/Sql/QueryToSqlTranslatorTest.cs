@@ -10,6 +10,14 @@ namespace Simple1C.Tests.Sql
 {
     public class QueryToSqlTranslatorTest : TestBase
     {
+        public DateTime? currentDate;
+
+        protected override void SetUp()
+        {
+            base.SetUp();
+            currentDate = null;
+        }
+
         [Test]
         public void Simple()
         {
@@ -158,6 +166,21 @@ where contractors.c1 = 'test-inn3'";
     Дата Single c1";
             const string expectedResult = @"select date_trunc('quarter', contracts.c1) as ContractDate
     from t1 as contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void CanUseNowParameter()
+        {
+            const string sourceSql = @"select *
+    from Справочник.ДоговорыКонтрагентов as contracts
+    where contracts.Дата >= &Now";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+    Дата Single c1";
+            currentDate = new DateTime(2016, 8, 9);
+            const string expectedResult = @"select *
+    from t1 as contracts
+    where contracts.c1 >= '2016-08-09'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -621,10 +644,13 @@ left join t312 as __nested_table2 on __nested_table2.d3 = __nested_table0.d1 and
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
-        private static void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
+        private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
-            var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore, areas);
+            var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore, areas)
+            {
+                CurrentDate = currentDate
+            };
             var actualTranslated = sqlTranslator.Translate(sql);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
         }

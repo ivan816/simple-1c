@@ -93,6 +93,8 @@ namespace Simple1C.Impl.Sql
                     .ToList();
         }
 
+        public DateTime? CurrentDate { get; set; }
+
         public string Translate(string source)
         {
             var match = unionRegex.Match(source);
@@ -119,6 +121,8 @@ namespace Simple1C.Impl.Sql
             queryTables.Clear();
 
             queryText = queryText.Replace("\"", "'");
+            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
+            queryText = queryText.Replace("&Now", currentDateString);
             queryText = keywordsRegex.Replace(queryText, m => keywordsMap[m.Groups[1].Value]);
             var match = tableNameRegex.Match(queryText);
             while (match.Success)
@@ -655,16 +659,19 @@ namespace Simple1C.Impl.Sql
 
         private static string FormatDateTime(string s)
         {
-            var match = dateTimeRegex.Match(s);
-            if (!match.Success)
+            var m = dateTimeRegex.Match(s);
+            if (!m.Success)
             {
                 const string messageFormat = "invalid ДАТАВРЕМЯ arguments [{0}]";
                 throw new InvalidOperationException(string.Format(messageFormat, s));
             }
-            var year = int.Parse(match.Groups["year"].Value);
-            var month = int.Parse(match.Groups["month"].Value);
-            var day = int.Parse(match.Groups["day"].Value);
-            return string.Format("'{0:00}-{1:00}-{2:00}'", year, month, day);
+            var date = new DateTime(m.AsInt("year"), m.AsInt("month"), m.AsInt("day"));
+            return FormatSqlDate(date);
+        }
+
+        private static string FormatSqlDate(DateTime dateTime)
+        {
+            return "'" + dateTime.ToString("yyyy-MM-dd") + "'";
         }
 
         private string GetQueryEntityAlias(QueryEntity entity)
