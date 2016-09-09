@@ -75,7 +75,7 @@ from t1 as __nested_table0) as contractors";
 from t1 as __nested_table0) as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void StripPresentationFunctionFromSimpleProperties()
         {
@@ -580,6 +580,39 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
         {
             const string sourceSql =
                 @"select payments.Контрагент.Наименование as ContractorName
+from документ.СписаниеСРасчетногоСчета as payments";
+
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
+    Контрагент UnionReferences f1_type f1_tableIndex f1_ref Справочник.Контрагенты Справочник.ФизическиеЛица
+    ОбластьДанныхОсновныеДанные Single d1
+Справочник.Контрагенты t210 Main
+    ССылка Single f2
+    Наименование Single f3
+    ОбластьДанныхОсновныеДанные Single d2
+Справочник.ФизическиеЛица t312 Main
+    ССылка Single f4
+    Наименование Single f5
+    ОбластьДанныхОсновныеДанные Single d3";
+
+            const string expectedResult =
+                @"select payments.__nested_field0 as ContractorName
+from (select
+    case
+    when __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x000000D2' then __nested_table1.f3
+    when __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x00000138' then __nested_table2.f5
+end as __nested_field0
+from t1 as __nested_table0
+left join t210 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x000000D2' and __nested_table1.f2 = __nested_table0.f1_ref
+left join t312 as __nested_table2 on __nested_table2.d3 = __nested_table0.d1 and __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x00000138' and __nested_table2.f4 = __nested_table0.f1_ref) as payments";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void UnionReferencesWithRepresentation()
+        {
+            const string sourceSql =
+                @"select ПРЕДСТАВЛЕНИЕ(payments.Контрагент) as ContractorName
 from документ.СписаниеСРасчетногоСчета as payments";
 
             const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
