@@ -22,7 +22,7 @@ namespace Simple1C.Tests.Sql
         public void Simple()
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
-    from Справочник.Контрагенты as contractors";
+    from Справочник.Контрагенты aS contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
             const string expectedResult = @"select contractors.c1 as CounterpartyInn
