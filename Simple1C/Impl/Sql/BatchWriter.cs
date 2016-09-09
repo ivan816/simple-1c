@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
+using System.Globalization;
 using System.Linq;
 using Npgsql;
 using Npgsql.Schema;
@@ -106,23 +107,35 @@ namespace Simple1C.Impl.Sql
             {
                 var r = rows[i];
                 for (var j = 0; j < columns.Length; j++)
-                    r[j] = ConvertType(r[j], columns[j].DataType);
+                    r[j] = ConvertType(r[j], columns[j]);
             }
             var reader = new InMemoryDataReader(rows, filledRowsCount, columns.Length);
             target.BulkCopy(reader, tableName, columns.Length);
             filledRowsCount = 0;
         }
 
-        private static object ConvertType(object source, Type targetType)
+        private static object ConvertType(object source, DataColumn column)
         {
-            if (source is string && targetType == typeof(decimal))
-                return Convert.ChangeType(((string)source).Replace('.', ','), typeof(decimal));
-            if (source is string && targetType == typeof(DateTime))
+            if (source is string && column.DataType == typeof(decimal))
+                return Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal));
+            if (source is string && column.DataType == typeof(DateTime))
             {
-                var dateTime = DateTime.ParseExact((string)source, "yyyy-MM-dd", null);
-                return dateTime == DateTime.MinValue ? (object)null : dateTime;
+                DateTime dateTime;
+                if (!TryParseDate((string) source, out dateTime))
+                {
+                    const string messageFormat = "can't parse datetime from [{0}] for column [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        source, column.ColumnName));
+                }
+                return dateTime == DateTime.MinValue ? (object) null : dateTime;
             }
             return source;
+        }
+
+        private static bool TryParseDate(string s, out DateTime result)
+        {
+            return DateTime.TryParseExact(s, "yyyy-MM-dd", null, DateTimeStyles.None, out result) ||
+                   DateTime.TryParseExact(s, "yyyy-MM-dd HH:mm:ss", null, DateTimeStyles.None, out result);
         }
     }
 }
