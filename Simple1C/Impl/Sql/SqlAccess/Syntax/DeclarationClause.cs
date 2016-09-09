@@ -17,7 +17,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public void Init(AstContext context, ParseTreeNode parseNode)
         {
-            Name = parseNode.Elements().OfType<Identifier>().Single().Value;
+            
         }
     }
 }

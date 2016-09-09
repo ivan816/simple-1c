@@ -1,5 +1,8 @@
-﻿using Irony.Ast;
+﻿using System;
+using System.Linq;
+using Irony.Ast;
 using Irony.Parsing;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Parsing
@@ -16,12 +19,32 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termSelect = ToTerm("SELECT");
             var termFrom = ToTerm("FROM");
 
-            var selectStmt = new NonTerminal("selectStmt", Use<SelectClause>());
-            var columnItemList = new NonTerminal("columnItemList", Use<ElementsHolder>());
-            var columnItem = new NonTerminal("columnItem", Use<SelectColumn>());
-            var fromClauseOpt = new NonTerminal("fromClauseOpt", Use<DeclarationClause>());
-            var idlist = new NonTerminal("idlist", Use<ElementsHolder>());
-            var id = new NonTerminal("id", Use<Identifier>());
+            var selectStmt = NonTerminal("selectStmt", delegate(ParseTreeNode n)
+            {
+                var elements = n.Elements();
+                var result = new SelectClause {Table = elements.OfType<DeclarationClause>().Single()};
+                foreach (var c in elements.OfType<SelectColumn>())
+                {
+                    ((ColumnReferenceExpression) c.Expression).TableName = result.Table.Name;
+                    result.Columns.Add(c);
+                }
+                return result;
+            });
+            var columnItemList = NonTerminal("columnItemList");
+            var columnItem = NonTerminal("columnItem", n => new SelectColumn
+            {
+                Expression = new ColumnReferenceExpression {Name = n.Elements().OfType<Identifier>().Single().Value}
+            });
+            var fromClauseOpt = NonTerminal("fromClauseOpt", n => new DeclarationClause
+            {
+                Name = n.Elements().OfType<Identifier>().Single().Value
+            });
+            var idlist = NonTerminal("idlist");
+            var id = NonTerminal("id", n => new Identifier
+            {
+                Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
+            });
+
             var idSimple = new IdentifierTerminal("Identifier");
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -34,17 +57,17 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             Root = selectStmt;
         }
 
-        private static AstNodeCreator Use<T>()
-            where T : new()
+        private static NonTerminal NonTerminal(string name)
         {
-            return delegate(AstContext context, ParseTreeNode node)
+            return NonTerminal(name, n => new ElementsHolder
             {
-                var astNode = new T();
-                var init = astNode as IAstNodeInit;
-                if (init != null)
-                    init.Init(context, node);
-                node.AstNode = astNode;
-            };
+                Elements = n.Elements()
+            });
+        }
+
+        private static NonTerminal NonTerminal(string name, Func<ParseTreeNode, object> creator)
+        {
+            return new NonTerminal(name, delegate(AstContext context, ParseTreeNode n) { n.AstNode = creator(n); });
         }
     }
 }

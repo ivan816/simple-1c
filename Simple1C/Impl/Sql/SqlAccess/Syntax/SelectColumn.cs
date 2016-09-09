@@ -1,11 +1,6 @@
-﻿using System.Linq;
-using Irony.Ast;
-using Irony.Parsing;
-using Simple1C.Impl.Sql.SqlAccess.Parsing;
-
-namespace Simple1C.Impl.Sql.SqlAccess.Syntax
+﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SelectColumn : ISqlElement, IAstNodeInit
+    internal class SelectColumn : ISqlElement
     {
         public ISqlElement Expression { get; set; }
         public string Alias { get; set; }
@@ -13,14 +8,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public ISqlElement Accept(SqlVisitor visitor)
         {
             return visitor.VisitSelectColumn(this);
-        }
-
-        public void Init(AstContext context, ParseTreeNode parseNode)
-        {
-            Expression = new ColumnReferenceExpression
-            {
-                Name = parseNode.Elements().OfType<Identifier>().Single().Value
-            };
         }
     }
 }
