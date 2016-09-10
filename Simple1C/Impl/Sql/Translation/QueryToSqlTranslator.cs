@@ -305,7 +305,7 @@ namespace Simple1C.Impl.Sql.Translation
             }
             if (!field.parts.Contains(selectPart))
                 field.parts.Add(selectPart);
-            return propertyNames[0] + "." + (field.alias ?? field.properties[0].mapping.SingleBinding.ColumnName);
+            return propertyNames[0] + "." + (field.alias ?? field.properties[0].mapping.SingleLayout.ColumnName);
         }
 
         private bool ReplaceWithRepresentation(List<QueryEntityProperty> properties)
@@ -358,7 +358,7 @@ namespace Simple1C.Impl.Sql.Translation
                 properties.Add(property);
                 return;
             }
-            if (property.mapping.Kind == PropertyKind.Single)
+            if (property.mapping.SingleLayout != null)
             {
                 if (property.nestedEntities.Count == 0)
                 {
@@ -382,35 +382,29 @@ namespace Simple1C.Impl.Sql.Translation
                 return null;
             var propertyMapping = queryEntity.mapping.GetByPropertyName(name);
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
-            switch (propertyMapping.Kind)
+            if (propertyMapping.SingleLayout != null)
             {
-                case PropertyKind.Single:
-                    if (name == "Ссылка")
+                if (name == "Ссылка")
+                {
+                    if (queryEntity.mapping.Type == TableType.TableSection)
                     {
-                        if (queryEntity.mapping.Type == TableType.TableSection)
-                        {
-                            var nestedTableName = queryEntity.mapping.QueryTableName;
-                            nestedTableName = TableMapping.GetMainQueryNameByTableSectionQueryName(nestedTableName);
-                            AddQueryEntity(property, nestedTableName);
-                        }
-                        else
-                            property.nestedEntities.Add(queryEntity);
+                        var nestedTableName = queryEntity.mapping.QueryTableName;
+                        nestedTableName = TableMapping.GetMainQueryNameByTableSectionQueryName(nestedTableName);
+                        AddQueryEntity(property, nestedTableName);
                     }
                     else
-                    {
-                        var nestedTableName = propertyMapping.SingleBinding.NestedTableName;
-                        if (!string.IsNullOrEmpty(nestedTableName))
-                            AddQueryEntity(property, nestedTableName);
-                    }
-                    break;
-                case PropertyKind.UnionReferences:
-                    foreach (var t in propertyMapping.UnionBinding.NestedTables)
-                        AddQueryEntity(property, t);
-                    break;
-                default:
-                    const string messageFormat = "type [{0}] is not supported";
-                    throw new InvalidOperationException(string.Format(messageFormat, propertyMapping.Kind));
+                        property.nestedEntities.Add(queryEntity);
+                }
+                else
+                {
+                    var nestedTableName = propertyMapping.SingleLayout.NestedTableName;
+                    if (!string.IsNullOrEmpty(nestedTableName))
+                        AddQueryEntity(property, nestedTableName);
+                }
             }
+            else
+                foreach (var t in propertyMapping.UnionLayout.NestedTables)
+                    AddQueryEntity(property, t);
             queryEntity.properties.Add(property);
             return property;
         }
@@ -517,7 +511,7 @@ namespace Simple1C.Impl.Sql.Translation
             }
             return new ColumnReferenceExpression
             {
-                Name = property.mapping.SingleBinding.ColumnName,
+                Name = property.mapping.SingleLayout.ColumnName,
                 TableName = GetQueryEntityAlias(property.referer)
             };
         }
@@ -544,11 +538,11 @@ namespace Simple1C.Impl.Sql.Translation
                                 TableName = GetQueryEntityAlias(p.referer)
                             }
                         });
-                    if (p.mapping.Kind == PropertyKind.UnionReferences)
+                    if (p.mapping.UnionLayout != null)
                         eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
-                    var referenceColumnName = p.mapping.Kind == PropertyKind.Single
-                        ? p.mapping.SingleBinding.ColumnName
-                        : p.mapping.UnionBinding.ReferenceColumnName;
+                    var referenceColumnName = p.mapping.SingleLayout == null
+                        ? p.mapping.UnionLayout.ReferenceColumnName
+                        : p.mapping.SingleLayout.ColumnName;
                     if (string.IsNullOrEmpty(referenceColumnName))
                     {
                         const string messageFormat = "ref column is not defined for [{0}.{1}]";
@@ -610,14 +604,14 @@ namespace Simple1C.Impl.Sql.Translation
 
         private ISqlElement GetUnionCondition(QueryEntityProperty property, QueryEntity nestedEntity)
         {
-            var typeColumnName = property.mapping.UnionBinding.TypeColumnName;
+            var typeColumnName = property.mapping.UnionLayout.TypeColumnName;
             if (string.IsNullOrEmpty(typeColumnName))
             {
                 const string messageFormat = "type column is not defined for [{0}.{1}]";
                 throw new InvalidOperationException(string.Format(messageFormat,
                     property.referer.mapping.QueryTableName, property.mapping.PropertyName));
             }
-            var tableIndexColumnName = property.mapping.UnionBinding.TableIndexColumnName;
+            var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
             if (string.IsNullOrEmpty(tableIndexColumnName))
             {
                 const string messageFormat = "tableIndex column is not defined for [{0}.{1}]";
@@ -725,7 +719,7 @@ namespace Simple1C.Impl.Sql.Translation
 
             public string GetSingleColumnName(string propertyName)
             {
-                return mapping.GetByPropertyName(propertyName).SingleBinding.ColumnName;
+                return mapping.GetByPropertyName(propertyName).SingleLayout.ColumnName;
             }
         }
 
