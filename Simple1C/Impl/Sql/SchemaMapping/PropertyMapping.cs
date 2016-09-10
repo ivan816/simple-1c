@@ -3,7 +3,7 @@ using System.Linq;
 using System.Text;
 using Simple1C.Impl.Helpers;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class PropertyMapping
     {

@@ -2,7 +2,9 @@
 using System.Diagnostics;
 using System.IO;
 using System.Threading;
+using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
+using Simple1C.Impl.Sql.Translation;
 
 namespace Simple1C.Impl.Sql
 {

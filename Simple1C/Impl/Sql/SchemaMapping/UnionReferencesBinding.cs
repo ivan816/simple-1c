@@ -1,4 +1,4 @@
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class UnionReferencesBinding
     {

@@ -5,7 +5,7 @@ using System.Linq;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class PostgreeSqlSchemaStore : IMappingSource
     {

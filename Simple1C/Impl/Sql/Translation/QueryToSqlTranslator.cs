@@ -4,15 +4,16 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Interface;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.Translation
 {
     internal class QueryToSqlTranslator
     {
-        private static readonly Regex nowMacroRegex = new Regex(@"&Now", 
+        private static readonly Regex nowMacroRegex = new Regex(@"&Now",
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private static readonly Regex dateTimeRegex = new Regex(@"(?<year>\d+)[\,\s]+(?<month>\d+)[\,\s]+(?<day>\d+)",
@@ -158,20 +159,19 @@ namespace Simple1C.Impl.Sql
                     const string messageFormat = "invalid propery [{0}], alias must be specified";
                     throw new InvalidOperationException(string.Format(messageFormat, properyPath));
                 }
-                FunctionName? functionName = null;
+                var isRepresentation = false;
                 if (m.Groups["func"].Success)
                 {
                     var functionNameString = m.Groups["func"].Value;
-                    if (functionNameString == "ПРЕДСТАВЛЕНИЕ")
-                        functionName = FunctionName.Representation;
-                    else
+                    if (functionNameString != "ПРЕДСТАВЛЕНИЕ")
                     {
                         const string messageFormat = "unexpected function [{0}] for [{1}]";
                         throw new InvalidOperationException(string.Format(messageFormat,
                             functionNameString, properyPath));
                     }
+                    isRepresentation = true;
                 }
-                return SelectProperty(properties, functionName, GetSelectPart(m.Index, partsPositions));
+                return SelectProperty(properties, isRepresentation, GetSelectPart(m.Index, partsPositions));
             });
             queryText = tableNameRegex.Replace(queryText,
                 m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
@@ -241,8 +241,8 @@ namespace Simple1C.Impl.Sql
             if (!tableMatch.Success)
                 throw new InvalidOperationException("assertion failure");
             var mainTableAlias = tableMatch.Groups[3].Value;
-            SelectProperty(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, null, SelectPart.Join);
-            SelectProperty(new[] { alias, "ОбластьДанныхОсновныеДанные" }, null, SelectPart.Join);
+            SelectProperty(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
+            SelectProperty(new[] {alias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
             var condition = string.Format("{0}.ОбластьДанныхОсновныеДанные = {1}.ОбластьДанныхОсновныеДанные and ",
                 mainTableAlias, alias);
             return joinText + condition;
@@ -264,19 +264,19 @@ namespace Simple1C.Impl.Sql
             public readonly List<SelectPart> parts = new List<SelectPart>();
         }
 
-        private string SelectProperty(string[] propertyNames, FunctionName? functionName, SelectPart selectPart)
+        private string SelectProperty(string[] propertyNames, bool isRepresentation, SelectPart selectPart)
         {
             var mainEntity = GetMainQueryEntity(propertyNames[0]);
             var keyWithoutFunction = string.Join(".", propertyNames);
-            if (!functionName.HasValue && selectPart == SelectPart.GroupBy)
+            if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;
-                var keyWithFunction = keyWithoutFunction + "." + FunctionName.Representation;
+                var keyWithFunction = keyWithoutFunction + "." + true;
                 if (mainEntity.fields.TryGetValue(keyWithFunction, out fieldWithFunction))
                     if (fieldWithFunction.parts.Contains(SelectPart.Select))
-                        functionName = FunctionName.Representation;
+                        isRepresentation = true;
             }
-            var key = keyWithoutFunction + "." + functionName;
+            var key = keyWithoutFunction + "." + isRepresentation;
             QueryField field;
             if (!mainEntity.fields.TryGetValue(key, out field))
             {
@@ -289,8 +289,8 @@ namespace Simple1C.Impl.Sql
                 }
                 var referencedProperties = new List<QueryEntityProperty>();
                 EnumProperties(propertyNames, mainEntity.queryEntity, 1, referencedProperties);
-                if (functionName.HasValue)
-                    if (ApplyFunction(referencedProperties, functionName.Value))
+                if (isRepresentation)
+                    if (ReplaceWithRepresentation(referencedProperties))
                         subqueryRequired = true;
                 string fieldAlias = null;
                 if (subqueryRequired)
@@ -308,7 +308,7 @@ namespace Simple1C.Impl.Sql
             return propertyNames[0] + "." + (field.alias ?? field.properties[0].mapping.SingleBinding.ColumnName);
         }
 
-        private bool ApplyFunction(List<QueryEntityProperty> properties, FunctionName functionName)
+        private bool ReplaceWithRepresentation(List<QueryEntityProperty> properties)
         {
             var result = false;
             for (var i = properties.Count - 1; i >= 0; i--)
@@ -323,12 +323,13 @@ namespace Simple1C.Impl.Sql
                         ? nestedEntity.mapping.ObjectName.Value.Scope
                         : (ConfigurationScope?) null;
                     var validScopes = new ConfigurationScope?[]
-                    {ConfigurationScope.Перечисления, ConfigurationScope.Справочники};
+                    {
+                        ConfigurationScope.Перечисления, ConfigurationScope.Справочники
+                    };
                     if (!validScopes.Contains(scope))
                     {
-                        const string messageFormat = "function [{0}] is only supported for [{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            FormatFunctionName(functionName), validScopes.JoinStrings(",")));
+                        const string messageFormat = "[ПРЕДСТАВЛЕНИЕ] is only supported for [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, validScopes.JoinStrings(",")));
                     }
                     var propertyName = scope == ConfigurationScope.Справочники ? "Наименование" : "Порядок";
                     var presentationProperty = GetOrCreatePropertyIfExists(nestedEntity, propertyName);
@@ -398,8 +399,8 @@ namespace Simple1C.Impl.Sql
                     else
                     {
                         var nestedTableName = propertyMapping.SingleBinding.NestedTableName;
-                         if (!string.IsNullOrEmpty(nestedTableName))
-                             AddQueryEntity(property, nestedTableName);
+                        if (!string.IsNullOrEmpty(nestedTableName))
+                            AddQueryEntity(property, nestedTableName);
                     }
                     break;
                 case PropertyKind.UnionReferences:
@@ -431,7 +432,7 @@ namespace Simple1C.Impl.Sql
             string sql;
             if (mainEntity.subqueryRequired)
             {
-                if (Strip(mainEntity.queryEntity) == StripResult.HasNoReference)
+                if (Strip(mainEntity.queryEntity) == StripResult.HasNoReferences)
                     throw new InvalidOperationException("assertion failure");
                 var selectClause = new SelectClause
                 {
@@ -526,7 +527,7 @@ namespace Simple1C.Impl.Sql
             foreach (var p in entity.properties)
                 foreach (var nestedEntity in p.nestedEntities)
                 {
-                    if(nestedEntity == entity)
+                    if (nestedEntity == entity)
                         continue;
                     var eqConditions = new List<ISqlElement>();
                     if (!nestedEntity.mapping.IsEnum())
@@ -584,7 +585,7 @@ namespace Simple1C.Impl.Sql
 
         private static StripResult Strip(QueryEntity queryEntity)
         {
-            var result = StripResult.HasNoReference;
+            var result = StripResult.HasNoReferences;
             for (var i = queryEntity.properties.Count - 1; i >= 0; i--)
             {
                 var p = queryEntity.properties[i];
@@ -592,15 +593,15 @@ namespace Simple1C.Impl.Sql
                 for (var j = p.nestedEntities.Count - 1; j >= 0; j--)
                 {
                     var nestedEntity = p.nestedEntities[j];
-                    if(nestedEntity == queryEntity)
+                    if (nestedEntity == queryEntity)
                         continue;
-                    if (Strip(nestedEntity) == StripResult.HasNoReference)
+                    if (Strip(nestedEntity) == StripResult.HasNoReferences)
                         p.nestedEntities.RemoveAt(j);
                     else
                         propertyReferenced = true;
                 }
                 if (propertyReferenced)
-                    result = StripResult.HasReferenced;
+                    result = StripResult.HasReferences;
                 else
                     queryEntity.properties.RemoveAt(i);
             }
@@ -788,8 +789,8 @@ namespace Simple1C.Impl.Sql
 
         private enum StripResult
         {
-            HasReferenced,
-            HasNoReference
+            HasReferences,
+            HasNoReferences
         }
 
         private enum SelectPart
@@ -804,22 +805,6 @@ namespace Simple1C.Impl.Sql
         {
             public SelectPart part;
             public int index;
-        }
-
-        private enum FunctionName
-        {
-            Representation
-        }
-
-        private static string FormatFunctionName(FunctionName name)
-        {
-            switch (name)
-            {
-                case FunctionName.Representation:
-                    return "ПРЕДСТАВЛЕНИЕ";
-                default:
-                    throw new ArgumentOutOfRangeException("name", name, null);
-            }
         }
 
         private class NameGenerator

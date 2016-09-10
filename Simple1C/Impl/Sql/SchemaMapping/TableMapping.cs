@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using Simple1C.Interface;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class TableMapping
     {

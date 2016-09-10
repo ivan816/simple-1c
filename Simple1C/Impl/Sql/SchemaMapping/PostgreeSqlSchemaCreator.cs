@@ -7,7 +7,7 @@ using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class PostgreeSqlSchemaCreator
     {

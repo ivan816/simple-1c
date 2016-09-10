@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Impl.Helpers;
-using Simple1C.Impl.Sql;
+using Simple1C.Impl.Sql.SchemaMapping;
+using Simple1C.Impl.Sql.Translation;
 using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests.Sql
@@ -286,7 +287,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             
             var exception = Assert.Throws<InvalidOperationException>(() => 
                 CheckTranslate(mappings, sourceSql, null));
-            Assert.That(exception.Message, Is.EqualTo("function [ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
+            Assert.That(exception.Message, Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
         }
 
         [Test]
