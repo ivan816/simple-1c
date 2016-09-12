@@ -18,12 +18,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return formatter.builder.ToString();
         }
 
-        public override ISqlElement VisitSelect(SelectClause clause)
+        public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("(select\r\n\t");
-            VisitEnumerable(clause.Columns, ",\r\n\t");
+            VisitEnumerable(clause.Fields, ",\r\n\t");
             builder.Append("\r\nfrom ");
-            Visit(clause.Table);
+            Visit(clause.Source);
             if (clause.JoinClauses.Count > 0)
             {
                 builder.Append("\r\n");
@@ -38,14 +38,14 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public override ISqlElement VisitSelectColumn(SelectColumn clause)
+        public override SelectField VisitSelectField(SelectField clause)
         {
             Visit(clause.Expression);
             WriteAlias(clause.Alias);
             return clause;
         }
 
-        public override ISqlElement VisitCase(CaseExpression expression)
+        public override CaseExpression VisitCase(CaseExpression expression)
         {
             builder.Append("case");
             foreach (var e in expression.Elements)
@@ -74,7 +74,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
+        public override ColumnReferenceExpression VisitColumnReference(ColumnReferenceExpression expression)
         {
             builder.Append(expression.TableName);
             builder.Append(".");
@@ -82,7 +82,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public override ISqlElement VisitDeclaration(DeclarationClause clause)
+        public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
             builder.Append(clause.Name);
             WriteAlias(clause.Alias);
@@ -99,11 +99,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public override ISqlElement VisitJoin(JoinClause clause)
+        public override JoinClause VisitJoin(JoinClause clause)
         {
             builder.Append(GetJoinKindString(clause));
             builder.Append(" join ");
-            Visit(clause.Table);
+            Visit(clause.Source);
             builder.Append(" on ");
             Visit(clause.Condition);
             return clause;

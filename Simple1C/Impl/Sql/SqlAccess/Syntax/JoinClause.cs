@@ -2,7 +2,7 @@
 {
     internal class JoinClause : ISqlElement
     {
-        public DeclarationClause Table { get; set; }
+        public ISqlElement Source { get; set; }
         public JoinKind JoinKind { get; set; }
         public ISqlElement Condition { get; set; }
 

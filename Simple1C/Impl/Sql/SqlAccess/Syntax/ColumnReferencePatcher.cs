@@ -6,31 +6,29 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class ColumnReferencePatcher : SqlVisitor
     {
-        private DeclarationClause currentDeclaration;
+        private TableDeclarationClause currentTableDeclaration;
 
-        private readonly Dictionary<string, DeclarationClause> nameToDeclaration =
-            new Dictionary<string, DeclarationClause>();
+        private readonly Dictionary<string, TableDeclarationClause> nameToDeclaration =
+            new Dictionary<string, TableDeclarationClause>();
 
-        public override ISqlElement VisitDeclaration(DeclarationClause clause)
+        public override void VisitTableDeclaration(TableDeclarationClause clause)
         {
-            currentDeclaration = clause;
+            currentTableDeclaration = clause;
             nameToDeclaration.Add(clause.GetRefName(), clause);
-            return base.VisitDeclaration(clause);
         }
 
-        public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
+        public override void VisitColumnReference(ColumnReferenceExpression expression)
         {
             var items = expression.Name.Split('.');
             var aliasCandidate = items[0];
-            DeclarationClause table;
+            TableDeclarationClause table;
             if (nameToDeclaration.TryGetValue(aliasCandidate, out table))
             {
                 expression.Name = items.Skip(1).JoinStrings(".");
                 expression.TableName = aliasCandidate;
             }
             else
-                expression.TableName = currentDeclaration.GetRefName();
-            return expression;
+                expression.TableName = currentTableDeclaration.GetRefName();
         }
     }
 }

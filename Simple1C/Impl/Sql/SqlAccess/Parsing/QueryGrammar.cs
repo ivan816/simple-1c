@@ -24,6 +24,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termOn = ToTerm("ON");
             var termIn = ToTerm("IN");
             var termBy = ToTerm("BY");
+            var termRepresentation = ToTerm("PRESENTATION");
+
             var idSimple = new IdentifierTerminal("Identifier");
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -72,7 +74,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Name = ((Identifier)n.ChildNodes[0].AstNode).Value
                 });
 
-            var columnSource = NonTerminal("columnSource", columnRef | aggregate);
+            var representation = NonTerminal("representation",
+                termRepresentation + "(" + columnRef + ")",
+                node => new UnaryFunctionExpression
+                {
+                    FunctionName = UnaryFunctionName.Presentation,
+                    Argument = (ISqlElement) node.ChildNodes[1].AstNode
+                });
+            var columnSource = NonTerminal("columnSource", representation | columnRef | aggregate);
             columnSource.SetFlag(TermFlags.IsTransient);
 
             var asOpt = NonTerminal("asOpt", Empty | termAs);
@@ -82,7 +91,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             {
                 var astNode = n.ChildNodes[0].AstNode;
                 var aliasNodes = n.ChildNodes[1].ChildNodes;
-                return new SelectColumn
+                return new SelectField
                 {
                     Expression = (ISqlElement) astNode,
                     Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
@@ -188,7 +197,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 id + aliasOpt,
                 delegate(ParseTreeNode n)
                 {
-                    return new DeclarationClause
+                    return new TableDeclarationClause
                     {
                         Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
                         Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
@@ -226,7 +235,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     }
                     return new JoinClause
                     {
-                        Table = (DeclarationClause) node.ChildNodes[2].AstNode,
+                        Source = (TableDeclarationClause) node.ChildNodes[2].AstNode,
                         JoinKind = joinKind,
                         Condition = (ISqlElement) node.ChildNodes[4].AstNode
                     };
@@ -278,16 +287,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     var elements = n.Elements();
                     var result = new SelectClause
                     {
-                        Table = elements.OfType<DeclarationClause>().Single()
+                        Source = elements.OfType<TableDeclarationClause>().Single()
                     };
-                    var selectColumns = elements.OfType<SelectColumn>().ToArray();
+                    var selectColumns = elements.OfType<SelectField>().ToArray();
                     if (selectColumns.Length == 0)
                     {
                         result.IsSelectAll = true;
-                        result.Columns = null;
+                        result.Fields = null;
                     }
                     else
-                        result.Columns.AddRange(selectColumns);
+                        result.Fields.AddRange(selectColumns);
                     result.JoinClauses.AddRange(elements.OfType<JoinClause>());
                     result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
                     result.GroupBy = n.ChildNodes[5].AstNode as GroupByClause;

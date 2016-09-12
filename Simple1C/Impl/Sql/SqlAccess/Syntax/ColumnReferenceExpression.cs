@@ -8,6 +8,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
     internal class ColumnReferenceExpression : ISqlElement, IAstNodeInit
     {
         public string Name { get; set; }
+
+        //todo Declaration ref?
         public string TableName { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)

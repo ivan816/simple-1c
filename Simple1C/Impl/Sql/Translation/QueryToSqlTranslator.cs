@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
+using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Interface;
 
@@ -19,16 +19,14 @@ namespace Simple1C.Impl.Sql.Translation
         private static readonly Regex dateTimeRegex = new Regex(@"(?<year>\d+)[\,\s]+(?<month>\d+)[\,\s]+(?<day>\d+)",
             RegexOptions.Compiled | RegexOptions.Singleline);
 
-        private static readonly Regex tableNameRegex = new Regex(@"(from|join)\s+(\S+)\s+as\s+(\S+)",
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-        private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+        //private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
+        //    RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
                 {"выбрать", "select"},
+                {"представление", "presentation"},
                 {"как", "as"},
                 {"из", "from"},
                 {"где", "where"},
@@ -39,18 +37,6 @@ namespace Simple1C.Impl.Sql.Translation
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-        private static readonly Dictionary<string, SelectPart> selectParts = new Dictionary<string, SelectPart>
-        {
-            {"select", SelectPart.Select},
-            {"where", SelectPart.Where},
-            {"group\\s+by", SelectPart.GroupBy},
-            {"join", SelectPart.Join}
-        };
-
-        private static readonly Dictionary<string, Regex> selectPartsRegexes = selectParts.Keys
-            .ToDictionary(x => x, x => new Regex(string.Format(@"\b({0})\b", x),
-                RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase));
 
         private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
             new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
@@ -75,18 +61,13 @@ namespace Simple1C.Impl.Sql.Translation
                 propRegex);
         }
 
-        private static readonly Regex unionRegex = new Regex(@"\bunion(\s+all)?\b",
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-        private readonly Dictionary<string, MainQueryEntity> queryTables =
-            new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
+        private Dictionary<string, MainQueryEntity> queryTables = new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
 
         private const byte configurationItemReferenceType = 8;
 
         private readonly NameGenerator nameGenerator = new NameGenerator();
         private readonly IMappingSource mappingSource;
         private readonly List<ISqlElement> areas;
-        private string queryText;
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
@@ -101,104 +82,55 @@ namespace Simple1C.Impl.Sql.Translation
 
         public string Translate(string source)
         {
-            var match = unionRegex.Match(source);
-            if (!match.Success)
-                return TranslateSingleSelect(source);
-            var b = new StringBuilder();
-            var lastPosition = 0;
-            while (match.Success)
+            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
+            source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
+            source = nowMacroRegex.Replace(source, currentDateString);
+            var queryParser = new QueryParser();
+            var rootSelectClause = queryParser.Parse(source);
+            var selectClause = rootSelectClause;
+            while (selectClause != null)
             {
-                var itemText = source.Substring(lastPosition, match.Index - lastPosition);
-                b.Append(TranslateSingleSelect(itemText));
-                b.Append(match.Value);
-                lastPosition = match.Index + match.Value.Length;
-                match = match.NextMatch();
+                var union = selectClause.Union;
+                selectClause.Union = null;
+                TranslateSingleSelect(selectClause);
+                selectClause.Union = union;
+                selectClause = union == null ? null : union.SelectClause;
             }
-            b.Append(TranslateSingleSelect(source.Substring(lastPosition)));
-            return b.ToString();
+            return SqlFormatter.Format(rootSelectClause);
         }
 
-        private string TranslateSingleSelect(string source)
+        private void RegisterMainQueryEntity(string name, string queryName)
         {
-            queryText = source;
+            var queryEntity = CreateQueryEntity(null, queryName);
+            var mainQueryEntity = new MainQueryEntity(queryEntity, areas != null);
+            queryTables.Add(name, mainQueryEntity);
+        }
+
+        private void TranslateSingleSelect(SelectClause selectClause)
+        {
             nameGenerator.Reset();
             queryTables.Clear();
 
-            queryText = queryText.Replace("\"", "'");
-            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
-            queryText = nowMacroRegex.Replace(queryText, currentDateString);
-            queryText = keywordsRegex.Replace(queryText, m => keywordsMap[m.Groups[1].Value]);
-            var match = tableNameRegex.Match(queryText);
-            while (match.Success)
-            {
-                var queryName = match.Groups[2].Value;
-                var alias = match.Groups[3].Value;
-                queryTables.Add(alias,
-                    new MainQueryEntity(CreateQueryEntity(null, queryName), areas != null));
-                match = match.NextMatch();
-            }
-            queryText = joinRegex.Replace(queryText, m => PatchJoin(m.Value, m.Index, m.Groups[1].Value));
-            var partsPositions = new List<SelectPartPosition>();
-            foreach (var selectPart in selectParts)
-            {
-                var m = selectPartsRegexes[selectPart.Key].Match(queryText);
-                if (m.Success)
-                    partsPositions.Add(new SelectPartPosition
-                    {
-                        index = m.Index,
-                        part = selectPart.Value
-                    });
-            }
-            partsPositions.Sort((x, y) => x.index.CompareTo(y.index));
-            queryText = propertiesRegex.Replace(queryText, delegate(Match m)
-            {
-                var properyPath = m.Groups["prop"].Value;
-                var properties = properyPath.Split('.');
-                if (properties.Length < 2)
-                {
-                    const string messageFormat = "invalid propery [{0}], alias must be specified";
-                    throw new InvalidOperationException(string.Format(messageFormat, properyPath));
-                }
-                var isRepresentation = false;
-                if (m.Groups["func"].Success)
-                {
-                    var functionNameString = m.Groups["func"].Value;
-                    if (functionNameString != "ПРЕДСТАВЛЕНИЕ")
-                    {
-                        const string messageFormat = "unexpected function [{0}] for [{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            functionNameString, properyPath));
-                    }
-                    isRepresentation = true;
-                }
-                var queryField = GetOrCreateQueryField(properties, isRepresentation,
-                    GetSelectPart(m.Index, partsPositions));
-                return properties[0] + "." + (queryField.alias ?? queryField.properties[0].GetDbColumnName());
-            });
-            queryText = tableNameRegex.Replace(queryText,
-                m => m.Groups[1].Value + " " + GetSql(m.Groups[3].Value));
-            queryText = functions.Aggregate(queryText, (s, f) => functionRegexes[f.Key]
-                .Replace(s, m => f.Value(this, m.Groups[1].Value)));
-            return queryText;
-        }
+            var referencePatcher = new ColumnReferencePatcher(this);
+            referencePatcher.Visit(selectClause);
 
-        private static SelectPart GetSelectPart(int index, List<SelectPartPosition> positions)
-        {
-            for (var i = positions.Count - 1; i >= 0; i--)
-            {
-                var position = positions[i];
-                if (index > position.index)
-                    return position.part;
-            }
-            throw new InvalidOperationException("asserton failure");
+            //todo
+            //queryText = joinRegex.Replace(queryText, m => PatchJoin(m.Value, m.Index, m.Groups[1].Value));
+
+            var tableDeclarationPatcher = new TableDeclarationPatcher(this);
+            tableDeclarationPatcher.Visit(selectClause);
+
+            //queryText = functions.Aggregate(queryText, (s, f) => functionRegexes[f.Key]
+            //    .Replace(s, m => f.Value(this, m.Groups[1].Value)));
+            //return queryText;
         }
 
         private string GetEnumValueSql(string enumValue)
         {
             var enumValueItems = enumValue.Split('.');
             var table = CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
-            var selectClause = new SelectClause {Table = GetDeclarationClause(table)};
-            selectClause.Columns.Add(new SelectColumn
+            var selectClause = new SelectClause {Source = GetDeclarationClause(table)};
+            selectClause.Fields.Add(new SelectField
             {
                 Expression = new ColumnReferenceExpression
                 {
@@ -213,7 +145,7 @@ namespace Simple1C.Impl.Sql.Translation
                 Left = new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = enumMappingsJoinClause.Table.Alias
+                    TableName = enumMappingsJoinClause.Source.Alias
                 },
                 Right = new LiteralExpression
                 {
@@ -234,33 +166,41 @@ namespace Simple1C.Impl.Sql.Translation
             return mainEntity;
         }
 
-        private string PatchJoin(string joinText, int joinPosition, string alias)
-        {
-            var fromPosition = queryText.LastIndexOf("from", joinPosition, StringComparison.OrdinalIgnoreCase);
-            if (fromPosition < 0)
-                throw new InvalidOperationException("assertion failure");
-            var tableMatch = tableNameRegex.Match(queryText, fromPosition);
-            if (!tableMatch.Success)
-                throw new InvalidOperationException("assertion failure");
-            var mainTableAlias = tableMatch.Groups[3].Value;
-            GetOrCreateQueryField(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
-            GetOrCreateQueryField(new[] {alias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
-            var condition = string.Format("{0}.ОбластьДанныхОсновныеДанные = {1}.ОбластьДанныхОсновныеДанные and ",
-                mainTableAlias, alias);
-            return joinText + condition;
-        }
+        //private class AreaConditionJoinClausePatcher : SqlVisitor
+        //{
+        //    public override ISqlElement VisitJoin(JoinClause clause)
+        //    {
+        //        return base.VisitJoin(clause);
+        //    }
+        //}
+
+        //private string PatchJoin(string joinText, int joinPosition, string alias)
+        //{
+        //    var fromPosition = queryText.LastIndexOf("from", joinPosition, StringComparison.OrdinalIgnoreCase);
+        //    if (fromPosition < 0)
+        //        throw new InvalidOperationException("assertion failure");
+        //    var tableMatch = tableNameRegex.Match(queryText, fromPosition);
+        //    if (!tableMatch.Success)
+        //        throw new InvalidOperationException("assertion failure");
+        //    var mainTableAlias = tableMatch.Groups[3].Value;
+        //    GetOrCreateQueryField(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
+        //    GetOrCreateQueryField(new[] {alias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
+        //    var condition = string.Format("{0}.ОбластьДанныхОсновныеДанные = {1}.ОбластьДанныхОсновныеДанные and ",
+        //        mainTableAlias, alias);
+        //    return joinText + condition;
+        //}
 
         private class QueryField
         {
             public readonly string alias;
             public readonly QueryEntityProperty[] properties;
-            public readonly string functionName;
+            public readonly bool invert;
 
-            public QueryField(string alias, QueryEntityProperty[] properties, string functionName)
+            public QueryField(string alias, QueryEntityProperty[] properties, bool invert)
             {
                 this.alias = alias;
                 this.properties = properties;
-                this.functionName = functionName;
+                this.invert = invert;
             }
 
             public readonly List<SelectPart> parts = new List<SelectPart>();
@@ -283,10 +223,10 @@ namespace Simple1C.Impl.Sql.Translation
             if (!mainEntity.fields.TryGetValue(key, out field))
             {
                 var subqueryRequired = propertyNames.Length > 2;
-                string fieldFunctionName = null;
+                bool needInvert = false;
                 if (propertyNames[propertyNames.Length - 1] == "ЭтоГруппа")
                 {
-                    fieldFunctionName = "not";
+                    needInvert = true;
                     subqueryRequired = true;
                 }
                 var referencedProperties = new List<QueryEntityProperty>();
@@ -304,7 +244,7 @@ namespace Simple1C.Impl.Sql.Translation
                 }
                 foreach (var p in referencedProperties)
                     p.referenced = true;
-                field = new QueryField(fieldAlias, referencedProperties.ToArray(), fieldFunctionName);
+                field = new QueryField(fieldAlias, referencedProperties.ToArray(), needInvert);
                 mainEntity.fields.Add(key, field);
             }
             if (!field.parts.Contains(selectPart))
@@ -419,9 +359,9 @@ namespace Simple1C.Impl.Sql.Translation
             return property;
         }
 
-        private QueryEntity CreateQueryEntity(QueryEntityProperty referer, string tableName)
+        private QueryEntity CreateQueryEntity(QueryEntityProperty referer, string queryName)
         {
-            var tableMapping = mappingSource.ResolveTable(tableName);
+            var tableMapping = mappingSource.ResolveTable(queryName);
             return new QueryEntity(tableMapping, referer);
         }
 
@@ -430,35 +370,33 @@ namespace Simple1C.Impl.Sql.Translation
             referer.nestedEntities.Add(CreateQueryEntity(referer, tableName));
         }
 
-        private string GetSql(string alias)
+        private ISqlElement PatchTableDeclaration(TableDeclarationClause declaration)
         {
-            var mainEntity = GetMainQueryEntity(alias);
-            string sql;
-            if (mainEntity.subqueryRequired)
+            var mainEntity = GetMainQueryEntity(declaration.GetRefName());
+            if (!mainEntity.subqueryRequired)
             {
-                if (Strip(mainEntity.queryEntity) == StripResult.HasNoReferences)
-                    throw new InvalidOperationException("assertion failure");
-                var selectClause = new SelectClause
-                {
-                    Table = GetDeclarationClause(mainEntity.queryEntity)
-                };
-                if (areas != null)
-                    selectClause.WhereExpression = new InExpression
-                    {
-                        Column = new ColumnReferenceExpression
-                        {
-                            Name = mainEntity.queryEntity.GetAreaColumnName(),
-                            TableName = GetQueryEntityAlias(mainEntity.queryEntity)
-                        },
-                        Values = areas
-                    };
-                AddJoinClauses(mainEntity.queryEntity, selectClause);
-                AddColumns(mainEntity, selectClause);
-                sql = SqlFormatter.Format(selectClause);
+                declaration.Name = mainEntity.queryEntity.mapping.DbTableName;
+                return declaration;
             }
-            else
-                sql = mainEntity.queryEntity.mapping.DbTableName;
-            return sql + " as " + alias;
+            if (Strip(mainEntity.queryEntity) == StripResult.HasNoReferences)
+                throw new InvalidOperationException("assertion failure");
+            var selectClause = new SelectClause
+            {
+                Source = GetDeclarationClause(mainEntity.queryEntity)
+            };
+            if (areas != null)
+                selectClause.WhereExpression = new InExpression
+                {
+                    Column = new ColumnReferenceExpression
+                    {
+                        Name = mainEntity.queryEntity.GetAreaColumnName(),
+                        TableName = GetQueryEntityAlias(mainEntity.queryEntity)
+                    },
+                    Values = areas
+                };
+            AddJoinClauses(mainEntity.queryEntity, selectClause);
+            AddColumns(mainEntity, selectClause);
+            return selectClause;
         }
 
         private void AddColumns(MainQueryEntity entity, SelectClause target)
@@ -466,13 +404,13 @@ namespace Simple1C.Impl.Sql.Translation
             foreach (var f in entity.fields.Values)
             {
                 var expression = GetFieldExpression(f, target);
-                if (f.functionName != null)
+                if (f.invert)
                     expression = new UnaryFunctionExpression
                     {
-                        FunctionName = f.functionName,
+                        FunctionName = UnaryFunctionName.Not,
                         Argument = expression
                     };
-                target.Columns.Add(new SelectColumn
+                target.Fields.Add(new SelectField
                 {
                     Expression = expression,
                     Alias = f.alias
@@ -516,7 +454,7 @@ namespace Simple1C.Impl.Sql.Translation
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = enumMappingsJoinClause.Table.Alias
+                    TableName = enumMappingsJoinClause.Source.Alias
                 };
             }
             return new ColumnReferenceExpression
@@ -574,7 +512,7 @@ namespace Simple1C.Impl.Sql.Translation
                     });
                     var joinClause = new JoinClause
                     {
-                        Table = new DeclarationClause
+                        Source = new TableDeclarationClause
                         {
                             Name = nestedEntity.mapping.DbTableName,
                             Alias = GetQueryEntityAlias(nestedEntity)
@@ -659,6 +597,94 @@ namespace Simple1C.Impl.Sql.Translation
             };
         }
 
+        private class TableDeclarationPatcher : SqlVisitor
+        {
+            private readonly QueryToSqlTranslator translator;
+
+            public TableDeclarationPatcher(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
+            {
+                return translator.PatchTableDeclaration(clause);
+            }
+        }
+
+        private class ColumnReferencePatcher : SqlVisitor
+        {
+            private readonly QueryToSqlTranslator translator;
+            private bool isPresentation;
+            private SelectPart? currentPart;
+
+            public ColumnReferencePatcher(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            private void WithCurrentPart(SelectPart part, Action handle)
+            {
+                var oldPart = currentPart;
+                currentPart = part;
+                handle();
+                currentPart = oldPart;
+            }
+
+            public override SelectField VisitSelectField(SelectField clause)
+            {
+                WithCurrentPart(SelectPart.Select, () => base.VisitSelectField(clause));
+                return clause;
+            }
+
+            public override ISqlElement VisitWhere(ISqlElement element)
+            {
+                WithCurrentPart(SelectPart.Where, () => base.VisitWhere(element));
+                return element;
+            }
+
+            public override GroupByClause VisitGroupBy(GroupByClause element)
+            {
+                WithCurrentPart(SelectPart.GroupBy, () => base.VisitGroupBy(element));
+                return element;
+            }
+
+            public override JoinClause VisitJoin(JoinClause element)
+            {
+                WithCurrentPart(SelectPart.Join, () => base.VisitJoin(element));
+                return element;
+            }
+
+            public override ISqlElement VisitUnary(UnaryFunctionExpression expression)
+            {
+                isPresentation = expression.FunctionName == UnaryFunctionName.Presentation;
+                base.VisitUnary(expression);
+                isPresentation = false;
+                return expression;
+            }
+
+            public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
+            {
+                translator.RegisterMainQueryEntity(clause.GetRefName(), clause.Name);
+                return clause;
+            }
+
+            public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
+            {
+                //todo remove this shit
+                var properties = new[] { expression.TableName }
+                    .Concat(expression.Name.Split('.'))
+                    .ToArray();
+
+                if (!currentPart.HasValue)
+                    throw new InvalidOperationException("assertion failure");
+                var queryField = translator.GetOrCreateQueryField(properties, isPresentation,
+                    currentPart.GetValueOrDefault());
+                expression.Name = queryField.alias ?? queryField.properties[0].GetDbColumnName();
+                return expression;
+            }
+        }
+
         private static string FormatDateTime(string s)
         {
             var m = dateTimeRegex.Match(s);
@@ -681,9 +707,9 @@ namespace Simple1C.Impl.Sql.Translation
             return entity.alias ?? (entity.alias = nameGenerator.GenerateTableName());
         }
 
-        private DeclarationClause GetDeclarationClause(QueryEntity queryEntity)
+        private TableDeclarationClause GetDeclarationClause(QueryEntity queryEntity)
         {
-            return new DeclarationClause
+            return new TableDeclarationClause
             {
                 Name = queryEntity.mapping.DbTableName,
                 Alias = GetQueryEntityAlias(queryEntity)
@@ -761,7 +787,7 @@ namespace Simple1C.Impl.Sql.Translation
                 throw new InvalidOperationException("assertion failure");
             return new JoinClause
             {
-                Table = new DeclarationClause
+                Source = new TableDeclarationClause
                 {
                     Name = "simple1c__enumMappings",
                     Alias = tableAlias
@@ -810,12 +836,6 @@ namespace Simple1C.Impl.Sql.Translation
             Where,
             GroupBy,
             Join
-        }
-
-        private class SelectPartPosition
-        {
-            public SelectPart part;
-            public int index;
         }
 
         private class NameGenerator

@@ -10,34 +10,40 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return element.Accept(this);
         }
 
-        public virtual ISqlElement VisitGroupBy(GroupByClause clause)
+        public virtual GroupByClause VisitGroupBy(GroupByClause clause)
         {
             VisitEnumerable(clause.Columns);
             return clause;
         }
 
-        public virtual ISqlElement VisitUnion(UnionClause clause)
+        public virtual UnionClause VisitUnion(UnionClause clause)
         {
             Visit(clause.SelectClause);
             return clause;
         }
 
-        public virtual ISqlElement VisitSelect(SelectClause clause)
+        public virtual SelectClause VisitSelect(SelectClause clause)
         {
-            Visit(clause.Table);
+            clause.Source = Visit(clause.Source);
             VisitEnumerable(clause.JoinClauses);
             if (clause.WhereExpression != null)
-                Visit(clause.WhereExpression);
-            if (clause.Columns != null)
-                VisitEnumerable(clause.Columns);
+                clause.WhereExpression = VisitWhere(clause.WhereExpression);
+            if (clause.Fields != null)
+                VisitEnumerable(clause.Fields);
             if (clause.GroupBy != null)
-                Visit(clause.GroupBy);
+                clause.GroupBy = VisitGroupBy(clause.GroupBy);
             if (clause.Union != null)
-                Visit(clause.Union);
+                clause.Union = VisitUnion(clause.Union);
             return clause;
         }
 
-        public virtual ISqlElement VisitSelectColumn(SelectColumn clause)
+        public virtual ISqlElement VisitWhere(ISqlElement filter)
+        {
+            Visit(filter);
+            return filter;
+        }
+
+        public virtual SelectField VisitSelectField(SelectField clause)
         {
             Visit(clause.Expression);
             return clause;
@@ -50,7 +56,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public virtual ISqlElement VisitCase(CaseExpression expression)
+        public virtual CaseExpression VisitCase(CaseExpression expression)
         {
             return expression;
         }
@@ -60,7 +66,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public virtual ISqlElement VisitDeclaration(DeclarationClause clause)
+        public virtual ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
             return clause;
         }
@@ -72,9 +78,9 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public virtual ISqlElement VisitJoin(JoinClause clause)
+        public virtual JoinClause VisitJoin(JoinClause clause)
         {
-            Visit(clause.Table);
+            clause.Source = Visit(clause.Source);
             Visit(clause.Condition);
             return clause;
         }
@@ -86,10 +92,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitUnary(UnaryFunctionExpression expression)
         {
+            Visit(expression.Argument);
             return expression;
         }
 
-        public virtual ISqlElement VisitAggregateFunction(AggregateFunction expression)
+        public virtual AggregateFunction VisitAggregateFunction(AggregateFunction expression)
         {
             return expression;
         }

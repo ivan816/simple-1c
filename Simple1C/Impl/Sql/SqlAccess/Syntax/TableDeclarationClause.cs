@@ -1,6 +1,6 @@
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class DeclarationClause : ISqlElement
+    internal class TableDeclarationClause : ISqlElement
     {
         public string Name { get; set; }
         public string Alias { get; set; }
@@ -12,7 +12,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public ISqlElement Accept(SqlVisitor visitor)
         {
-            return visitor.VisitDeclaration(this);
+            return visitor.VisitTableDeclaration(this);
         }
     }
 }
