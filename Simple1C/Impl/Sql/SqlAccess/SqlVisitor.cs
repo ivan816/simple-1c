@@ -13,7 +13,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             return clause;
         }
-        
+
         public virtual ISqlElement VisitSelectColumn(SelectColumn clause)
         {
             return clause;
@@ -55,6 +55,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
         }
 
         public virtual ISqlElement VisitUnary(UnaryFunctionExpression expression)
+        {
+            return expression;
+        }
+
+        public virtual ISqlElement VisitAggregateFunction(AggregateFunction expression)
         {
             return expression;
         }

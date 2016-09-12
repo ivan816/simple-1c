@@ -21,6 +21,34 @@ namespace Simple1C.Tests.Sql
             Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
         }
 
+        [Test]
+        public void ColumnAliases()
+        {
+            var selectClause = Parse("select a as a_alias,b b_alias from testTable");
+            Assert.That(selectClause.Columns[0].Alias, Is.EqualTo("a_alias"));
+            Assert.That(selectClause.Columns[1].Alias, Is.EqualTo("b_alias"));
+        }
+
+        [Test]
+        public void SelectAll()
+        {
+            var selectClause = Parse("select * from testTable");
+            Assert.That(selectClause.IsSelectAll, Is.True);
+            Assert.That(selectClause.Columns, Is.Null);
+        }
+
+        [Test]
+        public void SelectAggregate()
+        {
+            var selectClause = Parse("select count(*) as a, Sum(*) AS b from testTable");
+            var columnA = selectClause.Columns[0].Expression as AggregateFunction;
+            var columnB = selectClause.Columns[1].Expression as AggregateFunction;
+            Assert.NotNull(columnA);
+            Assert.That(columnA.Type, Is.EqualTo(AggregateFunctionType.Count));
+            Assert.NotNull(columnB);
+            Assert.That(columnB.Type, Is.EqualTo(AggregateFunctionType.Sum));
+        }
+
         private static SelectClause Parse(string source)
         {
             var parser = new QueryParser();

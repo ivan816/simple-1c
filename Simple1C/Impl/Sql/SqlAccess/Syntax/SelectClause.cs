@@ -10,7 +10,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             Columns = new List<SelectColumn>();
         }
 
-        public List<SelectColumn> Columns { get; private set; }
+        public bool IsSelectAll { get; set; }
+        public List<SelectColumn> Columns { get; set; }
         public List<JoinClause> JoinClauses { get; private set; }
         public ISqlElement WhereExpression { get; set; }
         public DeclarationClause Table { get; set; }
