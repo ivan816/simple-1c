@@ -15,6 +15,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public List<JoinClause> JoinClauses { get; private set; }
         public ISqlElement WhereExpression { get; set; }
         public DeclarationClause Table { get; set; }
+        public UnionClause Union { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
         {

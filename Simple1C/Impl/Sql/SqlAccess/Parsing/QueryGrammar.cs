@@ -240,8 +240,25 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Empty | "WHERE" + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
+            var unionStmt = NonTerminal("unionStmt", null,
+                delegate(ParseTreeNode node)
+                {
+                    if (node.ChildNodes.Count == 0)
+                        return null;
+                    var allModifierNodes = node.ChildNodes[1].ChildNodes;
+                    var unionType = allModifierNodes.Count > 0 &&
+                                    allModifierNodes[0].Token.ValueString.ToLower() == "all"
+                        ? UnionType.All
+                        : UnionType.Distinct;
+                    return new UnionClause
+                    {
+                        Type = unionType,
+                        SelectClause = (SelectClause) node.ChildNodes[2].AstNode
+                    };
+                });
+
             var selectStmt = NonTerminal("selectStmt",
-                termSelect + selList + fromClauseOpt + joinItemList + whereClauseOpt,
+                termSelect + selList + fromClauseOpt + joinItemList + whereClauseOpt + unionStmt,
                 delegate(ParseTreeNode n)
                 {
                     var elements = n.Elements();
@@ -260,8 +277,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     result.JoinClauses.AddRange(elements.OfType<JoinClause>());
                     if (n.ChildNodes.Count >= 5)
                         result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
+                    result.Union = n.ChildNodes[5].AstNode as UnionClause;
                     return result;
                 });
+            var unionAllModifier = NonTerminal("unionAllModifier", Empty | "ALL");
+
+            unionStmt.Rule = Empty | ToTerm("UNION") + unionAllModifier + selectStmt;
 
             RegisterOperators(10, "*", "/", "%");
             RegisterOperators(9, "+", "-");

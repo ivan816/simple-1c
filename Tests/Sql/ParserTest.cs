@@ -1,10 +1,11 @@
 ﻿using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests.Sql
 {
-    public class ParserTest
+    public class ParserTest: TestBase
     {
         [Test]
         public void Simple()
@@ -19,6 +20,20 @@ namespace Simple1C.Tests.Sql
             Assert.That(bReference.Name, Is.EqualTo("b"));
             Assert.That(bReference.TableName, Is.EqualTo("testTable"));
             Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
+        }
+
+        [Test]
+        public void Union()
+        {
+            var selectClause = Parse(@"select a1,b1 from t1
+union
+select a2,b2 from t2
+union all
+select a3,b3 from t3");
+            Assert.That(((ColumnReferenceExpression) selectClause.Columns[0].Expression).Name, Is.EqualTo("a1"));
+            Assert.That(selectClause.Union.Type, Is.EqualTo(UnionType.Distinct));
+            Assert.That(selectClause.Union.SelectClause.Union.Type, Is.EqualTo(UnionType.All));
+            Assert.That(selectClause.Union.SelectClause.Union.SelectClause.Union, Is.Null);
         }
 
         [Test]

@@ -152,6 +152,8 @@
     <Compile Include="Impl\Sql\SqlAccess\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
     <Compile Include="Impl\Sql\Translation\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlBinaryOperator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlType.cs" />

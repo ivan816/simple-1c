@@ -9,6 +9,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return element.Accept(this);
         }
 
+        public virtual ISqlElement VisitUnion(UnionClause clause)
+        {
+            Visit(clause.SelectClause);
+            return clause;
+        }
+
         public virtual ISqlElement VisitSelect(SelectClause clause)
         {
             Visit(clause.Table);
@@ -19,6 +25,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
             if (clause.Columns != null)
                 foreach (var column in clause.Columns)
                     Visit(column);
+            if (clause.Union != null)
+                Visit(clause.Union);
             return clause;
         }
 
