@@ -21,6 +21,15 @@ namespace Simple1C.Tests.Sql
             Assert.That(bReference.TableName, Is.EqualTo("testTable"));
             Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
         }
+        
+        [Test]
+        public void GroupBy()
+        {
+            var selectClause = Parse("select count(*) from testTable group by c");
+            Assert.NotNull(selectClause.GroupBy);
+            Assert.That(selectClause.GroupBy.Columns[0].Name, Is.EqualTo("c"));
+            Assert.That(selectClause.GroupBy.Columns[0].TableName, Is.EqualTo("testTable"));
+        }
 
         [Test]
         public void Union()

@@ -23,6 +23,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termJoin = ToTerm("JOIN");
             var termOn = ToTerm("ON");
             var termIn = ToTerm("IN");
+            var termBy = ToTerm("BY");
             var idSimple = new IdentifierTerminal("Identifier");
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -240,6 +241,19 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Empty | "WHERE" + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
+            var columnRefList = NonTerminal("columnRefListcolumnRef", null);
+            columnRefList.Rule = MakePlusRule(columnRefList, termComma, columnRef);
+            var groupClauseOpt = NonTerminal("groupClauseOpt",
+                Empty | "GROUP" + termBy + columnRefList,
+                node => node.ChildNodes.Count == 0
+                    ? null
+                    : new GroupByClause
+                    {
+                        Columns = node.ChildNodes[2].Elements()
+                            .Cast<ColumnReferenceExpression>()
+                            .ToList()
+                    });
+
             var unionStmt = NonTerminal("unionStmt", null,
                 delegate(ParseTreeNode node)
                 {
@@ -258,7 +272,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 });
 
             var selectStmt = NonTerminal("selectStmt",
-                termSelect + selList + fromClauseOpt + joinItemList + whereClauseOpt + unionStmt,
+                termSelect + selList + fromClauseOpt + joinItemList + whereClauseOpt + groupClauseOpt + unionStmt,
                 delegate(ParseTreeNode n)
                 {
                     var elements = n.Elements();
@@ -275,9 +289,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     else
                         result.Columns.AddRange(selectColumns);
                     result.JoinClauses.AddRange(elements.OfType<JoinClause>());
-                    if (n.ChildNodes.Count >= 5)
-                        result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
-                    result.Union = n.ChildNodes[5].AstNode as UnionClause;
+                    result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
+                    result.GroupBy = n.ChildNodes[5].AstNode as GroupByClause;
+                    result.Union = n.ChildNodes[6].AstNode as UnionClause;
                     return result;
                 });
             var unionAllModifier = NonTerminal("unionAllModifier", Empty | "ALL");

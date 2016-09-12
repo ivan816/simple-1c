@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.SqlAccess
@@ -9,6 +10,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return element.Accept(this);
         }
 
+        public virtual ISqlElement VisitGroupBy(GroupByClause clause)
+        {
+            VisitEnumerable(clause.Columns);
+            return clause;
+        }
+
         public virtual ISqlElement VisitUnion(UnionClause clause)
         {
             Visit(clause.SelectClause);
@@ -18,13 +25,13 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public virtual ISqlElement VisitSelect(SelectClause clause)
         {
             Visit(clause.Table);
-            foreach (var join in clause.JoinClauses)
-                Visit(join);
+            VisitEnumerable(clause.JoinClauses);
             if (clause.WhereExpression != null)
                 Visit(clause.WhereExpression);
             if (clause.Columns != null)
-                foreach (var column in clause.Columns)
-                    Visit(column);
+                VisitEnumerable(clause.Columns);
+            if (clause.GroupBy != null)
+                Visit(clause.GroupBy);
             if (clause.Union != null)
                 Visit(clause.Union);
             return clause;
@@ -61,8 +68,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public virtual ISqlElement VisitIn(InExpression expression)
         {
             Visit(expression.Column);
-            foreach (var v in expression.Values)
-                Visit(v);
+            VisitEnumerable(expression.Values);
             return expression;
         }
 
@@ -86,6 +92,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public virtual ISqlElement VisitAggregateFunction(AggregateFunction expression)
         {
             return expression;
+        }
+
+        private void VisitEnumerable(IEnumerable<ISqlElement> elements)
+        {
+            foreach (var el in elements)
+                Visit(el);
         }
     }
 }
