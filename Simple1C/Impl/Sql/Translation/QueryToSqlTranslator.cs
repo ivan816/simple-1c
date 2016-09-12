@@ -445,12 +445,12 @@ namespace Simple1C.Impl.Sql.Translation
                 if (areas != null)
                     selectClause.WhereExpression = new InExpression
                     {
-                        Expression = new ColumnReferenceExpression
+                        Column = new ColumnReferenceExpression
                         {
                             Name = mainEntity.queryEntity.GetAreaColumnName(),
                             TableName = GetQueryEntityAlias(mainEntity.queryEntity)
                         },
-                        Constant = areas
+                        Values = areas
                     };
                 AddJoinClauses(mainEntity.queryEntity, selectClause);
                 AddColumns(mainEntity, selectClause);

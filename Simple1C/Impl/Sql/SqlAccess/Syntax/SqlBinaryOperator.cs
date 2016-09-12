@@ -11,6 +11,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         GreaterThan,
         GreaterThanOrEqual,
         Plus,
-        Minus
+        Minus,
+        Like
     }
 }

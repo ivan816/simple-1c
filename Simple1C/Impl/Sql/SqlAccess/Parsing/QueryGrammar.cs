@@ -22,6 +22,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termCount = ToTerm("COUNT");
             var termJoin = ToTerm("JOIN");
             var termOn = ToTerm("ON");
+            var termIn = ToTerm("IN");
             var idSimple = new IdentifierTerminal("Identifier");
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -63,23 +64,27 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     return new AggregateFunction {Type = aggregateFunctionType};
                 });
 
-            var columnSource = NonTerminal("columnSource", id | aggregate);
+            var columnRef = NonTerminal("columnRef",
+                id,
+                n => new ColumnReferenceExpression
+                {
+                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
+                });
+
+            var columnSource = NonTerminal("columnSource", columnRef | aggregate);
+            columnSource.SetFlag(TermFlags.IsTransient);
 
             var asOpt = NonTerminal("asOpt", Empty | termAs);
             var aliasOpt = NonTerminal("aliasOpt", Empty | asOpt + id);
 
             var columnItem = NonTerminal("columnItem", columnSource + aliasOpt, n =>
             {
-                var ids = n.Elements().OfType<Identifier>().ToArray();
-                var aggregateFunction = n.Elements().OfType<AggregateFunction>().SingleOrDefault();
+                var astNode = n.ChildNodes[0].AstNode;
+                var aliasNodes = n.ChildNodes[1].ChildNodes;
                 return new SelectColumn
                 {
-                    Expression = (ISqlElement) aggregateFunction
-                                 ?? new ColumnReferenceExpression
-                                 {
-                                     Name = ids[0].Value
-                                 },
-                    Alias = ids.Length > 1 ? ids[1].Value : null
+                    Expression = (ISqlElement) astNode,
+                    Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
                 };
             });
 
@@ -88,26 +93,24 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var selList = NonTerminal("selList", columnItemList | "*");
 
-            var number = new NumberLiteral("number", NumberOptions.Default,
+            var stringLiteral = new StringLiteral("string",
+                "\"",
+                StringOptions.AllowsAllEscapes,
                 (context, node) => node.AstNode = new LiteralExpression
                 {
                     Value = node.Token.Value
                 });
-            var term = NonTerminal("term", id | number, delegate(ParseTreeNode node)
-            {
-                var result = node.ChildNodes[0].AstNode;
-                var identifier = result as Identifier;
-                if(identifier != null)
-                    result = new ColumnReferenceExpression
-                    {
-                        Name = identifier.Value
-                    };
-                return result;
-            });
+            var numberLiteral = new NumberLiteral("number", NumberOptions.Default,
+                (context, node) => node.AstNode = new LiteralExpression
+                {
+                    Value = node.Token.Value
+                });
+            var term = NonTerminal("term", columnRef | numberLiteral | stringLiteral);
+            term.SetFlag(TermFlags.IsTransient);
 
             var binOp = NonTerminal("binOp",
-                ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
-                | "AND" | "OR", delegate(ParseTreeNode node)
+                ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE", 
+                delegate(ParseTreeNode node)
                 {
                     var operatorText = node.ChildNodes[0].Token.ValueString;
                     switch (operatorText)
@@ -126,6 +129,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                             return SqlBinaryOperator.GreaterThanOrEqual;
                         case "<=":
                             return SqlBinaryOperator.LessThanOrEqual;
+                        case "like":
+                            return SqlBinaryOperator.Like;
                         case "<>":
                         case "!=":
                             return SqlBinaryOperator.Neq;
@@ -135,6 +140,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     }
                 });
             binOp.SetFlag(TermFlags.InheritPrecedence);
+
+            var inExpr = NonTerminal("inExpr", null,
+                node => new InExpression
+                {
+                    Column = (ColumnReferenceExpression) node.ChildNodes[0].AstNode,
+                    Values = node.ChildNodes[2].Elements().Cast<ISqlElement>().ToList()
+                });
 
             var binExpr = NonTerminal("binExpr", null, delegate(ParseTreeNode node)
             {
@@ -159,11 +171,17 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Right = right
                 };
             });
+
             var expression = NonTerminal("expression",
-                term | binExpr,
+                term | binExpr | inExpr,
                 n => n.ChildNodes[0].AstNode);
             expression.SetFlag(TermFlags.IsTransient);
             binExpr.Rule = expression + binOp + expression;
+
+            var exprList = NonTerminal("exprList", null);
+            exprList.Rule = MakePlusRule(exprList, termComma, expression);
+
+            inExpr.Rule = columnRef + termIn + "(" + exprList + ")";
 
             var declaration = NonTerminal("declaration",
                 id + aliasOpt,
@@ -247,8 +265,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             RegisterOperators(10, "*", "/", "%");
             RegisterOperators(9, "+", "-");
-            RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "!<", "!>", "LIKE", "IN");
-            RegisterOperators(7, "^", "&", "|");
+            RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "LIKE", "IN");
             RegisterOperators(5, "AND");
             RegisterOperators(4, "OR");
 

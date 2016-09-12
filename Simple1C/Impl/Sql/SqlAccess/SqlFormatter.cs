@@ -91,10 +91,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitIn(InExpression expression)
         {
-            Visit(expression.Expression);
+            Visit(expression.Column);
             builder.Append(" in ");
             builder.Append('(');
-            VisitEnumerable(expression.Constant, ",");
+            VisitEnumerable(expression.Values, ",");
             builder.Append(')');
             return expression;
         }

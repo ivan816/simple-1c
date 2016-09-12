@@ -4,8 +4,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class InExpression : ISqlElement
     {
-        public ISqlElement Expression { get; set; }
-        public List<ISqlElement> Constant { get; set; }
+        public ColumnReferenceExpression Column { get; set; }
+        public List<ISqlElement> Values { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
         {

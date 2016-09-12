@@ -52,6 +52,9 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitIn(InExpression expression)
         {
+            Visit(expression.Column);
+            foreach (var v in expression.Values)
+                Visit(v);
             return expression;
         }
 

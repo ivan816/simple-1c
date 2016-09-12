@@ -41,6 +41,50 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void InOperator()
+        {
+            var selectClause = Parse("select a,b from testTable where c in (10,20,30)");
+            var inExpression = selectClause.WhereExpression as InExpression;
+            
+            Assert.NotNull(inExpression);
+            Assert.That(inExpression.Column.Name, Is.EqualTo("c"));
+            Assert.That(inExpression.Column.TableName, Is.EqualTo("testTable"));
+
+            Assert.That(inExpression.Values.Count, Is.EqualTo(3));
+            Assert.That(((LiteralExpression) inExpression.Values[0]).Value, Is.EqualTo(10));
+            Assert.That(((LiteralExpression) inExpression.Values[1]).Value, Is.EqualTo(20));
+            Assert.That(((LiteralExpression) inExpression.Values[2]).Value, Is.EqualTo(30));
+        }
+        
+        [Test]
+        public void LikeOperator()
+        {
+            var selectClause = Parse("select a,b from testTable where c like \"%test%\"");
+            var binaryExpression = selectClause.WhereExpression as BinaryExpression;
+            
+            Assert.NotNull(binaryExpression);
+            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.Like));
+
+            var right = binaryExpression.Right as LiteralExpression;
+            Assert.NotNull(right);
+            Assert.That(right.Value, Is.EqualTo("%test%"));
+        }
+        
+        [Test]
+        public void StringLiteral()
+        {
+            var selectClause = Parse("select a,b from testTable where c != \"1\\\"2\\\"\"");
+            var binaryExpression = selectClause.WhereExpression as BinaryExpression;
+            
+            Assert.NotNull(binaryExpression);
+            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.Neq));
+
+            var right = binaryExpression.Right as LiteralExpression;
+            Assert.NotNull(right);
+            Assert.That(right.Value, Is.EqualTo("1\"2\""));
+        }
+        
+        [Test]
         public void Join()
         {
             var selectClause = Parse(@"select t1.a as nested1, t2.b as nested2
