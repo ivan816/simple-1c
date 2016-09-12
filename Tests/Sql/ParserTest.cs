@@ -20,6 +20,19 @@ namespace Simple1C.Tests.Sql
             Assert.That(bReference.TableName, Is.EqualTo("testTable"));
             Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
         }
+        
+        [Test]
+        public void FromAlias()
+        {
+            var selectClause = Parse("select a,b from testTable as tt");
+            var aReference = (ColumnReferenceExpression) selectClause.Columns[0].Expression;
+            Assert.That(aReference.Name, Is.EqualTo("a"));
+            Assert.That(aReference.TableName, Is.EqualTo("tt"));
+            var bReference = (ColumnReferenceExpression) selectClause.Columns[1].Expression;
+            Assert.That(bReference.Name, Is.EqualTo("b"));
+            Assert.That(bReference.TableName, Is.EqualTo("tt"));
+            Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
+        }
 
         [Test]
         public void ColumnAliases()

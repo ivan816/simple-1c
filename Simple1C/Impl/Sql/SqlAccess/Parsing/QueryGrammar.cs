@@ -42,7 +42,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     {
                         var columnReference = c.Expression as ColumnReferenceExpression;
                         if (columnReference != null)
-                            columnReference.TableName = result.Table.Name;
+                            columnReference.TableName = result.Table.Alias ?? result.Table.Name;
                         result.Columns.Add(c);
                     }
                 return result;
@@ -92,11 +92,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Alias = ids.Length > 1 ? ids[1].Value : null
                 };
             });
-            var fromClauseOpt = NonTerminal("fromClauseOpt", n => new DeclarationClause
+            var fromClauseOpt = NonTerminal("fromClauseOpt", n =>
             {
-                Name = n.Elements().OfType<Identifier>().Single().Value
+                return new DeclarationClause
+                {
+                    Name = ((Identifier)n.ChildNodes[1].AstNode).Value,
+                    Alias = n.ChildNodes[2].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
+                };
             });
-            var idlist = NonTerminal("idlist");
             var id = NonTerminal("id", n => new Identifier
             {
                 Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
@@ -113,8 +116,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             aggregateArg.Rule = "*"; 
             aliasOpt.Rule = Empty | asOpt + id;
             asOpt.Rule = Empty | termAs;
-            fromClauseOpt.Rule = termFrom + idlist;
-            idlist.Rule = MakePlusRule(idlist, termComma, id);
+            fromClauseOpt.Rule = termFrom + id + aliasOpt;
             id.Rule = MakePlusRule(id, dot, idSimple);
 
             Root = selectStmt;
