@@ -20,6 +20,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termFrom = ToTerm("FROM");
             var termAs = ToTerm("AS");
             var termCount = ToTerm("COUNT");
+            var termJoin = ToTerm("JOIN");
+            var termOn = ToTerm("ON");
             var idSimple = new IdentifierTerminal("Identifier");
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -38,18 +40,21 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     result.Columns = null;
                 }
                 else
-                    foreach (var c in selectColumns)
-                    {
-                        var columnReference = c.Expression as ColumnReferenceExpression;
-                        if (columnReference != null)
-                            columnReference.TableName = result.Table.Alias ?? result.Table.Name;
-                        result.Columns.Add(c);
-                    }
+                    result.Columns.AddRange(selectColumns);
+                result.JoinClauses.AddRange(elements.OfType<JoinClause>());
                 return result;
             });
             var aliasOpt = NonTerminal("aliasOpt");
             var asOpt = NonTerminal("asOpt");
             var selList = NonTerminal("selList");
+            var declaration = NonTerminal("declaration", delegate(ParseTreeNode n)
+            {
+                return new DeclarationClause
+                {
+                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
+                    Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
+                };
+            });
             var aggregate = NonTerminal("aggregate", delegate(ParseTreeNode node)
             {
                 var aggregateFunctionNameString = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
@@ -78,6 +83,51 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var aggregateArg = NonTerminal("aggregateArg");
             var columnItemList = NonTerminal("columnItemList");
             var columnSource = NonTerminal("columnSource");
+            var joinChainOpt = NonTerminal("joinChainOpt", delegate(ParseTreeNode node)
+            {
+                if (node.ChildNodes.Count == 0)
+                    return null;
+                var joinKindString = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
+                JoinKind joinKind;
+                switch (joinKindString.ToLower())
+                {
+                    case "":
+                    case "inner":
+                        joinKind = JoinKind.Inner;
+                        break;
+                    case "outer":
+                        joinKind = JoinKind.Outer;
+                        break;
+                    case "left":
+                        joinKind = JoinKind.Left;
+                        break;
+                    case "right":
+                        joinKind = JoinKind.Right;
+                        break;
+                    default:
+                        const string messageFormat = "unexpected join kind [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, joinKindString));
+                }
+                var col1 = (Identifier) node.ChildNodes[4].AstNode;
+                var col2 = (Identifier) node.ChildNodes[6].AstNode;
+                return new JoinClause
+                {
+                    Table = (DeclarationClause) node.ChildNodes[2].AstNode,
+                    JoinKind = joinKind,
+                    Condition = new EqualityExpression
+                    {
+                        Left = new ColumnReferenceExpression
+                        {
+                            Name = col1.Value
+                        },
+                        Right = new ColumnReferenceExpression
+                        {
+                            Name = col2.Value
+                        }
+                    }
+                };
+            });
+            var joinKindOpt = NonTerminal("joinKindOpt");
             var columnItem = NonTerminal("columnItem", n =>
             {
                 var ids = n.Elements().OfType<Identifier>().ToArray();
@@ -92,21 +142,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Alias = ids.Length > 1 ? ids[1].Value : null
                 };
             });
-            var fromClauseOpt = NonTerminal("fromClauseOpt", n =>
-            {
-                return new DeclarationClause
-                {
-                    Name = ((Identifier)n.ChildNodes[1].AstNode).Value,
-                    Alias = n.ChildNodes[2].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
-                };
-            });
+
+            var fromClauseOpt = NonTerminal("fromClauseOpt");
             var id = NonTerminal("id", n => new Identifier
             {
                 Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
             });
 
             //rules
-            selectStmt.Rule = termSelect + selList + fromClauseOpt;
+            selectStmt.Rule = termSelect + selList + fromClauseOpt + joinChainOpt;
             selList.Rule = columnItemList | "*";
             columnItemList.Rule = MakePlusRule(columnItemList, termComma, columnItem);
             columnItem.Rule = columnSource + aliasOpt;
@@ -116,7 +160,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             aggregateArg.Rule = "*"; 
             aliasOpt.Rule = Empty | asOpt + id;
             asOpt.Rule = Empty | termAs;
-            fromClauseOpt.Rule = termFrom + id + aliasOpt;
+            fromClauseOpt.Rule = termFrom + declaration;
+            declaration.Rule = id + aliasOpt;
+            joinChainOpt.Rule = Empty | joinKindOpt + termJoin + declaration + termOn + id + "=" + id;
+            joinKindOpt.Rule = Empty | "INNER" | "LEFT" | "RIGHT";
             id.Rule = MakePlusRule(id, dot, idSimple);
 
             Root = selectStmt;

@@ -28,7 +28,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                         message.Level, message.ParserState);
                 throw new InvalidOperationException(string.Format("parse error\r\n{0}", b));
             }
-            return (SelectClause) parseTree.Root.AstNode;
+            var result = (SelectClause) parseTree.Root.AstNode;
+            var columnReferencePatcher = new ColumnReferencePatcher();
+            columnReferencePatcher.Visit(result);
+            return result;
         }
     }
 }

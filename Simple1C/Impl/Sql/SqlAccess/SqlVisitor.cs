@@ -11,16 +11,27 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitSelect(SelectClause clause)
         {
+            Visit(clause.Table);
+            foreach (var join in clause.JoinClauses)
+                Visit(join);
+            if (clause.WhereExpression != null)
+                Visit(clause.WhereExpression);
+            if (clause.Columns != null)
+                foreach (var column in clause.Columns)
+                    Visit(column);
             return clause;
         }
 
         public virtual ISqlElement VisitSelectColumn(SelectColumn clause)
         {
+            Visit(clause.Expression);
             return clause;
         }
 
         public virtual ISqlElement VisitBinary(BinaryExpression expression)
         {
+            Visit(expression.Left);
+            Visit(expression.Right);
             return expression;
         }
 
@@ -46,6 +57,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitJoin(JoinClause clause)
         {
+            Visit(clause.Table);
+            Visit(clause.Condition);
             return clause;
         }
 
