@@ -7,7 +7,7 @@ using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
 
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class PostgreeSqlSchemaCreator
     {
@@ -142,22 +142,21 @@ namespace Simple1C.Impl.Sql
                         continue;
                     if(!mainTableMapping.HasProperty("ОбластьДанныхОсновныеДанные"))
                         continue;
-                    var refBinding = new SingleColumnBinding(GetTableSectionIdColumnNameByTableName(dbTableName), null);
-                    additionalProperties.Add(new PropertyMapping("Ссылка",
-                        PropertyKind.Single, refBinding, null));
-                    var areaBinding = new SingleColumnBinding(
-                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").SingleBinding.ColumnName,
+                    var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
+                    additionalProperties.Add(new PropertyMapping("Ссылка", refLayout, null));
+                    var areaLayout = new SingleLayout(
+                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").SingleLayout.ColumnName,
                         null);
-                    additionalProperties.Add(new PropertyMapping("ОбластьДанныхОсновныеДанные",
-                        PropertyKind.Single, areaBinding, null));
+                    var areaMapping = new PropertyMapping("ОбластьДанныхОсновныеДанные", areaLayout, null);
+                    additionalProperties.Add(areaMapping);
                     tableType = TableType.TableSection;
                 }
                 else
                     continue;
                 var propertyDescriptors = comObject == null
-                    ? new Dictionary<string, PropertyDescriptor>()
+                    ? new Dictionary<string, string[]>()
                     : MetadataHelpers.GetAttributes(comObject, descriptor)
-                        .ToDictionary(Call.Имя, GetPropertyDescriptor);
+                        .ToDictionary(Call.Имя, GetPropertyTypes);
                 var propertyMappings = new ValueTable(tableRow["Поля"])
                     .Select(x => new
                     {
@@ -169,25 +168,21 @@ namespace Simple1C.Impl.Sql
                     .GroupBy(x => x.queryName, (x, y) => new {queryName = x, columns = y.Select(z => z.dbName).ToArray()})
                     .Select(x =>
                     {
-                        var propertyDescriptor = propertyDescriptors.GetOrDefault(x.queryName);
-                        if (propertyDescriptor == null || propertyDescriptor.propertyKind == PropertyKind.Single)
+                        var propertyTypes = propertyDescriptors.GetOrDefault(x.queryName);
+                        if (propertyTypes == null || propertyTypes.Length == 1)
                         {
                             if (x.columns.Length != 1)
                                 return null;
-                            var binding = new SingleColumnBinding(x.columns[0],
-                                propertyDescriptor == null ? null : propertyDescriptor.types.Single());
-                            return new PropertyMapping(x.queryName, PropertyKind.Single, binding, null);
+                            var nestedTableName = propertyTypes == null ? null : propertyTypes[0];
+                            var singleLayout = new SingleLayout(x.columns[0], nestedTableName);
+                            return new PropertyMapping(x.queryName, singleLayout, null);
                         }
-                        if (propertyDescriptor.propertyKind == PropertyKind.UnionReferences)
-                        {
-                            var binding = new UnionReferencesBinding(
-                                GetColumnBySuffixOrNull("_type", x.columns),
-                                GetColumnBySuffixOrNull("_rtref", x.columns),
-                                GetColumnBySuffixOrNull("_rrref", x.columns),
-                                propertyDescriptor.types);
-                            return new PropertyMapping(x.queryName, PropertyKind.UnionReferences, null, binding);
-                        }
-                        return null;
+                        var unionLayout = new UnionLayout(
+                            GetColumnBySuffixOrNull("_type", x.columns),
+                            GetColumnBySuffixOrNull("_rtref", x.columns),
+                            GetColumnBySuffixOrNull("_rrref", x.columns),
+                            propertyTypes);
+                        return new PropertyMapping(x.queryName, null, unionLayout);
                     })
                     .NotNull()
                     .Union(additionalProperties)
@@ -207,13 +202,7 @@ namespace Simple1C.Impl.Sql
             return candidates.SingleOrDefault(x => x.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
-        private class PropertyDescriptor
-        {
-            public PropertyKind propertyKind;
-            public string[] types;
-        }
-
-        private PropertyDescriptor GetPropertyDescriptor(object a)
+        private string[] GetPropertyTypes(object a)
         {
             var type = ComHelpers.GetProperty(a, "Тип");
             var typesObject = ComHelpers.Invoke(type, "Типы");
@@ -226,23 +215,13 @@ namespace Simple1C.Impl.Sql
                 var typeObject = Call.Получить(typesObject, i);
                 var stringPresentation = globalContext.String(typeObject);
                 if (MetadataHelpers.simpleTypesMap.ContainsKey(stringPresentation))
-                    continue;
+                    return null;
                 var propertyComObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
                 if (propertyComObject == null)
                     return null;
                 types[i] = Call.ПолноеИмя(propertyComObject);
             }
-            if (types.Length == 1)
-                return types[0] == null
-                    ? null
-                    : new PropertyDescriptor
-                    {
-                        propertyKind = PropertyKind.Single,
-                        types = types
-                    };
-            return types.Any(x => x == null)
-                ? new PropertyDescriptor {propertyKind = PropertyKind.Union}
-                : new PropertyDescriptor {propertyKind = PropertyKind.UnionReferences, types = types};
+            return types;
         }
 
         private static string TableSectionQueryNameToFullName(string s)

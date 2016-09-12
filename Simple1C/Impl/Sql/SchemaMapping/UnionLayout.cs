@@ -1,8 +1,8 @@
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
-    internal class UnionReferencesBinding
+    internal class UnionLayout
     {
-        public UnionReferencesBinding(string typeColumnName, string tableIndexColumnName,
+        public UnionLayout(string typeColumnName, string tableIndexColumnName,
             string referenceColumnName, string[] nestedTables)
         {
             TypeColumnName = typeColumnName;

@@ -8,7 +8,9 @@ using Simple1C.Impl;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql;
+using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
+using Simple1C.Impl.Sql.Translation;
 using Simple1C.Interface;
 
 namespace Generator

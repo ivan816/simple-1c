@@ -1,8 +1,8 @@
-namespace Simple1C.Impl.Sql
+namespace Simple1C.Impl.Sql.SchemaMapping
 {
-    internal class SingleColumnBinding
+    internal class SingleLayout
     {
-        public SingleColumnBinding(string columnName, string nestedTableName)
+        public SingleLayout(string columnName, string nestedTableName)
         {
             ColumnName = columnName;
             NestedTableName = nestedTableName;

@@ -3,7 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Impl.Helpers;
-using Simple1C.Impl.Sql;
+using Simple1C.Impl.Sql.SchemaMapping;
+using Simple1C.Impl.Sql.Translation;
 using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests.Sql
@@ -286,7 +287,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             
             var exception = Assert.Throws<InvalidOperationException>(() => 
                 CheckTranslate(mappings, sourceSql, null));
-            Assert.That(exception.Message, Is.EqualTo("function [ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
+            Assert.That(exception.Message, Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
         }
 
         [Test]
@@ -607,6 +608,84 @@ left join t210 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and
 left join t312 as __nested_table2 on __nested_table2.d3 = __nested_table0.d1 and __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x00000138' and __nested_table2.f4 = __nested_table0.f1_ref) as payments";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void UnionReferencesForNestedField()
+        {
+            const string sourceSql =
+                @"select payments.Контрагент.Владелец as ContractorName
+from документ.СписаниеСРасчетногоСчета as payments";
+
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
+    Контрагент Single f1 Справочник.Контрагенты
+    ОбластьДанныхОсновныеДанные Single d1
+Справочник.Контрагенты t210 Main
+    ССылка Single f2
+    Владелец UnionReferences f1_type f1_tableIndex f1_ref Справочник.Контрагенты Справочник.ФизическиеЛица
+    ОбластьДанныхОсновныеДанные Single d2
+Справочник.ФизическиеЛица t312 Main
+    ССылка Single f4
+    Наименование Single f5
+    ОбластьДанныхОсновныеДанные Single d3";
+
+            const string expectedResult =
+                @"select payments.__nested_field0 as ContractorName
+from (select
+    __nested_table1.f1_ref as __nested_field0
+from t1 as __nested_table0
+left join t210 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and __nested_table1.f2 = __nested_table0.f1) as payments";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void UnionReferencesForTopField()
+        {
+            const string sourceSql =
+                @"select payments.Контрагент as Contractor
+from документ.СписаниеСРасчетногоСчета as payments";
+
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
+    Контрагент UnionReferences f1_type f1_tableIndex f1_ref Справочник.Контрагенты Справочник.ФизическиеЛица
+    ОбластьДанныхОсновныеДанные Single d1
+Справочник.Контрагенты t210 Main
+    ССылка Single f2
+    ОбластьДанныхОсновныеДанные Single d2
+Справочник.ФизическиеЛица t312 Main
+    ССылка Single f4
+    ОбластьДанныхОсновныеДанные Single d3";
+
+            const string expectedResult =
+                @"select payments.f1_ref as Contractor
+from t1 as payments";
+
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
+        public void NoPropertiesFoundForUnionReferences_CorrectException()
+        {
+            const string sourceSql =
+                @"select payments.Контрагент.Наименование as ContractorName
+from документ.СписаниеСРасчетногоСчета as payments";
+
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main
+    Контрагент UnionReferences f1_type f1_tableIndex f1_ref Справочник.Контрагенты Справочник.ФизическиеЛица
+    ОбластьДанныхОсновныеДанные Single d1
+Справочник.Контрагенты t210 Main
+    ССылка Single f2
+    ОбластьДанныхОсновныеДанные Single d2
+Справочник.ФизическиеЛица t312 Main
+    ССылка Single f4
+    ОбластьДанныхОсновныеДанные Single d3";
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                CheckTranslate(mappings, sourceSql, null));
+            const string expectedMessage =
+                "property [Контрагент] in [payments.Контрагент.Наименование] has multiple types [Справочник.Контрагенты,Справочник.ФизическиеЛица] " +
+                "and none of them has property [Наименование]";
+            Assert.That(exception.Message, Is.EqualTo(expectedMessage));
         }
         
         [Test]
