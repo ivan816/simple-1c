@@ -20,6 +20,25 @@ namespace Simple1C.Tests.Sql
             Assert.That(bReference.TableName, Is.EqualTo("testTable"));
             Assert.That(selectClause.Table.Name, Is.EqualTo("testTable"));
         }
+
+        [Test]
+        public void WhereCondition()
+        {
+            var selectClause = Parse("select a,b from testTable where c > 12");
+            var binaryExpression = selectClause.WhereExpression as BinaryExpression;
+            
+            Assert.NotNull(binaryExpression);
+            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
+            
+            var left = binaryExpression.Left as ColumnReferenceExpression;
+            Assert.NotNull(left);
+            Assert.That(left.Name, Is.EqualTo("c"));
+            Assert.That(left.TableName, Is.EqualTo("testTable"));
+            
+            var right = binaryExpression.Right as LiteralExpression;
+            Assert.NotNull(right);
+            Assert.That(right.Value, Is.EqualTo(12));
+        }
         
         [Test]
         public void Join()
@@ -60,6 +79,29 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.NotNull(right);
             Assert.That(right.Name, Is.EqualTo("id2"));
             Assert.That(right.TableName, Is.EqualTo("t2"));
+        }
+
+        [Test]
+        public void ManyJoinClauses()
+        {
+            var selectClause = Parse(@"select *
+from testTable1 as t1
+left join testTable2 as t2 on t1.id1 = t2.id2
+join testTable3 on t3.id3 = t1.id1
+outer join testTable4 as t4 on t4.id4 = t1.id1");
+
+            Assert.That(selectClause.JoinClauses.Count, Is.EqualTo(3));
+            Assert.That(selectClause.JoinClauses[0].JoinKind, Is.EqualTo(JoinKind.Left));
+            Assert.That(selectClause.JoinClauses[0].Table.Name, Is.EqualTo("testTable2"));
+            Assert.That(selectClause.JoinClauses[0].Table.Alias, Is.EqualTo("t2"));
+            
+            Assert.That(selectClause.JoinClauses[1].JoinKind, Is.EqualTo(JoinKind.Inner));
+            Assert.That(selectClause.JoinClauses[1].Table.Name, Is.EqualTo("testTable3"));
+            Assert.That(selectClause.JoinClauses[1].Table.Alias, Is.Null);
+
+            Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Outer));
+            Assert.That(selectClause.JoinClauses[2].Table.Name, Is.EqualTo("testTable4"));
+            Assert.That(selectClause.JoinClauses[2].Table.Alias, Is.EqualTo("t4"));
         }
         
         [Test]
