@@ -19,21 +19,65 @@ namespace Simple1C.Tests.Sql
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
             Assert.That(bReference.TableName, Is.EqualTo("testTable"));
-            Assert.That(selectClause.Source.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
         
         [Test]
-        public void Presentation()
+        public void PresentationQueryFunction()
         {
             var selectClause = Parse("select Presentation(a) x from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("x"));
-            var function = (UnaryFunctionExpression) selectClause.Fields[0].Expression;
-            Assert.That(function.FunctionName, Is.EqualTo(UnaryFunctionName.Presentation));
+            var function = (QueryFunctionExpression) selectClause.Fields[0].Expression;
+            Assert.That(function.FunctionName, Is.EqualTo(QueryFunctionName.Presentation));
 
-            var columnReference = (ColumnReferenceExpression)function.Argument;
+            var columnReference = (ColumnReferenceExpression)function.Arguments[0];
             Assert.That(columnReference.Name, Is.EqualTo("a"));
             Assert.That(columnReference.TableName, Is.EqualTo("testTable"));
+        }
+        
+        [Test]
+        public void DateTimeQueryFunction()
+        {
+            var selectClause = Parse("select a from testTable where b < DateTime(2010, 11, 12)");
+            var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
+            var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
+            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.DateTime));
+            Assert.That(queryFunction.Arguments.Count, Is.EqualTo(3));
+            Assert.That(((LiteralExpression)queryFunction.Arguments[0]).Value, Is.EqualTo(2010));
+            Assert.That(((LiteralExpression)queryFunction.Arguments[1]).Value, Is.EqualTo(11));
+            Assert.That(((LiteralExpression)queryFunction.Arguments[2]).Value, Is.EqualTo(12));
+        }
+        
+        [Test]
+        public void YearFunction()
+        {
+            var selectClause = Parse("select a from testTable where b < year(c)");
+            var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
+            var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
+            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Year));
+            Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
+            Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
+        }
+        
+        [Test]
+        public void QuarterFunction()
+        {
+            var selectClause = Parse("select a from testTable where b < quArter(c)");
+            var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
+            var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
+            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Quarter));
+            Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
+            Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
+        }
+        
+        [Test]
+        public void ValueFunction()
+        {
+            var selectClause = Parse("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
+            var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
+            var queryFunction = (ValueLiteral) binaryExpression.Right;
+            Assert.That(queryFunction.ObjectName, Is.EqualTo("Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо"));
         }
         
         [Test]
@@ -142,13 +186,15 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.That(col1Reference.Name, Is.EqualTo("b"));
             Assert.That(col1Reference.TableName, Is.EqualTo("t2"));
 
-            Assert.That(selectClause.Source.Name, Is.EqualTo("testTable1"));
-            Assert.That(selectClause.Source.Alias, Is.EqualTo("t1"));
+            var mainTable = (TableDeclarationClause) selectClause.Source;
+            Assert.That(mainTable.Name, Is.EqualTo("testTable1"));
+            Assert.That(mainTable.Alias, Is.EqualTo("t1"));
 
+            var joinTable = (TableDeclarationClause)selectClause.JoinClauses[0].Source;
             Assert.That(selectClause.JoinClauses.Count, Is.EqualTo(1));
             Assert.That(selectClause.JoinClauses[0].JoinKind, Is.EqualTo(JoinKind.Left));
-            Assert.That(selectClause.JoinClauses[0].Source.Name, Is.EqualTo("testTable2"));
-            Assert.That(selectClause.JoinClauses[0].Source.Alias, Is.EqualTo("t2"));
+            Assert.That(joinTable.Name, Is.EqualTo("testTable2"));
+            Assert.That(joinTable.Alias, Is.EqualTo("t2"));
 
             var binaryExpression = selectClause.JoinClauses[0].Condition as BinaryExpression;
             Assert.NotNull(binaryExpression);
@@ -173,17 +219,20 @@ join testTable3 on t3.id3 = t1.id1
 outer join testTable4 as t4 on t4.id4 = t1.id1");
 
             Assert.That(selectClause.JoinClauses.Count, Is.EqualTo(3));
+            var joinTable0 = (TableDeclarationClause)selectClause.JoinClauses[0].Source;
             Assert.That(selectClause.JoinClauses[0].JoinKind, Is.EqualTo(JoinKind.Left));
-            Assert.That(selectClause.JoinClauses[0].Source.Name, Is.EqualTo("testTable2"));
-            Assert.That(selectClause.JoinClauses[0].Source.Alias, Is.EqualTo("t2"));
-            
-            Assert.That(selectClause.JoinClauses[1].JoinKind, Is.EqualTo(JoinKind.Inner));
-            Assert.That(selectClause.JoinClauses[1].Source.Name, Is.EqualTo("testTable3"));
-            Assert.That(selectClause.JoinClauses[1].Source.Alias, Is.Null);
+            Assert.That(joinTable0.Name, Is.EqualTo("testTable2"));
+            Assert.That(joinTable0.Alias, Is.EqualTo("t2"));
 
+            var joinTable1 = (TableDeclarationClause)selectClause.JoinClauses[1].Source;
+            Assert.That(selectClause.JoinClauses[1].JoinKind, Is.EqualTo(JoinKind.Inner));
+            Assert.That(joinTable1.Name, Is.EqualTo("testTable3"));
+            Assert.That(joinTable1.Alias, Is.Null);
+
+            var joinTable2 = (TableDeclarationClause)selectClause.JoinClauses[2].Source;
             Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Outer));
-            Assert.That(selectClause.JoinClauses[2].Source.Name, Is.EqualTo("testTable4"));
-            Assert.That(selectClause.JoinClauses[2].Source.Alias, Is.EqualTo("t4"));
+            Assert.That(joinTable2.Name, Is.EqualTo("testTable4"));
+            Assert.That(joinTable2.Alias, Is.EqualTo("t4"));
         }
         
         [Test]
@@ -196,7 +245,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
             Assert.That(bReference.TableName, Is.EqualTo("tt"));
-            Assert.That(selectClause.Source.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
 
         [Test]

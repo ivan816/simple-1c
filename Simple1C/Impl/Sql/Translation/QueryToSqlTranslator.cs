@@ -31,37 +31,28 @@ namespace Simple1C.Impl.Sql.Translation
                 {"из", "from"},
                 {"где", "where"},
                 {"и", "and"},
-                {"или", "or"}
+                {"или", "or"},
+                {"датавремя", "datetime"},
+                {"год", "year"},
+                {"квартал", "quarter"},
+                {"значение", "value"}
             };
 
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
-        private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
-            new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
-            {
-                {"датавремя", (_, s) => FormatDateTime(s)},
-                {"год", (_, s) => string.Format("date_part('year', {0})", s)},
-                {"квартал", (_, s) => string.Format("date_trunc('quarter', {0})", s)},
-                {"значение", (t, s) => t.GetEnumValueSql(s)}
-            };
+        //todo
+        //private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
+        //    new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
+        //    {
+        //        {"датавремя", (_, s) => FormatDateTime(s)},
+        //        {"год", (_, s) => string.Format("date_part('year', {0})", s)},
+        //        {"квартал", (_, s) => string.Format("date_trunc('quarter', {0})", s)},
+        //        {"значение", (t, s) => t.GetEnumValueSql(s)}
+        //    };
 
-        private static readonly Dictionary<string, Regex> functionRegexes = functions.Keys
-            .ToDictionary(x => x, x => new Regex(string.Format(@"{0}\(([^\)]+)\)", x),
-                RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase));
-
-        private static readonly Regex propertiesRegex = new Regex(GetPropertiesRegex(),
-            RegexOptions.Compiled | RegexOptions.Singleline);
-
-        private static string GetPropertiesRegex()
-        {
-            const string propRegex = @"[a-zA-Z]+\.[а-яА-Яa-zA-Z0-9\.]+";
-            return string.Format(@"(?<func>ПРЕДСТАВЛЕНИЕ)\((?<prop>{0})\)|(?<prop>{0})",
-                propRegex);
-        }
-
-        private Dictionary<string, MainQueryEntity> queryTables = new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<string, MainQueryEntity> queryTables = new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
 
         private const byte configurationItemReferenceType = 8;
 
@@ -86,17 +77,10 @@ namespace Simple1C.Impl.Sql.Translation
             source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             source = nowMacroRegex.Replace(source, currentDateString);
             var queryParser = new QueryParser();
-            var rootSelectClause = queryParser.Parse(source);
-            var selectClause = rootSelectClause;
-            while (selectClause != null)
-            {
-                var union = selectClause.Union;
-                selectClause.Union = null;
-                TranslateSingleSelect(selectClause);
-                selectClause.Union = union;
-                selectClause = union == null ? null : union.SelectClause;
-            }
-            return SqlFormatter.Format(rootSelectClause);
+            var selectClause = queryParser.Parse(source);
+            var translator = new TranslationVisitor(this);
+            translator.Visit(selectClause);
+            return SqlFormatter.Format(selectClause);
         }
 
         private void RegisterMainQueryEntity(string name, string queryName)
@@ -114,8 +98,8 @@ namespace Simple1C.Impl.Sql.Translation
             var referencePatcher = new ColumnReferencePatcher(this);
             referencePatcher.Visit(selectClause);
 
-            //todo
-            //queryText = joinRegex.Replace(queryText, m => PatchJoin(m.Value, m.Index, m.Groups[1].Value));
+            var joinPatcher = new AreaConditionJoinClausePatcher(this);
+            joinPatcher.Visit(selectClause);
 
             var tableDeclarationPatcher = new TableDeclarationPatcher(this);
             tableDeclarationPatcher.Visit(selectClause);
@@ -145,7 +129,7 @@ namespace Simple1C.Impl.Sql.Translation
                 Left = new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = enumMappingsJoinClause.Source.Alias
+                    TableName = ((TableDeclarationClause) enumMappingsJoinClause.Source).Alias
                 },
                 Right = new LiteralExpression
                 {
@@ -166,29 +150,53 @@ namespace Simple1C.Impl.Sql.Translation
             return mainEntity;
         }
 
-        //private class AreaConditionJoinClausePatcher : SqlVisitor
-        //{
-        //    public override ISqlElement VisitJoin(JoinClause clause)
-        //    {
-        //        return base.VisitJoin(clause);
-        //    }
-        //}
+        private class AreaConditionJoinClausePatcher : SqlVisitor
+        {
+            private readonly QueryToSqlTranslator translator;
+            private TableDeclarationClause mainTable;
 
-        //private string PatchJoin(string joinText, int joinPosition, string alias)
-        //{
-        //    var fromPosition = queryText.LastIndexOf("from", joinPosition, StringComparison.OrdinalIgnoreCase);
-        //    if (fromPosition < 0)
-        //        throw new InvalidOperationException("assertion failure");
-        //    var tableMatch = tableNameRegex.Match(queryText, fromPosition);
-        //    if (!tableMatch.Success)
-        //        throw new InvalidOperationException("assertion failure");
-        //    var mainTableAlias = tableMatch.Groups[3].Value;
-        //    GetOrCreateQueryField(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
-        //    GetOrCreateQueryField(new[] {alias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
-        //    var condition = string.Format("{0}.ОбластьДанныхОсновныеДанные = {1}.ОбластьДанныхОсновныеДанные and ",
-        //        mainTableAlias, alias);
-        //    return joinText + condition;
-        //}
+            public AreaConditionJoinClausePatcher(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            public override JoinClause VisitJoin(JoinClause clause)
+            {
+                var mainTableArea = GetAreaField(mainTable);
+                var joinTable = (TableDeclarationClause)clause.Source;
+                var joinTableArea = GetAreaField(joinTable);
+                clause.Condition = new AndExpression
+                {
+                    Left = new EqualityExpression
+                    {
+                        Left = new ColumnReferenceExpression
+                        {
+                            Name = mainTableArea.properties.Single().GetDbColumnName(),
+                            TableName = mainTable.GetRefName()
+                        },
+                        Right = new ColumnReferenceExpression
+                        {
+                            Name = joinTableArea.properties.Single().GetDbColumnName(),
+                            TableName = joinTable.GetRefName()
+                        }
+                    },
+                    Right = clause.Condition
+                };
+                return clause;
+            }
+
+            public override SelectClause VisitSelect(SelectClause clause)
+            {
+                mainTable = (TableDeclarationClause) clause.Source;
+                return base.VisitSelect(clause);
+            }
+
+            private QueryField GetAreaField(TableDeclarationClause tableDeclaration)
+            {
+                var propertyNames = new[] { tableDeclaration.GetRefName(), "ОбластьДанныхОсновныеДанные" };
+                return translator.GetOrCreateQueryField(propertyNames, false, SelectPart.Join);
+            }
+        }
 
         private class QueryField
         {
@@ -405,10 +413,10 @@ namespace Simple1C.Impl.Sql.Translation
             {
                 var expression = GetFieldExpression(f, target);
                 if (f.invert)
-                    expression = new UnaryFunctionExpression
+                    expression = new QueryFunctionExpression
                     {
-                        FunctionName = UnaryFunctionName.Not,
-                        Argument = expression
+                        FunctionName = QueryFunctionName.SqlNot,
+                        Arguments = new List<ISqlElement> {expression}
                     };
                 target.Fields.Add(new SelectField
                 {
@@ -454,7 +462,7 @@ namespace Simple1C.Impl.Sql.Translation
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = enumMappingsJoinClause.Source.Alias
+                    TableName = ((TableDeclarationClause) enumMappingsJoinClause.Source).Alias
                 };
             }
             return new ColumnReferenceExpression
@@ -597,6 +605,25 @@ namespace Simple1C.Impl.Sql.Translation
             };
         }
 
+        private class TranslationVisitor : SqlVisitor
+        {
+            private readonly QueryToSqlTranslator translator;
+
+            public TranslationVisitor(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            public override SelectClause VisitSelect(SelectClause clause)
+            {
+                var union = clause.Union;
+                clause.Union = null;
+                translator.TranslateSingleSelect(clause);
+                clause.Union = union;
+                return base.VisitSelect(clause);
+            }
+        }
+
         private class TableDeclarationPatcher : SqlVisitor
         {
             private readonly QueryToSqlTranslator translator;
@@ -655,10 +682,10 @@ namespace Simple1C.Impl.Sql.Translation
                 return element;
             }
 
-            public override ISqlElement VisitUnary(UnaryFunctionExpression expression)
+            public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
             {
-                isPresentation = expression.FunctionName == UnaryFunctionName.Presentation;
-                base.VisitUnary(expression);
+                isPresentation = expression.FunctionName == QueryFunctionName.Presentation;
+                base.VisitQueryFunction(expression);
                 isPresentation = false;
                 return expression;
             }

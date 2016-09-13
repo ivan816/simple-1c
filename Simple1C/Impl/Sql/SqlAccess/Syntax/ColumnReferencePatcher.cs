@@ -11,13 +11,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         private readonly Dictionary<string, TableDeclarationClause> nameToDeclaration =
             new Dictionary<string, TableDeclarationClause>();
 
-        public override void VisitTableDeclaration(TableDeclarationClause clause)
+        public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
             currentTableDeclaration = clause;
             nameToDeclaration.Add(clause.GetRefName(), clause);
+            return clause;
         }
 
-        public override void VisitColumnReference(ColumnReferenceExpression expression)
+        public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
             var items = expression.Name.Split('.');
             var aliasCandidate = items[0];
@@ -29,6 +30,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             }
             else
                 expression.TableName = currentTableDeclaration.GetRefName();
+            return expression;
         }
     }
 }
