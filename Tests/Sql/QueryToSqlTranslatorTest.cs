@@ -33,6 +33,19 @@ from t1 as contractors";
         }
         
         [Test]
+        public void SimpleWithoutAlias()
+        {
+            const string sourceSql = @"select ИНН as CounterpartyInn
+    from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1";
+            const string expectedResult = @"select
+    c1 as CounterpartyInn
+from t1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+        
+        [Test]
         public void SimpleWithAreas()
         {
             const string sourceSql = @"select contractors.ИНН as CounterpartyInn
@@ -237,7 +250,7 @@ where contractors.c2 = 'test-name' and contractors.c1 <> 'test-inn'";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
             const string expectedResult = @"select
-    contractors.c1 as CounterpartyInn
+    Contractors.c1 as CounterpartyInn
 from t1 as Contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }

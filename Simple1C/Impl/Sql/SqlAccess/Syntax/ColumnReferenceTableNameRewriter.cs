@@ -40,15 +40,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
             var items = expression.Name.Split('.');
-            var tableRefName = items[0];
+            var possiblyAlias = items[0];
             TableDeclarationClause table;
-            if (nameToDeclaration.TryGetValue(tableRefName, out table))
+            if (nameToDeclaration.TryGetValue(possiblyAlias, out table))
             {
                 expression.Name = items.Skip(1).JoinStrings(".");
-                expression.TableName = tableRefName;
+                expression.Declaration = table;
             }
             else
-                expression.TableName = currentTableDeclaration.GetRefName();
+                expression.Declaration = currentTableDeclaration;
             return expression;
         }
     }

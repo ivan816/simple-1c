@@ -15,10 +15,10 @@ namespace Simple1C.Tests.Sql
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
             Assert.That(aReference.Name, Is.EqualTo("a"));
-            Assert.That(aReference.TableName, Is.EqualTo("testTable"));
+            Assert.That(aReference.Declaration.Name, Is.EqualTo("testTable"));
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
-            Assert.That(bReference.TableName, Is.EqualTo("testTable"));
+            Assert.That(bReference.Declaration, Is.SameAs(aReference.Declaration));
             Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
         
@@ -31,7 +31,7 @@ namespace Simple1C.Tests.Sql
             var colReference = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(colReference);
             Assert.That(colReference.Name, Is.EqualTo("c"));
-            Assert.That(colReference.TableName, Is.EqualTo("testTable"));
+            Assert.That(colReference.Declaration.Name, Is.EqualTo("testTable"));
 
             var literalExpression = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(literalExpression);
@@ -59,7 +59,7 @@ namespace Simple1C.Tests.Sql
 
             var columnReference = (ColumnReferenceExpression)function.Arguments[0];
             Assert.That(columnReference.Name, Is.EqualTo("a"));
-            Assert.That(columnReference.TableName, Is.EqualTo("testTable"));
+            Assert.That(columnReference.Declaration.Name, Is.EqualTo("testTable"));
         }
         
         [Test]
@@ -112,7 +112,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = Parse("select count(*) from testTable group by c");
             Assert.NotNull(selectClause.GroupBy);
             Assert.That(selectClause.GroupBy.Columns[0].Name, Is.EqualTo("c"));
-            Assert.That(selectClause.GroupBy.Columns[0].TableName, Is.EqualTo("testTable"));
+            Assert.That(selectClause.GroupBy.Columns[0].Declaration.Name, Is.EqualTo("testTable"));
         }
 
         [Test]
@@ -141,7 +141,7 @@ select a3,b3 from t3");
             var left = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
             Assert.That(left.Name, Is.EqualTo("c"));
-            Assert.That(left.TableName, Is.EqualTo("testTable"));
+            Assert.That(left.Declaration.Name, Is.EqualTo("testTable"));
             
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
@@ -162,7 +162,7 @@ select a3,b3 from t3");
             var col1Reference = leftAnd.Left as ColumnReferenceExpression;
             Assert.NotNull(col1Reference);
             Assert.That(col1Reference.Name, Is.EqualTo("c"));
-            Assert.That(col1Reference.TableName, Is.EqualTo("testTable"));
+            Assert.That(col1Reference.Declaration.Name, Is.EqualTo("testTable"));
             var const1Reference = leftAnd.Right as LiteralExpression;
             Assert.NotNull(const1Reference);
             Assert.That(const1Reference.Value, Is.EqualTo(12));
@@ -172,7 +172,7 @@ select a3,b3 from t3");
             var col2Reference = rightAnd.Left as ColumnReferenceExpression;
             Assert.NotNull(col2Reference);
             Assert.That(col2Reference.Name, Is.EqualTo("c"));
-            Assert.That(col2Reference.TableName, Is.EqualTo("testTable"));
+            Assert.That(col2Reference.Declaration, Is.SameAs(col1Reference.Declaration));
             var const2Reference = rightAnd.Right as LiteralExpression;
             Assert.NotNull(const2Reference);
             Assert.That(const2Reference.Value, Is.EqualTo(25));
@@ -186,7 +186,7 @@ select a3,b3 from t3");
             
             Assert.NotNull(inExpression);
             Assert.That(inExpression.Column.Name, Is.EqualTo("c"));
-            Assert.That(inExpression.Column.TableName, Is.EqualTo("testTable"));
+            Assert.That(inExpression.Column.Declaration.Name, Is.EqualTo("testTable"));
 
             Assert.That(inExpression.Values.Count, Is.EqualTo(3));
             Assert.That(((LiteralExpression) inExpression.Values[0]).Value, Is.EqualTo(10));
@@ -234,13 +234,15 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.That(col0.Alias, Is.EqualTo("nested1"));
             var col0Reference = (ColumnReferenceExpression)col0.Expression;
             Assert.That(col0Reference.Name, Is.EqualTo("a"));
-            Assert.That(col0Reference.TableName, Is.EqualTo("t1"));
+            Assert.That(col0Reference.Declaration.Name, Is.EqualTo("testTable1"));
+            Assert.That(col0Reference.Declaration.Alias, Is.EqualTo("t1"));
 
             var col1 = selectClause.Fields[1];
             Assert.That(col1.Alias, Is.EqualTo("nested2"));
             var col1Reference = (ColumnReferenceExpression)col1.Expression;
             Assert.That(col1Reference.Name, Is.EqualTo("b"));
-            Assert.That(col1Reference.TableName, Is.EqualTo("t2"));
+            Assert.That(col1Reference.Declaration.Name, Is.EqualTo("testTable2"));
+            Assert.That(col1Reference.Declaration.Alias, Is.EqualTo("t2"));
 
             var mainTable = (TableDeclarationClause) selectClause.Source;
             Assert.That(mainTable.Name, Is.EqualTo("testTable1"));
@@ -257,12 +259,12 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             var left = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
             Assert.That(left.Name, Is.EqualTo("id1"));
-            Assert.That(left.TableName, Is.EqualTo("t1"));
+            Assert.That(left.Declaration, Is.SameAs(col0Reference.Declaration));
 
             var right = binaryExpression.Right as ColumnReferenceExpression;
             Assert.NotNull(right);
             Assert.That(right.Name, Is.EqualTo("id2"));
-            Assert.That(right.TableName, Is.EqualTo("t2"));
+            Assert.That(right.Declaration, Is.SameAs(col1Reference.Declaration));
         }
 
         [Test]
@@ -297,10 +299,11 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             var selectClause = Parse("select a,b from testTable as tt");
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
             Assert.That(aReference.Name, Is.EqualTo("a"));
-            Assert.That(aReference.TableName, Is.EqualTo("tt"));
+            Assert.That(aReference.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(aReference.Declaration.Alias, Is.EqualTo("tt"));
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
-            Assert.That(bReference.TableName, Is.EqualTo("tt"));
+            Assert.That(bReference.Declaration, Is.SameAs(aReference.Declaration));
             Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
 

@@ -36,7 +36,8 @@ namespace Simple1C.Impl.Sql.Translation
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
-        private readonly Dictionary<string, MainQueryEntity> queryTables = new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<TableDeclarationClause, QueryRoot> queryTables =
+            new Dictionary<TableDeclarationClause, QueryRoot>();
 
         private const byte configurationItemReferenceType = 8;
 
@@ -67,11 +68,11 @@ namespace Simple1C.Impl.Sql.Translation
             return SqlFormatter.Format(selectClause);
         }
 
-        private void RegisterMainQueryEntity(string name, string queryName)
+        private void RegisterMainQueryEntity(TableDeclarationClause declaration)
         {
-            var queryEntity = CreateQueryEntity(null, queryName);
-            var mainQueryEntity = new MainQueryEntity(queryEntity, areas != null);
-            queryTables.Add(name, mainQueryEntity);
+            var queryEntity = CreateQueryEntity(null, declaration.Name);
+            var mainQueryEntity = new QueryRoot(queryEntity, declaration);
+            queryTables.Add(declaration, mainQueryEntity);
         }
 
         private void TranslateSingleSelect(SelectClause selectClause)
@@ -102,13 +103,13 @@ namespace Simple1C.Impl.Sql.Translation
         {
             var enumValueItems = valueLiteralExpression.ObjectName.Split('.');
             var table = CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
-            var selectClause = new SelectClause {Source = GetDeclarationClause(table)};
+            var selectClause = new SelectClause {Source = GetTableDeclaration(table)};
             selectClause.Fields.Add(new SelectFieldElement
             {
                 Expression = new ColumnReferenceExpression
                 {
                     Name = table.GetSingleColumnName("Ссылка"),
-                    TableName = GetQueryEntityAlias(table)
+                    Declaration = (TableDeclarationClause) selectClause.Source
                 }
             });
             var enumMappingsJoinClause = CreateEnumMappingsJoinClause(table);
@@ -118,7 +119,7 @@ namespace Simple1C.Impl.Sql.Translation
                 Left = new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = ((TableDeclarationClause) enumMappingsJoinClause.Source).Alias
+                    Declaration = (TableDeclarationClause) enumMappingsJoinClause.Source
                 },
                 Right = new LiteralExpression
                 {
@@ -128,15 +129,15 @@ namespace Simple1C.Impl.Sql.Translation
             return new SubqueryClause {SelectClause = selectClause};
         }
 
-        private MainQueryEntity GetMainQueryEntity(string alias)
+        private QueryRoot GetQueryRoot(TableDeclarationClause declaration)
         {
-            MainQueryEntity mainEntity;
-            if (!queryTables.TryGetValue(alias, out mainEntity))
+            QueryRoot root;
+            if (!queryTables.TryGetValue(declaration, out root))
             {
-                const string messageFormat = "can't find query table by alias [{0}]";
-                throw new InvalidOperationException(string.Format(messageFormat, alias));
+                const string messageFormat = "can't find query table for [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, declaration.GetRefName()));
             }
-            return mainEntity;
+            return root;
         }
 
         private class JoinConditionAreaAppender : SingleSelectSqlVisitorBase
@@ -153,12 +154,12 @@ namespace Simple1C.Impl.Sql.Translation
                         Left = new ColumnReferenceExpression
                         {
                             Name = "ОбластьДанныхОсновныеДанные",
-                            TableName = mainTable.GetRefName()
+                            Declaration = mainTable
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = "ОбластьДанныхОсновныеДанные",
-                            TableName = joinTable.GetRefName()
+                            Declaration = joinTable
                         }
                     },
                     Right = clause.Condition
@@ -189,31 +190,31 @@ namespace Simple1C.Impl.Sql.Translation
             public readonly List<SelectPart> parts = new List<SelectPart>();
         }
 
-        private QueryField GetOrCreateQueryField(string[] propertyNames, bool isRepresentation, SelectPart selectPart)
+        private QueryField GetOrCreateQueryField(TableDeclarationClause declaration, string[] propertyNames, bool isRepresentation, SelectPart selectPart)
         {
-            var mainEntity = GetMainQueryEntity(propertyNames[0]);
+            var queryRoot = GetQueryRoot(declaration);
             var keyWithoutFunction = string.Join(".", propertyNames);
             if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;
                 var keyWithFunction = keyWithoutFunction + "." + true;
-                if (mainEntity.fields.TryGetValue(keyWithFunction, out fieldWithFunction))
+                if (queryRoot.fields.TryGetValue(keyWithFunction, out fieldWithFunction))
                     if (fieldWithFunction.parts.Contains(SelectPart.Select))
                         isRepresentation = true;
             }
             var key = keyWithoutFunction + "." + isRepresentation;
             QueryField field;
-            if (!mainEntity.fields.TryGetValue(key, out field))
+            if (!queryRoot.fields.TryGetValue(key, out field))
             {
-                var subqueryRequired = propertyNames.Length > 2;
-                bool needInvert = false;
+                var subqueryRequired = propertyNames.Length > 1;
+                var needInvert = false;
                 if (propertyNames[propertyNames.Length - 1] == "ЭтоГруппа")
                 {
                     needInvert = true;
                     subqueryRequired = true;
                 }
-                var referencedProperties = new List<QueryEntityProperty>();
-                EnumProperties(propertyNames, mainEntity.queryEntity, 1, referencedProperties);
+                var propertiesEnumerator = new PropertiesEnumerator(propertyNames, queryRoot, this);
+                var referencedProperties = propertiesEnumerator.Enumerate();
                 if (referencedProperties.Count == 0)
                     throw new InvalidOperationException("assertion failure");
                 if (isRepresentation)
@@ -222,13 +223,13 @@ namespace Simple1C.Impl.Sql.Translation
                 string fieldAlias = null;
                 if (subqueryRequired)
                 {
-                    mainEntity.subqueryRequired = true;
+                    queryRoot.subqueryRequired = true;
                     fieldAlias = nameGenerator.GenerateColumnName();
                 }
                 foreach (var p in referencedProperties)
                     p.referenced = true;
                 field = new QueryField(fieldAlias, referencedProperties.ToArray(), needInvert);
-                mainEntity.fields.Add(key, field);
+                queryRoot.fields.Add(key, field);
             }
             if (!field.parts.Contains(selectPart))
                 field.parts.Add(selectPart);
@@ -271,39 +272,6 @@ namespace Simple1C.Impl.Sql.Translation
                 }
             }
             return result;
-        }
-
-        private void EnumProperties(string[] propertyNames, QueryEntity queryEntity, int index,
-            List<QueryEntityProperty> result)
-        {
-            var property = GetOrCreatePropertyIfExists(queryEntity, propertyNames[index]);
-            if (property == null)
-                return;
-            if (index == propertyNames.Length - 1)
-                result.Add(property);
-            else if (property.mapping.UnionLayout != null)
-            {
-                var count = result.Count;
-                foreach (var p in property.nestedEntities)
-                    EnumProperties(propertyNames, p, index + 1, result);
-                if (result.Count == count)
-                {
-                    const string messageFormat = "property [{0}] in [{1}] has multiple types [{2}] " +
-                                                 "and none of them has property [{3}]";
-                    throw new InvalidOperationException(string.Format(messageFormat,
-                        propertyNames[index], propertyNames.JoinStrings("."),
-                        property.nestedEntities.Select(x => x.mapping.QueryTableName).JoinStrings(","),
-                        propertyNames[index + 1]));
-                }
-            }
-            else if (property.nestedEntities.Count == 1)
-                EnumProperties(propertyNames, property.nestedEntities[0], index + 1, result);
-            else
-            {
-                const string messageFormat = "property [{0}] has no table mapping, property path [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    property.mapping.PropertyName, propertyNames.JoinStrings(".")));
-            }
         }
 
         private QueryEntityProperty GetOrCreatePropertyIfExists(QueryEntity queryEntity, string name)
@@ -355,29 +323,30 @@ namespace Simple1C.Impl.Sql.Translation
 
         private ISqlElement PatchTableDeclaration(TableDeclarationClause declaration)
         {
-            var mainEntity = GetMainQueryEntity(declaration.GetRefName());
-            if (!mainEntity.subqueryRequired)
+            var mainEntity = GetQueryRoot(declaration);
+            var subqueryRequired = mainEntity.subqueryRequired || areas != null;
+            if (!subqueryRequired)
             {
-                declaration.Name = mainEntity.queryEntity.mapping.DbTableName;
+                declaration.Name = mainEntity.entity.mapping.DbTableName;
                 return declaration;
             }
-            if (Strip(mainEntity.queryEntity) == StripResult.HasNoReferences)
+            if (Strip(mainEntity.entity) == StripResult.HasNoReferences)
                 throw new InvalidOperationException("assertion failure");
             var selectClause = new SelectClause
             {
-                Source = GetDeclarationClause(mainEntity.queryEntity)
+                Source = GetTableDeclaration(mainEntity.entity)
             };
             if (areas != null)
                 selectClause.WhereExpression = new InExpression
                 {
                     Column = new ColumnReferenceExpression
                     {
-                        Name = mainEntity.queryEntity.GetAreaColumnName(),
-                        TableName = GetQueryEntityAlias(mainEntity.queryEntity)
+                        Name = mainEntity.entity.GetAreaColumnName(),
+                        Declaration = (TableDeclarationClause) selectClause.Source
                     },
                     Values = areas
                 };
-            AddJoinClauses(mainEntity.queryEntity, selectClause);
+            AddJoinClauses(mainEntity.entity, selectClause);
             AddColumns(mainEntity, selectClause);
             return new SubqueryClause
             {
@@ -386,9 +355,9 @@ namespace Simple1C.Impl.Sql.Translation
             };
         }
 
-        private void AddColumns(MainQueryEntity entity, SelectClause target)
+        private void AddColumns(QueryRoot root, SelectClause target)
         {
-            foreach (var f in entity.fields.Values)
+            foreach (var f in root.fields.Values)
             {
                 var expression = GetFieldExpression(f, target);
                 if (f.invert)
@@ -441,13 +410,13 @@ namespace Simple1C.Impl.Sql.Translation
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    TableName = ((TableDeclarationClause) enumMappingsJoinClause.Source).Alias
+                    Declaration = (TableDeclarationClause) enumMappingsJoinClause.Source
                 };
             }
             return new ColumnReferenceExpression
             {
                 Name = property.GetDbColumnName(),
-                TableName = GetQueryEntityAlias(property.referer)
+                Declaration = GetTableDeclaration(property.referer)
             };
         }
 
@@ -465,12 +434,12 @@ namespace Simple1C.Impl.Sql.Translation
                             Left = new ColumnReferenceExpression
                             {
                                 Name = nestedEntity.GetAreaColumnName(),
-                                TableName = GetQueryEntityAlias(nestedEntity)
+                                Declaration = GetTableDeclaration(nestedEntity)
                             },
                             Right = new ColumnReferenceExpression
                             {
                                 Name = p.referer.GetAreaColumnName(),
-                                TableName = GetQueryEntityAlias(p.referer)
+                                Declaration = GetTableDeclaration(p.referer)
                             }
                         });
                     if (p.mapping.UnionLayout != null)
@@ -489,21 +458,17 @@ namespace Simple1C.Impl.Sql.Translation
                         Left = new ColumnReferenceExpression
                         {
                             Name = nestedEntity.GetIdColumnName(),
-                            TableName = GetQueryEntityAlias(nestedEntity)
+                            Declaration = GetTableDeclaration(nestedEntity)
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = referenceColumnName,
-                            TableName = GetQueryEntityAlias(p.referer)
+                            Declaration = GetTableDeclaration(p.referer)
                         }
                     });
                     var joinClause = new JoinClause
                     {
-                        Source = new TableDeclarationClause
-                        {
-                            Name = nestedEntity.mapping.DbTableName,
-                            Alias = GetQueryEntityAlias(nestedEntity)
-                        },
+                        Source = GetTableDeclaration(nestedEntity),
                         JoinKind = JoinKind.Left,
                         Condition = eqConditions.Combine()
                     };
@@ -560,7 +525,7 @@ namespace Simple1C.Impl.Sql.Translation
                     Left = new ColumnReferenceExpression
                     {
                         Name = typeColumnName,
-                        TableName = GetQueryEntityAlias(property.referer)
+                        Declaration = GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {
@@ -573,7 +538,7 @@ namespace Simple1C.Impl.Sql.Translation
                     Left = new ColumnReferenceExpression
                     {
                         Name = tableIndexColumnName,
-                        TableName = GetQueryEntityAlias(property.referer)
+                        Declaration = GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {
@@ -582,6 +547,59 @@ namespace Simple1C.Impl.Sql.Translation
                     }
                 }
             };
+        }
+
+        private class PropertiesEnumerator
+        {
+            private readonly string[] propertyNames;
+            private readonly QueryRoot queryRoot;
+            private readonly QueryToSqlTranslator translator;
+            private readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
+
+            public PropertiesEnumerator(string[] propertyNames, QueryRoot queryRoot, QueryToSqlTranslator translator)
+            {
+                this.propertyNames = propertyNames;
+                this.queryRoot = queryRoot;
+                this.translator = translator;
+            }
+
+            public List<QueryEntityProperty> Enumerate()
+            {
+                Iterate(0, queryRoot.entity);
+                return properties;
+            }
+
+            private void Iterate(int index, QueryEntity entity)
+            {
+                var property = translator.GetOrCreatePropertyIfExists(entity, propertyNames[index]);
+                if (property == null)
+                    return;
+                if (index == propertyNames.Length - 1)
+                    properties.Add(property);
+                else if (property.mapping.UnionLayout != null)
+                {
+                    var count = properties.Count;
+                    foreach (var p in property.nestedEntities)
+                        Iterate(index + 1, p);
+                    if (properties.Count == count)
+                    {
+                        const string messageFormat = "property [{0}] in [{1}.{2}] has multiple types [{3}] " +
+                                                     "and none of them has property [{4}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            propertyNames[index], queryRoot.tableDeclaration.Alias, propertyNames.JoinStrings("."),
+                            property.nestedEntities.Select(x => x.mapping.QueryTableName).JoinStrings(","),
+                            propertyNames[index + 1]));
+                    }
+                }
+                else if (property.nestedEntities.Count == 1)
+                    Iterate(index + 1, property.nestedEntities[0]);
+                else
+                {
+                    const string messageFormat = "property [{0}] has no table mapping, property path [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        property.mapping.PropertyName, propertyNames.JoinStrings(".")));
+                }
+            }
         }
 
         private class QueryFunctionTranslator : SingleSelectSqlVisitorBase
@@ -713,7 +731,7 @@ namespace Simple1C.Impl.Sql.Translation
 
             public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
             {
-                translator.RegisterMainQueryEntity(clause.GetRefName(), clause.Name);
+                translator.RegisterMainQueryEntity(clause);
                 return clause;
             }
         }
@@ -771,14 +789,10 @@ namespace Simple1C.Impl.Sql.Translation
 
             public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
             {
-                //todo remove this shit
-                var properties = new[] { expression.TableName }
-                    .Concat(expression.Name.Split('.'))
-                    .ToArray();
-
                 if (!currentPart.HasValue)
                     throw new InvalidOperationException("assertion failure");
-                var queryField = translator.GetOrCreateQueryField(properties, isPresentation,
+                var queryField = translator.GetOrCreateQueryField(expression.Declaration,
+                    expression.Name.Split('.'), isPresentation,
                     currentPart.GetValueOrDefault());
                 expression.Name = queryField.alias ?? queryField.properties[0].GetDbColumnName();
                 return expression;
@@ -790,30 +804,27 @@ namespace Simple1C.Impl.Sql.Translation
             return string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime);
         }
 
-        private string GetQueryEntityAlias(QueryEntity entity)
+        private TableDeclarationClause GetTableDeclaration(QueryEntity entity)
         {
-            return entity.alias ?? (entity.alias = nameGenerator.GenerateTableName());
+            return entity.declaration
+                   ?? (entity.declaration = new TableDeclarationClause
+                   {
+                       Name = entity.mapping.DbTableName,
+                       Alias = nameGenerator.GenerateTableName()
+                   });
         }
 
-        private TableDeclarationClause GetDeclarationClause(QueryEntity queryEntity)
+        private class QueryRoot
         {
-            return new TableDeclarationClause
-            {
-                Name = queryEntity.mapping.DbTableName,
-                Alias = GetQueryEntityAlias(queryEntity)
-            };
-        }
-
-        private class MainQueryEntity
-        {
-            public readonly QueryEntity queryEntity;
+            public readonly QueryEntity entity;
+            public readonly TableDeclarationClause tableDeclaration;
             public readonly Dictionary<string, QueryField> fields = new Dictionary<string, QueryField>();
             public bool subqueryRequired;
 
-            public MainQueryEntity(QueryEntity queryEntity, bool subqueryRequired)
+            public QueryRoot(QueryEntity entity, TableDeclarationClause tableDeclaration)
             {
-                this.queryEntity = queryEntity;
-                this.subqueryRequired = subqueryRequired;
+                this.entity = entity;
+                this.tableDeclaration = tableDeclaration;
             }
         }
 
@@ -827,7 +838,7 @@ namespace Simple1C.Impl.Sql.Translation
 
             public readonly TableMapping mapping;
             public readonly QueryEntityProperty referer;
-            public string alias;
+            public TableDeclarationClause declaration;
             public readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
             public ISqlElement unionCondition;
 
@@ -870,16 +881,16 @@ namespace Simple1C.Impl.Sql.Translation
 
         private JoinClause CreateEnumMappingsJoinClause(QueryEntity enumEntity)
         {
-            var tableAlias = nameGenerator.GenerateTableName();
             if (!enumEntity.mapping.ObjectName.HasValue)
                 throw new InvalidOperationException("assertion failure");
+            var declaration = new TableDeclarationClause
+            {
+                Name = "simple1c__enumMappings",
+                Alias = nameGenerator.GenerateTableName()
+            };
             return new JoinClause
             {
-                Source = new TableDeclarationClause
-                {
-                    Name = "simple1c__enumMappings",
-                    Alias = tableAlias
-                },
+                Source = declaration,
                 JoinKind = JoinKind.Left,
                 Condition = new AndExpression
                 {
@@ -888,7 +899,7 @@ namespace Simple1C.Impl.Sql.Translation
                         Left = new ColumnReferenceExpression
                         {
                             Name = "enumName",
-                            TableName = tableAlias
+                            Declaration = declaration
                         },
                         Right = new LiteralExpression
                         {
@@ -900,12 +911,12 @@ namespace Simple1C.Impl.Sql.Translation
                         Left = new ColumnReferenceExpression
                         {
                             Name = "orderIndex",
-                            TableName = tableAlias
+                            Declaration = declaration
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = enumEntity.GetSingleColumnName("Порядок"),
-                            TableName = GetQueryEntityAlias(enumEntity)
+                            Declaration = GetTableDeclaration(enumEntity)
                         }
                     }
                 }

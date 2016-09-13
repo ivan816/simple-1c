@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override UnionClause VisitUnion(UnionClause clause)
         {
             builder.Append("\r\n\r\nunion");
-            if(clause.Type == UnionType.All)
+            if (clause.Type == UnionType.All)
                 builder.Append(" all");
             builder.Append("\r\n\r\n");
             return base.VisitUnion(clause);
@@ -130,8 +130,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
-            builder.Append(expression.TableName);
-            builder.Append(".");
+            if (!string.IsNullOrEmpty(expression.Declaration.Alias))
+            {
+                builder.Append(expression.Declaration.Alias);
+                builder.Append(".");
+            }
             builder.Append(expression.Name);
             return expression;
         }
@@ -165,7 +168,9 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitLiteral(LiteralExpression expression)
         {
-            var value = expression.SqlType.HasValue ? ApplySqlType(expression.Value, expression.SqlType.Value) : expression.Value;
+            var value = expression.SqlType.HasValue
+                ? ApplySqlType(expression.Value, expression.SqlType.Value)
+                : expression.Value;
             builder.Append(FormatValueAsString(value));
             return expression;
         }
@@ -203,9 +208,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         private static void NotSupported(ISqlElement element, params object[] args)
         {
-            const string messageFormat = "element [{0}] can't be turned to sql, " + "must be rewritten to something else first";
+            const string messageFormat = "element [{0}] can't be turned to sql, " +
+                                         "must be rewritten to something else first";
             var argsString = args.JoinStrings(",");
-            throw new InvalidOperationException(string.Format(messageFormat, element.GetType().FormatName() + (argsString == "" ? "" : ":" + argsString)));
+            throw new InvalidOperationException(string.Format(messageFormat,
+                element.GetType().FormatName() + (argsString == "" ? "" : ":" + argsString)));
         }
 
         private static string GetOperatorText(SqlBinaryOperator op)
@@ -264,7 +271,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     if (i.HasValue)
                         return BitConverter.GetBytes(i.Value).Reverse().ToArray();
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, value, value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    throw new InvalidOperationException(string.Format(messageFormat, value,
+                        value == null ? "<null>" : value.GetType().FormatName(), sqlType));
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));
