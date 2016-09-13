@@ -40,8 +40,9 @@ from t1 as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     ОбластьДанныхОсновныеДанные Single c2";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from (select
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from (select
     __nested_table0.c1
 from t1 as __nested_table0
 where __nested_table0.c2 in (10,200)) as contractors";
@@ -56,8 +57,10 @@ where __nested_table0.c2 in (10,200)) as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     Ссылка Single f1
     ИНН Single f2";
-            const string expectedResult = @"select contractors.__nested_field0 as CounterpartyInn,contractors.f1 as CounterpartyReference
-    from (select
+            const string expectedResult = @"select
+    contractors.__nested_field0 as CounterpartyInn,
+    contractors.f1 as CounterpartyReference
+from (select
     __nested_table0.f2 as __nested_field0,
     __nested_table0.f1
 from t1 as __nested_table0) as contractors";
@@ -71,8 +74,9 @@ from t1 as __nested_table0) as contractors";
     from справочник.ДоговорыКонтрагентов as contracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ЭтоГруппа Single c1";
-            const string expectedResult = @"select contracts.__nested_field0 as IsFolder
-    from (select
+            const string expectedResult = @"select
+    contracts.__nested_field0 as IsFolder
+from (select
     not(__nested_table0.c1) as __nested_field0
 from t1 as __nested_table0) as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -85,8 +89,9 @@ from t1 as __nested_table0) as contracts";
     from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as contractors";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -114,7 +119,8 @@ where contractors.ИНН = ""test-inn3""";
 Перечисление.ЮридическоеФизическоеЛицо t2 Main
     Ссылка Single c3
     Порядок Single c4 ";
-            const string expectedResult = @"select contractors.__nested_field0 as Type
+            const string expectedResult = @"select
+    contractors.__nested_field0 as Type
 from (select
     __nested_table2.enumValueName as __nested_field0,
     __nested_table0.c1
@@ -125,7 +131,8 @@ where contractors.c1 = 'test-inn1'
 
 union all
 
-select contractors.__nested_field0 as Type
+select
+    contractors.__nested_field0 as Type
 from (select
     __nested_table2.enumValueName as __nested_field0,
     __nested_table0.c1
@@ -136,7 +143,8 @@ where contractors.c1 = 'test-inn2'
 
 union
 
-select contractors.__nested_field0 as Type
+select
+    contractors.__nested_field0 as Type
 from (select
     __nested_table2.enumValueName as __nested_field0,
     __nested_table0.c1
@@ -154,8 +162,9 @@ where contractors.c1 = 'test-inn3'";
     from Справочник.ДоговорыКонтрагентов as contracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата Single c1";
-            const string expectedResult = @"select date_part('year', contracts.c1) as ContractDate
-    from t1 as contracts";
+            const string expectedResult = @"select
+    date_part('year',contracts.c1) as ContractDate
+from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -166,8 +175,9 @@ where contractors.c1 = 'test-inn3'";
     from Справочник.ДоговорыКонтрагентов as contracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата Single c1";
-            const string expectedResult = @"select date_trunc('quarter', contracts.c1) as ContractDate
-    from t1 as contracts";
+            const string expectedResult = @"select
+    date_trunc('quarter',contracts.c1) as ContractDate
+from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -225,8 +235,9 @@ where contractors.c2 = 'test-name' and contractors.c1 <> 'test-inn'";
     from Справочник.Контрагенты as Contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as Contractors";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as Contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -252,9 +263,10 @@ from t1 as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     Наименование Single c2";
-            const string expectedResult = @"select contractors.c2 as CounterpartyInn
-    from t1 as contractors
-    where contractors.c1='test-inn'";
+            const string expectedResult = @"select
+    contractors.c2 as CounterpartyInn
+from t1 as contractors
+where contractors.c1 = 'test-inn'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -270,7 +282,8 @@ from t1 as contractors";
     Ссылка Single с2
     Наименование Single c3
     ОбластьДанныхОсновныеДанные Single d2";
-            const string expectedResult = @"select contracts.__nested_field0 as Currency
+            const string expectedResult = @"select
+    contracts.__nested_field0 as Currency
     from (select
     __nested_table1.c3 as __nested_field0
 from t1 as __nested_table0
@@ -420,7 +433,10 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ОбластьДанныхОсновныеДанные Single d3";
 
             const string expectedResult =
-                @"select contracts.f2 as ContractName,contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as AccountNumber
+                @"select
+    contracts.f2 as ContractName,
+    contracts.__nested_field0 as ContractorInn,
+    contracts.__nested_field1 as AccountNumber
 from (select
     __nested_table0.f2,
     __nested_table1.f4 as __nested_field0,
@@ -446,7 +462,9 @@ from справочник.Контрагенты as contractors";
     ССылка Single f3
     Порядок Single f4";
 
-            const string expectedResult = @"select contractors.f1 as ContractorFullname,contractors.f2 as ContractorType
+            const string expectedResult = @"select
+    contractors.f1 as ContractorFullname,
+    contractors.f2 as ContractorType
 from t1 as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -467,7 +485,8 @@ where contractors.ЮридическоеФизическоеЛицо = Знач�
     ССылка Single f3
     Порядок Single f4";
 
-            const string expectedResult = @"select contractors.f1 as ContractorFullname
+            const string expectedResult = @"select
+    contractors.f1 as ContractorFullname
 from t1 as contractors
 where contractors.f2 = (select
     __nested_table0.f3
@@ -493,7 +512,10 @@ from справочник.Контрагенты as contractors";
     Порядок Single f4";
 
             const string expectedResult =
-                @"select contractors.f1 as ContractorFullname,contractors.__nested_field0 as ContractorTypeText,contractors.f2 as ContractorType
+                @"select
+    contractors.f1 as ContractorFullname,
+    contractors.__nested_field0 as ContractorTypeText,
+    contractors.f2 as ContractorType
 from (select
     __nested_table0.f1,
     __nested_table2.enumValueName as __nested_field0,
@@ -520,7 +542,9 @@ group by contractors.ЮридическоеФизическоеЛицо";
     Порядок Single f4";
 
             const string expectedResult =
-                @"select contractors.__nested_field0 as ContractorTypeText, count(*) as ContractorCount
+                @"select
+    contractors.__nested_field0 as ContractorTypeText,
+    count(*) as ContractorCount
 from (select
     __nested_table2.enumValueName as __nested_field0
 from t1 as __nested_table0
@@ -546,7 +570,10 @@ from справочник.Контрагенты as contractors";
     ОбластьДанныхОсновныеДанные Single d1";
 
             const string expectedResult =
-                @"select contractors.f2 as Inn,contractors.__nested_field0 as ParentInn,contractors.__nested_field1 as HeadInn
+                @"select
+    contractors.f2 as Inn,
+    contractors.__nested_field0 as ParentInn,
+    contractors.__nested_field1 as HeadInn
 from (select
     __nested_table0.f2,
     __nested_table1.f2 as __nested_field0,
@@ -575,7 +602,9 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ОбластьДанныхОсновныеДанные Single d2";
 
             const string expectedResult =
-                @"select contracts.__nested_field0 as ContractorInn,contracts.__nested_field1 as ContractorName
+                @"select
+    contracts.__nested_field0 as ContractorInn,
+    contracts.__nested_field1 as ContractorName
 from (select
     __nested_table1.f3 as __nested_field0,
     __nested_table1.f4 as __nested_field1
@@ -605,7 +634,8 @@ from документ.СписаниеСРасчетногоСчета as paymen
     ОбластьДанныхОсновныеДанные Single d3";
 
             const string expectedResult =
-                @"select payments.__nested_field0 as ContractorName
+                @"select
+    payments.__nested_field0 as ContractorName
 from (select
     case
     when __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x000000D2' then __nested_table1.f3
@@ -638,7 +668,8 @@ from документ.СписаниеСРасчетногоСчета as paymen
     ОбластьДанныхОсновныеДанные Single d3";
 
             const string expectedResult =
-                @"select payments.__nested_field0 as ContractorName
+                @"select
+    payments.__nested_field0 as ContractorName
 from (select
     __nested_table1.f1_ref as __nested_field0
 from t1 as __nested_table0
@@ -665,7 +696,8 @@ from документ.СписаниеСРасчетногоСчета as paymen
     ОбластьДанныхОсновныеДанные Single d3";
 
             const string expectedResult =
-                @"select payments.f1_ref as Contractor
+                @"select
+    payments.f1_ref as Contractor
 from t1 as payments";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -716,7 +748,8 @@ from документ.СписаниеСРасчетногоСчета as paymen
     ОбластьДанныхОсновныеДанные Single d3";
 
             const string expectedResult =
-                @"select payments.__nested_field0 as ContractorName
+                @"select
+    payments.__nested_field0 as ContractorName
 from (select
     case
     when __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x000000D2' then __nested_table1.f3
@@ -752,7 +785,8 @@ from документ.СписаниеСРасчетногоСчета as paymen
     ОбластьДанныхОсновныеДанные Single d4";
 
             const string expectedResult =
-                @"select payments.__nested_field0 as ContractorName
+                @"select
+    payments.__nested_field0 as ContractorName
 from (select
     case
     when __nested_table0.f1_type = E'\\x08' and __nested_table0.f1_tableIndex = E'\\x000000D2' then __nested_table1.f3

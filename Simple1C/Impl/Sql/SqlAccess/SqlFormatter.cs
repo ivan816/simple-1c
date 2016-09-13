@@ -20,8 +20,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitSubquery(SubqueryClause clause)
         {
-            if (string.IsNullOrEmpty(clause.Alias))
-                throw new InvalidOperationException("alias is empty");
             builder.Append("(");
             Visit(clause.SelectClause);
             builder.Append(")");
@@ -225,7 +223,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     if (i.HasValue)
                         return BitConverter.GetBytes(i.Value).Reverse().ToArray();
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, value, value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    throw new InvalidOperationException(string.Format(messageFormat, value,
+                        value == null ? "<null>" : value.GetType().FormatName(), sqlType));
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));

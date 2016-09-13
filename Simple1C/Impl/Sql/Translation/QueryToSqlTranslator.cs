@@ -125,7 +125,7 @@ namespace Simple1C.Impl.Sql.Translation
                     Value = enumValueItems[2]
                 }
             };
-            return selectClause;
+            return new SubqueryClause {SelectClause = selectClause};
         }
 
         private MainQueryEntity GetMainQueryEntity(string alias)
