@@ -7,6 +7,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public readonly string alias;
         public readonly QueryEntityProperty[] properties;
         public readonly bool invert;
+        public readonly List<SelectPart> parts = new List<SelectPart>();
 
         public QueryField(string alias, QueryEntityProperty[] properties, bool invert)
         {
@@ -14,7 +15,5 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             this.properties = properties;
             this.invert = invert;
         }
-
-        public readonly List<SelectPart> parts = new List<SelectPart>();
     }
 }

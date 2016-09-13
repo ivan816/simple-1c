@@ -65,7 +65,7 @@ where __nested_table0.c2 in (10,200)) as contractors";
         [Test]
         public void SimpleSelfReference()
         {
-            const string sourceSql = @"select contractors.Ссылка.ИНН as CounterpartyInn,contractors.Ссылка as CounterpartyReference
+            const string sourceSql = @"select contractors.Ссылка.ИНН as CounterpartyInn,contractors.ссылка as CounterpartyReference
     from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     Ссылка Single f1
@@ -83,7 +83,7 @@ from t1 as __nested_table0) as contractors";
         [Test]
         public void InvertIsFolder()
         {
-            const string sourceSql = @"select contracts.ЭтоГруппа as IsFolder
+            const string sourceSql = @"select contracts.этогруппа as IsFolder
     from справочник.ДоговорыКонтрагентов as contracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     ЭтоГруппа Single c1";
@@ -399,7 +399,7 @@ left join t2 as __nested_table1 on __nested_table1.d1 = __nested_table0.d2 and _
             const string sourceSql =
                 @"select docItems.номенклатура.наименование as name
 from Документ.ПоступлениеТоваровУслуг.Услуги as docItems
-where docItems.Ссылка.ПометкаУдаления = false";
+where docItems.сСыЛка.ПометкаУдаления = false";
 
             const string mappings = @"Документ.ПоступлениеТоваровУслуг.Услуги t1 TableSection
     Ссылка Single f1

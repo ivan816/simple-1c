@@ -37,7 +37,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             {
                 var subqueryRequired = propertyNames.Length > 1;
                 var needInvert = false;
-                if (propertyNames[propertyNames.Length - 1] == "ЭтоГруппа")
+                if (propertyNames[propertyNames.Length - 1].EqualsIgnoringCase("ЭтоГруппа"))
                 {
                     needInvert = true;
                     subqueryRequired = true;
@@ -76,7 +76,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
             if (propertyMapping.SingleLayout != null)
             {
-                if (name == "Ссылка")
+                if (name.EqualsIgnoringCase("Ссылка"))
                 {
                     if (queryEntity.mapping.Type == TableType.TableSection)
                     {
