@@ -12,6 +12,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             new Dictionary<string, TableDeclarationClause>(StringComparer.OrdinalIgnoreCase);
 
         //мудотня какая-то, разобрать
+        //без алиасов соответствие колонка->таблица можно
+        //построить только зная какие колонки есть в каждой таблице =>
+        //должно быть где-то выше, где уже есть TableMapping
         private TableDeclarationClause currentTableDeclaration;
 
         //todo remove copypaste

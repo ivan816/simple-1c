@@ -22,6 +22,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public List<QueryEntityProperty> Enumerate()
         {
             Iterate(0, queryRoot.entity);
+            if (properties.Count == 0)
+            {
+                const string messageFormat = "no properties found for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    queryRoot.tableDeclaration.GetRefName(), propertyNames.JoinStrings(".")));
+            }
             return properties;
         }
 

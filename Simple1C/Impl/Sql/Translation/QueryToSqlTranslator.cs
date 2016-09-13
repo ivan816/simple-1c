@@ -30,7 +30,9 @@ namespace Simple1C.Impl.Sql.Translation
                 {"датавремя", "datetime"},
                 {"год", "year"},
                 {"квартал", "quarter"},
-                {"значение", "value"}
+                {"значение", "value"},
+                {"ложь", "false"},
+                {"истина", "true"}
             };
 
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",

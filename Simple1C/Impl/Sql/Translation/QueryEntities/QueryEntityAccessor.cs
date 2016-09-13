@@ -44,8 +44,6 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 }
                 var propertiesEnumerator = new PropertiesEnumerator(propertyNames, queryRoot, this);
                 var referencedProperties = propertiesEnumerator.Enumerate();
-                if (referencedProperties.Count == 0)
-                    throw new InvalidOperationException("assertion failure");
                 if (isRepresentation)
                     if (ReplaceWithRepresentation(referencedProperties))
                         subqueryRequired = true;

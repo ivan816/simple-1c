@@ -8,8 +8,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     public class QueryGrammar : Grammar
     {
-        private const string englishAlphbet = "abcdefghijklmnopqrstuvwxyz";
-        private const string russianAlphbet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+        private const string englishAlphabet = "abcdefghijklmnopqrstuvwxyz";
+        private const string russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
 
         public QueryGrammar()
             : base(false)
@@ -33,10 +33,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var termPresentation = ToTerm("PRESENTATION");
 
-            var validChars = englishAlphbet +
-                             englishAlphbet.ToUpper() +
-                             russianAlphbet +
-                             russianAlphbet.ToUpper() +
+            var validChars = englishAlphabet +
+                             englishAlphabet.ToUpper() +
+                             russianAlphabet +
+                             russianAlphabet.ToUpper() +
                              "_";
             var idSimple = new IdentifierTerminal("Identifier")
             {
@@ -122,7 +122,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 delegate(ParseTreeNode node)
                 {
                     var operatorText = node.ChildNodes[0].Token.ValueString;
-                    switch (operatorText)
+                    switch (operatorText.ToLower())
                     {
                         case "and":
                             return SqlBinaryOperator.And;
@@ -189,8 +189,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 termPresentation | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
                 delegate(ParseTreeNode node)
                 {
-                    var queryFunctionNameString = node.ChildNodes[0].Token.ValueString.ToLower();
-                    switch (queryFunctionNameString)
+                    var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
+                    switch (queryFunctionNameString.ToLower())
                     {
                         case "presentation":
                             return QueryFunctionName.Presentation;

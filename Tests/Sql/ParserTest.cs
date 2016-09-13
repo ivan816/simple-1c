@@ -151,7 +151,7 @@ select a3,b3 from t3");
         [Test]
         public void AndOperator()
         {
-            var selectClause = Parse("select * from testTable where c > 12 and c<25");
+            var selectClause = Parse("select * from testTable where c > 12 aNd c<25");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -221,7 +221,7 @@ select a3,b3 from t3");
             Assert.NotNull(right);
             Assert.That(right.Value, Is.EqualTo("1\"2\""));
         }
-        
+
         [Test]
         public void Join()
         {

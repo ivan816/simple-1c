@@ -94,6 +94,23 @@ from (select
 from t1 as __nested_table0) as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+        
+        [Test]
+        public void BoolLiteral()
+        {
+            const string sourceSql = @"select *
+    from справочник.ДоговорыКонтрагентов as contracts
+    where contracts.этогруппа = ложь";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+    ЭтоГруппа Single c1";
+            const string expectedResult = @"select
+    *
+from (select
+    not(__nested_table0.c1) as __nested_field0
+from t1 as __nested_table0) as contracts
+where contracts.__nested_field0 = false";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void StripPresentationFunctionFromSimpleProperties()
@@ -742,6 +759,22 @@ from документ.СписаниеСРасчетногоСчета as paymen
             const string expectedMessage =
                 "property [Контрагент] in [payments.Контрагент.Наименование] has multiple types [Справочник.Контрагенты,Справочник.ФизическиеЛица] " +
                 "and none of them has property [Наименование]";
+            Assert.That(exception.Message, Is.EqualTo(expectedMessage));
+        }
+
+        [Test]
+        public void InvalidPropertyName_CorrectException()
+        {
+            const string sourceSql =
+                @"select payments.Наименование as ContractorName
+from документ.СписаниеСРасчетногоСчета as payments";
+
+            const string mappings = @"Документ.СписаниеСРасчетногоСчета t1 Main    
+    ОбластьДанныхОсновныеДанные Single d1";
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                CheckTranslate(mappings, sourceSql, null));
+            const string expectedMessage = "no properties found for [payments.Наименование]";
             Assert.That(exception.Message, Is.EqualTo(expectedMessage));
         }
         
