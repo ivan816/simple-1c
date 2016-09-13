@@ -14,7 +14,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             return expression;
         }
-        
+
         public virtual GroupByClause VisitGroupBy(GroupByClause clause)
         {
             VisitEnumerable(clause.Columns);
@@ -44,25 +44,26 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitWhere(ISqlElement filter)
         {
-            Visit(filter);
-            return filter;
+            return Visit(filter);
         }
 
         public virtual SelectField VisitSelectField(SelectField clause)
         {
-            Visit(clause.Expression);
+            clause.Expression = Visit(clause.Expression);
             return clause;
         }
 
         public virtual ISqlElement VisitBinary(BinaryExpression expression)
         {
-            Visit(expression.Left);
-            Visit(expression.Right);
+            expression.Left = Visit(expression.Left);
+            expression.Right = Visit(expression.Right);
             return expression;
         }
 
         public virtual CaseExpression VisitCase(CaseExpression expression)
         {
+            if (expression.DefaultValue != null)
+                expression.DefaultValue = (LiteralExpression) Visit(expression.DefaultValue);
             return expression;
         }
 
@@ -78,7 +79,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual ISqlElement VisitIn(InExpression expression)
         {
-            Visit(expression.Column);
+            expression.Column = (ColumnReferenceExpression) Visit(expression.Column);
             VisitEnumerable(expression.Values);
             return expression;
         }
@@ -86,7 +87,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public virtual JoinClause VisitJoin(JoinClause clause)
         {
             clause.Source = Visit(clause.Source);
-            Visit(clause.Condition);
+            clause.Condition = Visit(clause.Condition);
             return clause;
         }
 
@@ -106,10 +107,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        private void VisitEnumerable(IEnumerable<ISqlElement> elements)
+        private void VisitEnumerable<T>(List<T> elements)
+            where T : ISqlElement
         {
-            foreach (var el in elements)
-                Visit(el);
+            for (var i = 0; i < elements.Count; i++)
+                elements[i] = (T) Visit(elements[i]);
         }
     }
 }

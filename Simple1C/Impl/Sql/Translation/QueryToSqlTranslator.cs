@@ -16,12 +16,6 @@ namespace Simple1C.Impl.Sql.Translation
         private static readonly Regex nowMacroRegex = new Regex(@"&Now",
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
-        private static readonly Regex dateTimeRegex = new Regex(@"(?<year>\d+)[\,\s]+(?<month>\d+)[\,\s]+(?<day>\d+)",
-            RegexOptions.Compiled | RegexOptions.Singleline);
-
-        //private static readonly Regex joinRegex = new Regex(@"join\s+\S+\s+as\s+(\S+)\s+on\s+",
-        //    RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
         private static readonly Dictionary<string, string> keywordsMap =
             new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -41,16 +35,6 @@ namespace Simple1C.Impl.Sql.Translation
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-        //todo
-        //private static readonly Dictionary<string, Func<QueryToSqlTranslator, string, string>> functions =
-        //    new Dictionary<string, Func<QueryToSqlTranslator, string, string>>(StringComparer.OrdinalIgnoreCase)
-        //    {
-        //        {"датавремя", (_, s) => FormatDateTime(s)},
-        //        {"год", (_, s) => string.Format("date_part('year', {0})", s)},
-        //        {"квартал", (_, s) => string.Format("date_trunc('quarter', {0})", s)},
-        //        {"значение", (t, s) => t.GetEnumValueSql(s)}
-        //    };
 
         private readonly Dictionary<string, MainQueryEntity> queryTables = new Dictionary<string, MainQueryEntity>(StringComparer.OrdinalIgnoreCase);
 
@@ -73,13 +57,13 @@ namespace Simple1C.Impl.Sql.Translation
 
         public string Translate(string source)
         {
-            var currentDateString = FormatSqlDate(CurrentDate ?? DateTime.Today);
+            var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
             source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             source = nowMacroRegex.Replace(source, currentDateString);
             var queryParser = new QueryParser();
             var selectClause = queryParser.Parse(source);
-            var translator = new TranslationVisitor(this);
-            translator.Visit(selectClause);
+            var translationVisitor = new TranslationVisitor(this);
+            translationVisitor.Visit(selectClause);
             return SqlFormatter.Format(selectClause);
         }
 
@@ -104,14 +88,16 @@ namespace Simple1C.Impl.Sql.Translation
             var tableDeclarationPatcher = new TableDeclarationPatcher(this);
             tableDeclarationPatcher.Visit(selectClause);
 
-            //queryText = functions.Aggregate(queryText, (s, f) => functionRegexes[f.Key]
-            //    .Replace(s, m => f.Value(this, m.Groups[1].Value)));
-            //return queryText;
+            var valueLiteralTranslator = new ValueLiteralTranslator(this);
+            valueLiteralTranslator.Visit(selectClause);
+
+            var queryFunctionTranslator = new QueryFunctionTranslator();
+            queryFunctionTranslator.Visit(selectClause);
         }
 
-        private string GetEnumValueSql(string enumValue)
+        private ISqlElement TranslateValueLiteral(ValueLiteral valueLiteral)
         {
-            var enumValueItems = enumValue.Split('.');
+            var enumValueItems = valueLiteral.ObjectName.Split('.');
             var table = CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
             var selectClause = new SelectClause {Source = GetDeclarationClause(table)};
             selectClause.Fields.Add(new SelectField
@@ -136,7 +122,7 @@ namespace Simple1C.Impl.Sql.Translation
                     Value = enumValueItems[2]
                 }
             };
-            return SqlFormatter.Format(selectClause);
+            return selectClause;
         }
 
         private MainQueryEntity GetMainQueryEntity(string alias)
@@ -605,6 +591,73 @@ namespace Simple1C.Impl.Sql.Translation
             };
         }
 
+        private class QueryFunctionTranslator : SqlVisitor
+        {
+            public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
+            {
+                if (expression.FunctionName == QueryFunctionName.DateTime)
+                {
+                    if (expression.Arguments.Count != 3)
+                        throw new InvalidOperationException("invalid function");
+                    var yearLiteral = expression.Arguments[0] as LiteralExpression;
+                    var monthLiteral = expression.Arguments[1] as LiteralExpression;
+                    var dayLiteral = expression.Arguments[2] as LiteralExpression;
+                    if (yearLiteral == null || monthLiteral == null || dayLiteral == null)
+                        throw new InvalidOperationException("invalid function");
+                    return new LiteralExpression
+                    {
+                        Value = new DateTime((int) yearLiteral.Value,
+                            (int) monthLiteral.Value,
+                            (int) dayLiteral.Value)
+                    };
+                }
+                if (expression.FunctionName == QueryFunctionName.Year)
+                {
+                    if (expression.Arguments.Count != 1)
+                        throw new InvalidOperationException("invalid function");
+                    return new QueryFunctionExpression
+                    {
+                        FunctionName = QueryFunctionName.SqlDatePart,
+                        Arguments = new List<ISqlElement>
+                        {
+                            new LiteralExpression {Value = "year"},
+                            expression.Arguments[0]
+                        }
+                    };
+                }
+                if (expression.FunctionName == QueryFunctionName.Quarter)
+                {
+                    if (expression.Arguments.Count != 1)
+                        throw new InvalidOperationException("invalid function");
+                    return new QueryFunctionExpression
+                    {
+                        FunctionName = QueryFunctionName.SqlDateTrunc,
+                        Arguments = new List<ISqlElement>
+                        {
+                            new LiteralExpression {Value = "quarter"},
+                            expression.Arguments[0]
+                        }
+                    };
+                }
+                return base.VisitQueryFunction(expression);
+            }
+        }
+
+        private class ValueLiteralTranslator : SqlVisitor
+        {
+            private readonly QueryToSqlTranslator translator;
+
+            public ValueLiteralTranslator(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            public override ISqlElement VisitValueLiteral(ValueLiteral expression)
+            {
+                return translator.TranslateValueLiteral(expression);
+            }
+        }
+
         private class TranslationVisitor : SqlVisitor
         {
             private readonly QueryToSqlTranslator translator;
@@ -711,22 +764,10 @@ namespace Simple1C.Impl.Sql.Translation
                 return expression;
             }
         }
-
-        private static string FormatDateTime(string s)
+        
+        private static string FormatDateTime(DateTime dateTime)
         {
-            var m = dateTimeRegex.Match(s);
-            if (!m.Success)
-            {
-                const string messageFormat = "invalid ДАТАВРЕМЯ arguments [{0}]";
-                throw new InvalidOperationException(string.Format(messageFormat, s));
-            }
-            var date = new DateTime(m.AsInt("year"), m.AsInt("month"), m.AsInt("day"));
-            return FormatSqlDate(date);
-        }
-
-        private static string FormatSqlDate(DateTime dateTime)
-        {
-            return "cast('" + dateTime.ToString("yyyy-MM-dd") + "' as date)";
+            return string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime);
         }
 
         private string GetQueryEntityAlias(QueryEntity entity)

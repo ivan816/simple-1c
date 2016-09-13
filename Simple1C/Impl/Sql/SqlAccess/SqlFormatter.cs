@@ -179,6 +179,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 return "'" + value + "'";
             if (value is byte[])
                 return "E'\\\\x" + ((byte[]) value).ToHex() + "'";
+            if (value is DateTime)
+                return "cast('" + ((DateTime) value).ToString("yyyy-MM-dd") + "' as date)";
             return value.ToString();
         }
 
