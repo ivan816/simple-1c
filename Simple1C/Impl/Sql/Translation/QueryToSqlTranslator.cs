@@ -79,13 +79,16 @@ namespace Simple1C.Impl.Sql.Translation
             nameGenerator.Reset();
             queryTables.Clear();
 
-            var referencePatcher = new ColumnReferencePatcher(this);
-            referencePatcher.Visit(selectClause);
+            var tableDeclarationExtractor = new TableDeclarationExtractor(this);
+            tableDeclarationExtractor.Visit(selectClause);
 
-            var joinPatcher = new AreaConditionJoinClausePatcher(this);
+            var joinPatcher = new JoinConditionAreaAppender();
             joinPatcher.Visit(selectClause);
 
-            var tableDeclarationPatcher = new TableDeclarationPatcher(this);
+            var referencePatcher = new ColumnReferenceTranslator(this);
+            referencePatcher.Visit(selectClause);
+
+            var tableDeclarationPatcher = new TableDeclarationTranslator(this);
             tableDeclarationPatcher.Visit(selectClause);
 
             var valueLiteralTranslator = new ValueLiteralTranslator(this);
@@ -136,33 +139,25 @@ namespace Simple1C.Impl.Sql.Translation
             return mainEntity;
         }
 
-        private class AreaConditionJoinClausePatcher : SqlVisitor
+        private class JoinConditionAreaAppender : SingleSelectSqlVisitorBase
         {
-            private readonly QueryToSqlTranslator translator;
             private TableDeclarationClause mainTable;
-
-            public AreaConditionJoinClausePatcher(QueryToSqlTranslator translator)
-            {
-                this.translator = translator;
-            }
 
             public override JoinClause VisitJoin(JoinClause clause)
             {
-                var mainTableArea = GetAreaField(mainTable);
-                var joinTable = (TableDeclarationClause)clause.Source;
-                var joinTableArea = GetAreaField(joinTable);
+                var joinTable = (TableDeclarationClause) clause.Source;
                 clause.Condition = new AndExpression
                 {
                     Left = new EqualityExpression
                     {
                         Left = new ColumnReferenceExpression
                         {
-                            Name = mainTableArea.properties.Single().GetDbColumnName(),
+                            Name = "ОбластьДанныхОсновныеДанные",
                             TableName = mainTable.GetRefName()
                         },
                         Right = new ColumnReferenceExpression
                         {
-                            Name = joinTableArea.properties.Single().GetDbColumnName(),
+                            Name = "ОбластьДанныхОсновныеДанные",
                             TableName = joinTable.GetRefName()
                         }
                     },
@@ -175,12 +170,6 @@ namespace Simple1C.Impl.Sql.Translation
             {
                 mainTable = (TableDeclarationClause) clause.Source;
                 return base.VisitSelect(clause);
-            }
-
-            private QueryField GetAreaField(TableDeclarationClause tableDeclaration)
-            {
-                var propertyNames = new[] { tableDeclaration.GetRefName(), "ОбластьДанныхОсновныеДанные" };
-                return translator.GetOrCreateQueryField(propertyNames, false, SelectPart.Join);
             }
         }
 
@@ -390,7 +379,11 @@ namespace Simple1C.Impl.Sql.Translation
                 };
             AddJoinClauses(mainEntity.queryEntity, selectClause);
             AddColumns(mainEntity, selectClause);
-            return selectClause;
+            return new SubqueryClause
+            {
+                SelectClause = selectClause,
+                Alias = declaration.GetRefName()
+            };
         }
 
         private void AddColumns(MainQueryEntity entity, SelectClause target)
@@ -591,7 +584,7 @@ namespace Simple1C.Impl.Sql.Translation
             };
         }
 
-        private class QueryFunctionTranslator : SqlVisitor
+        private class QueryFunctionTranslator : SingleSelectSqlVisitorBase
         {
             public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
             {
@@ -639,11 +632,17 @@ namespace Simple1C.Impl.Sql.Translation
                         }
                     };
                 }
+                if (expression.FunctionName == QueryFunctionName.Presentation)
+                {
+                    if (expression.Arguments.Count != 1)
+                        throw new InvalidOperationException("invalid function");
+                    return expression.Arguments[0];
+                }
                 return base.VisitQueryFunction(expression);
             }
         }
 
-        private class ValueLiteralTranslator : SqlVisitor
+        private class ValueLiteralTranslator : SingleSelectSqlVisitorBase
         {
             private readonly QueryToSqlTranslator translator;
 
@@ -669,19 +668,17 @@ namespace Simple1C.Impl.Sql.Translation
 
             public override SelectClause VisitSelect(SelectClause clause)
             {
-                var union = clause.Union;
-                clause.Union = null;
-                translator.TranslateSingleSelect(clause);
-                clause.Union = union;
-                return base.VisitSelect(clause);
+                var result = base.VisitSelect(clause);
+                translator.TranslateSingleSelect(result);
+                return result;
             }
         }
 
-        private class TableDeclarationPatcher : SqlVisitor
+        private class TableDeclarationTranslator : SingleSelectSqlVisitorBase
         {
             private readonly QueryToSqlTranslator translator;
 
-            public TableDeclarationPatcher(QueryToSqlTranslator translator)
+            public TableDeclarationTranslator(QueryToSqlTranslator translator)
             {
                 this.translator = translator;
             }
@@ -692,13 +689,42 @@ namespace Simple1C.Impl.Sql.Translation
             }
         }
 
-        private class ColumnReferencePatcher : SqlVisitor
+        private abstract class SingleSelectSqlVisitorBase : SqlVisitor
+        {
+            private bool selectVisited;
+
+            public override SelectClause VisitSelect(SelectClause clause)
+            {
+                if (selectVisited)
+                    return clause;
+                selectVisited = true;
+                return base.VisitSelect(clause);
+            }
+        }
+
+        private class TableDeclarationExtractor : SingleSelectSqlVisitorBase
+        {
+            private readonly QueryToSqlTranslator translator;
+
+            public TableDeclarationExtractor(QueryToSqlTranslator translator)
+            {
+                this.translator = translator;
+            }
+
+            public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
+            {
+                translator.RegisterMainQueryEntity(clause.GetRefName(), clause.Name);
+                return clause;
+            }
+        }
+
+        private class ColumnReferenceTranslator : SingleSelectSqlVisitorBase
         {
             private readonly QueryToSqlTranslator translator;
             private bool isPresentation;
             private SelectPart? currentPart;
 
-            public ColumnReferencePatcher(QueryToSqlTranslator translator)
+            public ColumnReferenceTranslator(QueryToSqlTranslator translator)
             {
                 this.translator = translator;
             }
@@ -741,12 +767,6 @@ namespace Simple1C.Impl.Sql.Translation
                 base.VisitQueryFunction(expression);
                 isPresentation = false;
                 return expression;
-            }
-
-            public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
-            {
-                translator.RegisterMainQueryEntity(clause.GetRefName(), clause.Name);
-                return clause;
             }
 
             public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)

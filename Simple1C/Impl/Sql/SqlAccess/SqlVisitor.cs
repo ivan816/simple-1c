@@ -10,6 +10,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return element.Accept(this);
         }
 
+        public virtual ISqlElement VisitSubquery(SubqueryClause clause)
+        {
+            clause.SelectClause = VisitSelect(clause.SelectClause);
+            return clause;
+        }
+
         public virtual ISqlElement VisitValueLiteral(ValueLiteral expression)
         {
             return expression;
@@ -29,12 +35,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual SelectClause VisitSelect(SelectClause clause)
         {
+            if (clause.Fields != null)
+                VisitEnumerable(clause.Fields);
             clause.Source = Visit(clause.Source);
             VisitEnumerable(clause.JoinClauses);
             if (clause.WhereExpression != null)
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);
-            if (clause.Fields != null)
-                VisitEnumerable(clause.Fields);
             if (clause.GroupBy != null)
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
             if (clause.Union != null)
@@ -107,7 +113,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        private void VisitEnumerable<T>(List<T> elements)
+        protected void VisitEnumerable<T>(List<T> elements)
             where T : ISqlElement
         {
             for (var i = 0; i < elements.Count; i++)

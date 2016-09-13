@@ -1,19 +1,33 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class ColumnReferencePatcher : SqlVisitor
+    internal class ColumnReferenceTableNameRewriter : SqlVisitor
     {
-        private TableDeclarationClause currentTableDeclaration;
-
         private readonly Dictionary<string, TableDeclarationClause> nameToDeclaration =
             new Dictionary<string, TableDeclarationClause>();
 
+        //todo remove copypaste
+        public override SelectClause VisitSelect(SelectClause clause)
+        {
+            clause.Source = Visit(clause.Source);
+            VisitEnumerable(clause.JoinClauses);
+            if (clause.Fields != null)
+                VisitEnumerable(clause.Fields);
+            if (clause.WhereExpression != null)
+                clause.WhereExpression = VisitWhere(clause.WhereExpression);
+            if (clause.GroupBy != null)
+                clause.GroupBy = VisitGroupBy(clause.GroupBy);
+            if (clause.Union != null)
+                clause.Union = VisitUnion(clause.Union);
+            return clause;
+        }
+
         public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
-            currentTableDeclaration = clause;
             nameToDeclaration.Add(clause.GetRefName(), clause);
             return clause;
         }
@@ -29,7 +43,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
                 expression.TableName = aliasCandidate;
             }
             else
-                expression.TableName = currentTableDeclaration.GetRefName();
+                throw new InvalidOperationException("assertion failure");
             return expression;
         }
     }

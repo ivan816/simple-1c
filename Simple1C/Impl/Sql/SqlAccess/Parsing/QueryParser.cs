@@ -29,7 +29,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 throw new InvalidOperationException(string.Format("parse error\r\n{0}", b));
             }
             var result = (SelectClause) parseTree.Root.AstNode;
-            var columnReferencePatcher = new ColumnReferencePatcher();
+            var columnReferencePatcher = new ColumnReferenceTableNameRewriter();
             columnReferencePatcher.Visit(result);
             return result;
         }

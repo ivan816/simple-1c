@@ -18,9 +18,20 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return formatter.builder.ToString();
         }
 
+        public override ISqlElement VisitSubquery(SubqueryClause clause)
+        {
+            if (string.IsNullOrEmpty(clause.Alias))
+                throw new InvalidOperationException("alias is empty");
+            builder.Append("(");
+            Visit(clause.SelectClause);
+            builder.Append(")");
+            WriteAlias(clause.Alias);
+            return clause;
+        }
+
         public override SelectClause VisitSelect(SelectClause clause)
         {
-            builder.Append("(select\r\n\t");
+            builder.Append("select\r\n\t");
             VisitEnumerable(clause.Fields, ",\r\n\t");
             builder.Append("\r\nfrom ");
             Visit(clause.Source);
@@ -34,7 +45,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 builder.Append("\r\nwhere ");
                 Visit(clause.WhereExpression);
             }
-            builder.Append(")");
             return clause;
         }
 

@@ -132,13 +132,14 @@
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\SubqueryClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunction.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AndExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\BinaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseExpression.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferencePatcher.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceTableNameRewriter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\GroupByClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\InExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceExpression.cs" />

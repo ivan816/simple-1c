@@ -26,8 +26,9 @@ namespace Simple1C.Tests.Sql
     from Справочник.Контрагенты aS contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as contractors";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -305,10 +306,13 @@ left join Справочник.КонтактныеЛица as contacts on contr
 Справочник.КонтактныеЛица t2 Main
     Ссылка Single c7
     ОбластьДанныхОсновныеДанные Single c5";
-            const string expectedResult = @"select contractors.c1 as ContractorName,contractors.__nested_field0 as ParentName from (select
-    __nested_table0.c2,
+            const string expectedResult = @"select
+    contractors.c1 as ContractorName,
+    contractors.__nested_field0 as ParentName
+from (select
     __nested_table0.c1,
     __nested_table1.c1 as __nested_field0,
+    __nested_table0.c2,
     __nested_table0.c3
 from t1 as __nested_table0
 left join t1 as __nested_table1 on __nested_table1.c2 = __nested_table0.c2 and __nested_table1.c6 = __nested_table0.c4) as contractors
