@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class QueryRoot
     {

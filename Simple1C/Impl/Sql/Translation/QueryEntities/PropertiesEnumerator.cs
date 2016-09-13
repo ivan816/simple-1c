@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
 
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class PropertiesEnumerator
     {

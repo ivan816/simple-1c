@@ -6,7 +6,7 @@ using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Interface;
 
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class QueryEntityAccessor
     {

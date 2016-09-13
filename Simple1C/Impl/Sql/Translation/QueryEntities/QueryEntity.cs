@@ -2,7 +2,7 @@ using System.Collections.Generic;
 using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class QueryEntity
     {
@@ -14,18 +14,19 @@ namespace Simple1C.Impl.Sql.Translation
 
         public readonly TableMapping mapping;
         public readonly QueryEntityProperty referer;
-        public TableDeclarationClause declaration;
         public readonly List<QueryEntityProperty> properties = new List<QueryEntityProperty>();
+
         public ISqlElement unionCondition;
+        public TableDeclarationClause declaration;
 
         public string GetAreaColumnName()
         {
-            return GetSingleColumnName("ОбластьДанныхОсновныеДанные");
+            return GetSingleColumnName("РћР±Р»Р°СЃС‚СЊР”Р°РЅРЅС‹С…РћСЃРЅРѕРІРЅС‹РµР”Р°РЅРЅС‹Рµ");
         }
 
         public string GetIdColumnName()
         {
-            return GetSingleColumnName("Ссылка");
+            return GetSingleColumnName("РЎСЃС‹Р»РєР°");
         }
 
         public string GetSingleColumnName(string propertyName)

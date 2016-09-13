@@ -7,6 +7,8 @@ using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Impl.Sql.Translation.QueryEntities;
+using Simple1C.Impl.Sql.Translation.Visitors;
 
 namespace Simple1C.Impl.Sql.Translation
 {

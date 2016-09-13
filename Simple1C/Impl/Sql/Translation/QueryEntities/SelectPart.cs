@@ -1,4 +1,4 @@
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal enum SelectPart
     {

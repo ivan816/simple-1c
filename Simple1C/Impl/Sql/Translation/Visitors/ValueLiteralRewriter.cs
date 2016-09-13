@@ -1,7 +1,8 @@
 using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Impl.Sql.Translation.QueryEntities;
 
-namespace Simple1C.Impl.Sql.Translation
+namespace Simple1C.Impl.Sql.Translation.Visitors
 {
     internal class ValueLiteralRewriter : SingleSelectSqlVisitorBase
     {
