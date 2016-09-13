@@ -18,6 +18,45 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return formatter.builder.ToString();
         }
 
+        public override UnionClause VisitUnion(UnionClause clause)
+        {
+            builder.Append("\r\n\r\nunion");
+            if(clause.Type == UnionType.All)
+                builder.Append(" all");
+            builder.Append("\r\n\r\n");
+            return base.VisitUnion(clause);
+        }
+
+        public override AggregateFunction VisitAggregateFunction(AggregateFunction expression)
+        {
+            builder.Append(FormatAggregateFunction(expression.Type));
+            return expression;
+        }
+
+        public override GroupByClause VisitGroupBy(GroupByClause clause)
+        {
+            builder.Append("\r\ngroup by ");
+            VisitEnumerable(clause.Columns, ",");
+            return clause;
+        }
+
+        private static string FormatAggregateFunction(AggregateFunctionType f)
+        {
+            switch (f)
+            {
+                case AggregateFunctionType.Count:
+                    return "count(*)";
+                case AggregateFunctionType.Sum:
+                    return "sum(*)";
+                case AggregateFunctionType.Max:
+                    return "max(*)";
+                case AggregateFunctionType.Min:
+                    return "min(*)";
+                default:
+                    throw new ArgumentOutOfRangeException("f", f, null);
+            }
+        }
+
         public override ISqlElement VisitSubquery(SubqueryClause clause)
         {
             builder.Append("(");
@@ -46,6 +85,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 builder.Append("\r\nwhere ");
                 Visit(clause.WhereExpression);
             }
+            if (clause.GroupBy != null)
+                Visit(clause.GroupBy);
+            if (clause.Union != null)
+                Visit(clause.Union);
             return clause;
         }
 
@@ -122,9 +165,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitLiteral(LiteralExpression expression)
         {
-            var value = expression.SqlType.HasValue
-                ? ApplySqlType(expression.Value, expression.SqlType.Value)
-                : expression.Value;
+            var value = expression.SqlType.HasValue ? ApplySqlType(expression.Value, expression.SqlType.Value) : expression.Value;
             builder.Append(FormatValueAsString(value));
             return expression;
         }
@@ -162,11 +203,9 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         private static void NotSupported(ISqlElement element, params object[] args)
         {
-            const string messageFormat = "element [{0}] can't be turned to sql, " +
-                                         "must be rewritten to something else first";
+            const string messageFormat = "element [{0}] can't be turned to sql, " + "must be rewritten to something else first";
             var argsString = args.JoinStrings(",");
-            throw new InvalidOperationException(string.Format(messageFormat,
-                element.GetType().FormatName() + (argsString == "" ? "" : ":" + argsString)));
+            throw new InvalidOperationException(string.Format(messageFormat, element.GetType().FormatName() + (argsString == "" ? "" : ":" + argsString)));
         }
 
         private static string GetOperatorText(SqlBinaryOperator op)
@@ -208,6 +247,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 return "E'\\\\x" + ((byte[]) value).ToHex() + "'";
             if (value is DateTime)
                 return "cast('" + ((DateTime) value).ToString("yyyy-MM-dd") + "' as date)";
+            if (value is bool)
+                return ((bool?) value).Value ? "true" : "false";
             return value.ToString();
         }
 
@@ -223,8 +264,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     if (i.HasValue)
                         return BitConverter.GetBytes(i.Value).Reverse().ToArray();
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, value,
-                        value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    throw new InvalidOperationException(string.Format(messageFormat, value, value == null ? "<null>" : value.GetType().FormatName(), sqlType));
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));

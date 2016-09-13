@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
@@ -7,7 +8,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
     internal class ColumnReferenceTableNameRewriter : SqlVisitor
     {
         private readonly Dictionary<string, TableDeclarationClause> nameToDeclaration =
-            new Dictionary<string, TableDeclarationClause>();
+            new Dictionary<string, TableDeclarationClause>(StringComparer.OrdinalIgnoreCase);
 
         //мудотня какая-то, разобрать
         private TableDeclarationClause currentTableDeclaration;
@@ -15,6 +16,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         //todo remove copypaste
         public override SelectClause VisitSelect(SelectClause clause)
         {
+            nameToDeclaration.Clear();
             clause.Source = Visit(clause.Source);
             VisitEnumerable(clause.JoinClauses);
             if (clause.Fields != null)

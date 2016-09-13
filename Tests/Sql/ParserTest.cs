@@ -23,6 +23,22 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void Bool()
+        {
+            var selectClause = Parse("select a,b from testTable where c = false");
+            var binaryExpression = selectClause.WhereExpression as BinaryExpression;
+            Assert.NotNull(binaryExpression);
+            var colReference = binaryExpression.Left as ColumnReferenceExpression;
+            Assert.NotNull(colReference);
+            Assert.That(colReference.Name, Is.EqualTo("c"));
+            Assert.That(colReference.TableName, Is.EqualTo("testTable"));
+
+            var literalExpression = binaryExpression.Right as LiteralExpression;
+            Assert.NotNull(literalExpression);
+            Assert.That(literalExpression.Value, Is.False);
+        }
+        
+        [Test]
         public void Parenthesis()
         {
             var selectClause = Parse("select (a.b) from testTable");

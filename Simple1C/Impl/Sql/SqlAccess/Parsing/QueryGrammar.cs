@@ -28,6 +28,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termIn = ToTerm("IN");
             var termBy = ToTerm("BY");
             var termValue = ToTerm("VALUE");
+            var termTrue = ToTerm("TRUE");
+            var termFalse = ToTerm("FALSE");
+
             var termRepresentation = ToTerm("PRESENTATION");
 
             var validChars = englishAlphbet +
@@ -84,16 +87,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 id,
                 n => new ColumnReferenceExpression
                 {
-                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
+                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value
                 });
 
             var stringLiteral = new StringLiteral("string",
                 "\"",
                 StringOptions.AllowsAllEscapes,
-                (context, node) => node.AstNode = new LiteralExpression
-                {
-                    Value = node.Token.Value
-                });
+                (context, node) => node.AstNode = new LiteralExpression { Value = node.Token.Value });
             var numberLiteral = new NumberLiteral("number", NumberOptions.Default,
                 (context, node) => node.AstNode = new LiteralExpression
                 {
@@ -106,7 +106,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 {
                     ObjectName = ((Identifier) node.ChildNodes[1].AstNode).Value
                 });
-            var term = NonTerminal("term", valueLiteral | columnRef | numberLiteral | stringLiteral);
+
+            var boolLiteral = NonTerminal("boolLiteral",
+                termTrue | termFalse,
+                node => new LiteralExpression
+                {
+                    Value = node.ChildNodes[0].Token.ValueString.ToLower() == "true"
+                });
+
+            var term = NonTerminal("term", boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral);
             term.SetFlag(TermFlags.IsTransient);
 
             var binOp = NonTerminal("binOp",

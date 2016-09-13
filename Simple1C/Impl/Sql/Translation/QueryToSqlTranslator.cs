@@ -166,10 +166,10 @@ namespace Simple1C.Impl.Sql.Translation
                 return clause;
             }
 
-            public override SelectClause VisitSelect(SelectClause clause)
+            public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
             {
-                mainTable = (TableDeclarationClause) clause.Source;
-                return base.VisitSelect(clause);
+                mainTable = clause;
+                return clause;
             }
         }
 

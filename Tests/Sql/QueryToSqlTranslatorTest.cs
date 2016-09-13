@@ -203,12 +203,13 @@ where contracts.c1 <= cast('2016-08-09' as date) and contracts.c2 >= cast('2016-
         {
             const string sourceSql = @"select *
     from Справочник.ДоговорыКонтрагентов as contracts
-    where c1 >= ДАТАВРЕМЯ(2010, 7, 10)";
+    where contracts.Дата >= ДАТАВРЕМЯ(2010, 7, 10)";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата Single c1";
-            const string expectedResult = @"select *
-    from t1 as contracts
-    where c1 >= cast('2010-07-10' as date)";
+            const string expectedResult = @"select
+    *
+from t1 as contracts
+where contracts.c1 >= cast('2010-07-10' as date)";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -284,7 +285,7 @@ where contractors.c1 = 'test-inn'";
     ОбластьДанныхОсновныеДанные Single d2";
             const string expectedResult = @"select
     contracts.__nested_field0 as Currency
-    from (select
+from (select
     __nested_table1.c3 as __nested_field0
 from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and __nested_table1.с2 = __nested_table0.c1) as contracts";
@@ -367,7 +368,9 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ИНН Single f3
     ОбластьДанныхОсновныеДанные Single d1";
 
-            const string expectedResult = @"select contracts.f4, contracts.__nested_field0 as ContractorInn
+            const string expectedResult = @"select
+    contracts.f4,
+    contracts.__nested_field0 as ContractorInn
 from (select
     __nested_table0.f4,
     __nested_table1.f3 as __nested_field0
@@ -399,7 +402,8 @@ where docItems.Ссылка.ПометкаУдаления = false";
     ОбластьДанныхОсновныеДанные Single f8";
 
             const string expectedResult =
-                @"select docItems.__nested_field0 as name
+                @"select
+    docItems.__nested_field0 as name
 from (select
     __nested_table1.f56 as __nested_field0,
     __nested_table2.f7 as __nested_field1
