@@ -32,7 +32,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
-            VisitEnumerable(clause.Fields, ",\r\n\t");
+            if (clause.IsSelectAll)
+                builder.Append("*");
+            else
+                VisitEnumerable(clause.Fields, ",\r\n\t");
             builder.Append("\r\nfrom ");
             Visit(clause.Source);
             if (clause.JoinClauses.Count > 0)
@@ -174,10 +177,26 @@ namespace Simple1C.Impl.Sql.SqlAccess
             {
                 case SqlBinaryOperator.Eq:
                     return " = ";
+                case SqlBinaryOperator.Neq:
+                    return " <> ";
                 case SqlBinaryOperator.And:
                     return " and ";
                 case SqlBinaryOperator.Or:
                     return " or ";
+                case SqlBinaryOperator.LessThan:
+                    return " < ";
+                case SqlBinaryOperator.LessThanOrEqual:
+                    return " <= ";
+                case SqlBinaryOperator.GreaterThan:
+                    return " > ";
+                case SqlBinaryOperator.GreaterThanOrEqual:
+                    return " >= ";
+                case SqlBinaryOperator.Plus:
+                    return " + ";
+                case SqlBinaryOperator.Minus:
+                    return " - ";
+                case SqlBinaryOperator.Like:
+                    return " like ";
                 default:
                     throw new ArgumentOutOfRangeException("op", op, null);
             }
@@ -206,8 +225,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     if (i.HasValue)
                         return BitConverter.GetBytes(i.Value).Reverse().ToArray();
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, value,
-                        value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    throw new InvalidOperationException(string.Format(messageFormat, value, value == null ? "<null>" : value.GetType().FormatName(), sqlType));
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));

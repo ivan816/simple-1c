@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
@@ -9,6 +8,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
     {
         private readonly Dictionary<string, TableDeclarationClause> nameToDeclaration =
             new Dictionary<string, TableDeclarationClause>();
+
+        //мудотня какая-то, разобрать
+        private TableDeclarationClause currentTableDeclaration;
 
         //todo remove copypaste
         public override SelectClause VisitSelect(SelectClause clause)
@@ -28,6 +30,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
+            currentTableDeclaration = clause;
             nameToDeclaration.Add(clause.GetRefName(), clause);
             return clause;
         }
@@ -43,7 +46,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
                 expression.TableName = aliasCandidate;
             }
             else
-                throw new InvalidOperationException("assertion failure");
+                expression.TableName = currentTableDeclaration.GetRefName();
             return expression;
         }
     }

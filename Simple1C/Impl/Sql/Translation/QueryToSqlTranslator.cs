@@ -58,8 +58,8 @@ namespace Simple1C.Impl.Sql.Translation
         public string Translate(string source)
         {
             var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
-            source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             source = nowMacroRegex.Replace(source, currentDateString);
+            source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             var queryParser = new QueryParser();
             var selectClause = queryParser.Parse(source);
             var translationVisitor = new TranslationVisitor(this);

@@ -181,9 +181,10 @@ where contractors.c1 = 'test-inn3'";
     ДатаНачала Single c1
     ДатаКонца Single c2";
             currentDate = new DateTime(2016, 8, 9);
-            const string expectedResult = @"select *
-    from t1 as contracts
-    where contracts.c1 <= cast('2016-08-09' as date) and contracts.c2 >= cast('2016-08-09' as date)";
+            const string expectedResult = @"select
+    *
+from t1 as contracts
+where contracts.c1 <= cast('2016-08-09' as date) and contracts.c2 >= cast('2016-08-09' as date)";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
@@ -210,9 +211,10 @@ where contractors.c1 = 'test-inn3'";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     Наименование Single c2";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as contractors
-    where contractors.c2 ='test-name' and contractors.c1 <> 'test-inn'";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as contractors
+where contractors.c2 = 'test-name' and contractors.c1 <> 'test-inn'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -235,8 +237,9 @@ where contractors.c1 = 'test-inn3'";
     from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
-            const string expectedResult = @"select (contractors.c1) as CounterpartyInn
-    from t1 as contractors";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -329,9 +332,10 @@ left join t2 as contacts on contractors.c2 = contacts.c5 and contractors.c3 = co
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     Наименование Single c2";
-            const string expectedResult = @"select contractors.c1 as CounterpartyInn
-    from t1 as contractors
-    where contractors.c2 = 'test-name'";
+            const string expectedResult = @"select
+    contractors.c1 as CounterpartyInn
+from t1 as contractors
+where contractors.c2 = 'test-name'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 

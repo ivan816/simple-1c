@@ -8,6 +8,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     public class QueryGrammar : Grammar
     {
+        private const string englishAlphbet = "abcdefghijklmnopqrstuvwxyz";
+        private const string russianAlphbet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+
         public QueryGrammar()
             : base(false)
         {
@@ -27,10 +30,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termValue = ToTerm("VALUE");
             var termRepresentation = ToTerm("PRESENTATION");
 
+            var validChars = englishAlphbet +
+                             englishAlphbet.ToUpper() +
+                             russianAlphbet +
+                             russianAlphbet.ToUpper() +
+                             "_";
             var idSimple = new IdentifierTerminal("Identifier")
             {
-                AllFirstChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзиклмнопрстуфхцчшщъыьэюя_",
-                AllChars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyzАБВГДЕЁЖЗИКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯабвгдеёжзиклмнопрстуфхцчшщъыьэюя1234567890_"
+                AllFirstChars = validChars,
+                AllChars = validChars + "1234567890"
             };
             idSimple.SetFlag(TermFlags.NoAstNode);
 
@@ -108,6 +116,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     var operatorText = node.ChildNodes[0].Token.ValueString;
                     switch (operatorText)
                     {
+                        case "and":
+                            return SqlBinaryOperator.And;
+                        case "or":
+                            return SqlBinaryOperator.Or;
                         case "+":
                             return SqlBinaryOperator.Plus;
                         case "-":
@@ -204,7 +216,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             exprList.Rule = MakePlusRule(exprList, termComma, expression);
             inExpr.Rule = columnRef + termIn + "(" + exprList + ")";
 
-            var columnSource = NonTerminal("columnSource", expression | aggregate);
+            var columnSource = NonTerminal("columnSource", expression | aggregate | "(" + expression + ")");
             columnSource.SetFlag(TermFlags.IsTransient);
 
             var asOpt = NonTerminal("asOpt", Empty | termAs);

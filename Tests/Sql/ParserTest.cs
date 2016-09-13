@@ -23,6 +23,16 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void Parenthesis()
+        {
+            var selectClause = Parse("select (a.b) from testTable");
+            Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
+            Assert.That(selectClause.Fields[0].Alias, Is.Null);
+            var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
+            Assert.That(aReference.Name, Is.EqualTo("a.b"));
+        }
+
+        [Test]
         public void PresentationQueryFunction()
         {
             var selectClause = Parse("select Presentation(a) x from testTable");
@@ -120,6 +130,36 @@ select a3,b3 from t3");
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
             Assert.That(right.Value, Is.EqualTo(12));
+        }
+        
+        [Test]
+        public void AndOperator()
+        {
+            var selectClause = Parse("select * from testTable where c > 12 and c<25");
+            var binaryExpression = selectClause.WhereExpression as BinaryExpression;
+            
+            Assert.NotNull(binaryExpression);
+            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.And));
+            
+            var leftAnd = binaryExpression.Left as BinaryExpression;
+            Assert.NotNull(leftAnd);
+            var col1Reference = leftAnd.Left as ColumnReferenceExpression;
+            Assert.NotNull(col1Reference);
+            Assert.That(col1Reference.Name, Is.EqualTo("c"));
+            Assert.That(col1Reference.TableName, Is.EqualTo("testTable"));
+            var const1Reference = leftAnd.Right as LiteralExpression;
+            Assert.NotNull(const1Reference);
+            Assert.That(const1Reference.Value, Is.EqualTo(12));
+
+            var rightAnd = binaryExpression.Right as BinaryExpression;
+            Assert.NotNull(rightAnd);
+            var col2Reference = rightAnd.Left as ColumnReferenceExpression;
+            Assert.NotNull(col2Reference);
+            Assert.That(col2Reference.Name, Is.EqualTo("c"));
+            Assert.That(col2Reference.TableName, Is.EqualTo("testTable"));
+            var const2Reference = rightAnd.Right as LiteralExpression;
+            Assert.NotNull(const2Reference);
+            Assert.That(const2Reference.Value, Is.EqualTo(25));
         }
         
         [Test]
