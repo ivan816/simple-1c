@@ -510,5 +510,30 @@ namespace Simple1C.Tests.Integration
                 .Count(x => x.УникальныйИдентификатор == контрагент.УникальныйИдентификатор);
             Assert.That(count, Is.EqualTo(1));
         }
+
+        [Test]
+        public void SourceTypeAsStringIsStronger()
+        {
+            const string testContractorName = "test contractor name";
+            var контрагент = new Контрагенты
+            {
+                Наименование = testContractorName,
+                ИНН = "test-inn"
+            };
+            dataContext.Save(контрагент);
+            var values = dataContext
+                .Select<WithId>("Справочник.Контрагенты")
+                .Where(x => x.УникальныйИдентификатор == контрагент.УникальныйИдентификатор.Value)
+                .Cast<object>()
+                .ToArray();
+            Assert.That(values.Length, Is.EqualTo(1));
+            Assert.That(values[0], Is.TypeOf<Контрагенты>());
+            Assert.That(((Контрагенты)values[0]).Наименование, Is.EqualTo(testContractorName));
+        }
+
+        private class WithId
+        {
+            public Guid УникальныйИдентификатор { get; set; }
+        }
     }
 }

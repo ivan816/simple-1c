@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using Simple1C.Impl.Helpers;
+using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl.Queriables
 {
@@ -11,7 +12,6 @@ namespace Simple1C.Impl.Queriables
         private readonly Dictionary<string, object> parameters = new Dictionary<string, object>();
         private readonly List<string> whereParts = new List<string>();
         private Projection projection;
-        private Type sourceType;
         private string sourceName;
 
         public QueryBuilder(TypeRegistry typeRegistry)
@@ -23,6 +23,8 @@ namespace Simple1C.Impl.Queriables
         public string TableSectionName { get; set; }
         public int? Take { get; set; }
         public bool? Count { get; set; }
+        public Type SourceType { get; private set; }
+        public Type QueryType { get; private set; }
 
         public void SetProjection(Projection newProjection)
         {
@@ -60,7 +62,7 @@ namespace Simple1C.Impl.Queriables
             if (isCount)
                 selection = "*";
             else if (projection == null)
-                selection = ConfigurationName.Get(sourceType).HasReference ? "src.Ссылка" : "*";
+                selection = ConfigurationName.Get(SourceType).HasReference ? "src.Ссылка" : "*";
             else
                 selection = projection.GetSelection();
 
@@ -100,20 +102,21 @@ namespace Simple1C.Impl.Queriables
                         resultBuilder.Append(" УБЫВ");
                 }
             }
-            return new BuiltQuery(sourceType, resultBuilder.ToString(), parameters, projection, isCount);
+            return new BuiltQuery(SourceType, resultBuilder.ToString(), parameters, projection, isCount);
         }
 
         public void SetSource(Type type, string name)
         {
+            QueryType = type;
             if (!string.IsNullOrEmpty(name))
             {
                 sourceName = name;
-                sourceType = typeRegistry.GetTypeOrNull(sourceName);
+                SourceType = typeRegistry.GetTypeOrNull(sourceName);
             }
             else
             {
                 sourceName = ConfigurationName.Get(type).Fullname;
-                sourceType = type;
+                SourceType = type;
             }
         }
     }
