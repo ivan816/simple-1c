@@ -7,11 +7,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public SelectClause()
         {
             JoinClauses = new List<JoinClause>();
-            Fields = new List<SelectField>();
+            Fields = new List<SelectFieldElement>();
         }
 
         public bool IsSelectAll { get; set; }
-        public List<SelectField> Fields { get; set; }
+        public List<SelectFieldElement> Fields { get; set; }
         public ISqlElement WhereExpression { get; set; }
         public ISqlElement Source { get; set; }
         public List<JoinClause> JoinClauses { get; private set; }

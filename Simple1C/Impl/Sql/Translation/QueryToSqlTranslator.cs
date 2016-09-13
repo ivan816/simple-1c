@@ -98,12 +98,12 @@ namespace Simple1C.Impl.Sql.Translation
             queryFunctionTranslator.Visit(selectClause);
         }
 
-        private ISqlElement TranslateValueLiteral(ValueLiteral valueLiteral)
+        private ISqlElement TranslateValueLiteral(ValueLiteralExpression valueLiteralExpression)
         {
-            var enumValueItems = valueLiteral.ObjectName.Split('.');
+            var enumValueItems = valueLiteralExpression.ObjectName.Split('.');
             var table = CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
             var selectClause = new SelectClause {Source = GetDeclarationClause(table)};
-            selectClause.Fields.Add(new SelectField
+            selectClause.Fields.Add(new SelectFieldElement
             {
                 Expression = new ColumnReferenceExpression
                 {
@@ -397,7 +397,7 @@ namespace Simple1C.Impl.Sql.Translation
                         FunctionName = QueryFunctionName.SqlNot,
                         Arguments = new List<ISqlElement> {expression}
                     };
-                target.Fields.Add(new SelectField
+                target.Fields.Add(new SelectFieldElement
                 {
                     Expression = expression,
                     Alias = f.alias
@@ -651,7 +651,7 @@ namespace Simple1C.Impl.Sql.Translation
                 this.translator = translator;
             }
 
-            public override ISqlElement VisitValueLiteral(ValueLiteral expression)
+            public override ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
             {
                 return translator.TranslateValueLiteral(expression);
             }
@@ -737,7 +737,7 @@ namespace Simple1C.Impl.Sql.Translation
                 currentPart = oldPart;
             }
 
-            public override SelectField VisitSelectField(SelectField clause)
+            public override SelectFieldElement VisitSelectField(SelectFieldElement clause)
             {
                 WithCurrentPart(SelectPart.Select, () => base.VisitSelectField(clause));
                 return clause;

@@ -31,7 +31,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termTrue = ToTerm("TRUE");
             var termFalse = ToTerm("FALSE");
 
-            var termRepresentation = ToTerm("PRESENTATION");
+            var termPresentation = ToTerm("PRESENTATION");
 
             var validChars = englishAlphbet +
                              englishAlphbet.ToUpper() +
@@ -102,7 +102,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var valueLiteral = NonTerminal("valueLiteral",
                 termValue + "(" + id + ")",
-                node => new ValueLiteral
+                node => new ValueLiteralExpression
                 {
                     ObjectName = ((Identifier) node.ChildNodes[1].AstNode).Value
                 });
@@ -186,7 +186,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             });
             var exprList = NonTerminal("exprList", null);
             var queryFunctionName = NonTerminal("queryFunctionName",
-                termRepresentation | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
+                termPresentation | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
                 delegate(ParseTreeNode node)
                 {
                     var queryFunctionNameString = node.ChildNodes[0].Token.ValueString.ToLower();
@@ -234,7 +234,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             {
                 var astNode = n.ChildNodes[0].AstNode;
                 var aliasNodes = n.ChildNodes[1].ChildNodes;
-                return new SelectField
+                return new SelectFieldElement
                 {
                     Expression = (ISqlElement) astNode,
                     Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
@@ -341,7 +341,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     {
                         Source = elements.OfType<TableDeclarationClause>().Single()
                     };
-                    var selectColumns = elements.OfType<SelectField>().ToArray();
+                    var selectColumns = elements.OfType<SelectFieldElement>().ToArray();
                     if (selectColumns.Length == 0)
                     {
                         result.IsSelectAll = true;

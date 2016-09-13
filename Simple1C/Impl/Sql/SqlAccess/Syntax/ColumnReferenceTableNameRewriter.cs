@@ -40,12 +40,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
             var items = expression.Name.Split('.');
-            var aliasCandidate = items[0];
+            var tableRefName = items[0];
             TableDeclarationClause table;
-            if (nameToDeclaration.TryGetValue(aliasCandidate, out table))
+            if (nameToDeclaration.TryGetValue(tableRefName, out table))
             {
                 expression.Name = items.Skip(1).JoinStrings(".");
-                expression.TableName = aliasCandidate;
+                expression.TableName = tableRefName;
             }
             else
                 expression.TableName = currentTableDeclaration.GetRefName();

@@ -150,14 +150,14 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\LiteralExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectField.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\QueryFunctionName.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteral.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteralExpression.cs" />
     <Compile Include="Impl\Sql\Translation\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlBinaryOperator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlType.cs" />

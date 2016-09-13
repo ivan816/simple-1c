@@ -16,7 +16,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public virtual ISqlElement VisitValueLiteral(ValueLiteral expression)
+        public virtual ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
         {
             return expression;
         }
@@ -53,7 +53,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return Visit(filter);
         }
 
-        public virtual SelectField VisitSelectField(SelectField clause)
+        public virtual SelectFieldElement VisitSelectField(SelectFieldElement clause)
         {
             clause.Expression = Visit(clause.Expression);
             return clause;

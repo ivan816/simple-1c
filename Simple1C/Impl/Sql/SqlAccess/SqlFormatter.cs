@@ -92,7 +92,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public override SelectField VisitSelectField(SelectField clause)
+        public override SelectFieldElement VisitSelectField(SelectFieldElement clause)
         {
             Visit(clause.Expression);
             WriteAlias(clause.Alias);
@@ -195,7 +195,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             }
         }
 
-        public override ISqlElement VisitValueLiteral(ValueLiteral expression)
+        public override ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
         {
             NotSupported(expression, expression.ObjectName);
             return expression;

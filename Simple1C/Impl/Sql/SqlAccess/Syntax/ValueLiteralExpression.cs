@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class ValueLiteral : ISqlElement
+    internal class ValueLiteralExpression : ISqlElement
     {
         public string ObjectName { get; set; }
 
