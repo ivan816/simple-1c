@@ -11,3 +11,41 @@ todo
 	* убрать лишнюю возню с перестроением QueryField, SelectedProperty, SelectedPropertyItem,
 	если проекцию из кэша можно достать
    	* объединить логику получения метаданных в генераторе и в MetadataAccessor-е
+
+todo sql
+	ЛОЖЬ
+
+	Min,Max,Sum(*)
+
+	НомерДоговора <> """"
+		builder.Append("\r\nunion");
+
+	NumberLiteral
+		1.22 ?
+
+	binOp
+		ToLower
+
+	ColumnReferenceTableNameRewriter
+		запоминать филды в список, remove copypaste
+
+	!TOP N
+
+	!ORDER BY
+
+	TableDeclarationExtractor.VisitJoin ??
+		copypaste иван советует
+
+	CASE
+
+	HAVING
+
+	DISTINCT
+	
+	IS NOT NULL
+
+	()
+
+	SUM, AVG
+
+	NOT без скобочек
