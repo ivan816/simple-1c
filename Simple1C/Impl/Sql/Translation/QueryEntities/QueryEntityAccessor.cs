@@ -18,23 +18,23 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             this.queryEntityRegistry = queryEntityRegistry;
         }
 
-        public QueryField GetOrCreateQueryField(TableDeclarationClause declaration,
-            string[] propertyNames, bool isRepresentation, SelectPart selectPart)
+        public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
+            bool isRepresentation, SelectPart selectPart)
         {
-            var queryRoot = queryEntityRegistry.Get(declaration);
-            var keyWithoutFunction = string.Join(".", propertyNames);
+            var queryRoot = queryEntityRegistry.Get(columnReference.Declaration);
             if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;
-                var keyWithFunction = keyWithoutFunction + "." + true;
+                var keyWithFunction = columnReference.Name + "." + true;
                 if (queryRoot.fields.TryGetValue(keyWithFunction, out fieldWithFunction))
                     if (fieldWithFunction.parts.Contains(SelectPart.Select))
                         isRepresentation = true;
             }
-            var key = keyWithoutFunction + "." + isRepresentation;
+            var key = columnReference.Name + "." + isRepresentation;
             QueryField field;
             if (!queryRoot.fields.TryGetValue(key, out field))
             {
+                var propertyNames = columnReference.Name.Split('.');
                 var subqueryRequired = propertyNames.Length > 1;
                 var needInvert = false;
                 if (propertyNames[propertyNames.Length - 1].EqualsIgnoringCase("ЭтоГруппа"))

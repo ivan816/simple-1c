@@ -40,7 +40,7 @@ namespace Simple1C.Impl.Sql
                 var npgsqlColumns = reader.GetColumnSchema();
                 if (columns != null)
                 {
-                    if (!CheckColumnsConsistent(npgsqlColumns))
+                    if (!CheckColumnsConsistency(npgsqlColumns))
                     {
                         const string messageFormat = "inconsistent columns, original [{0}], current [{1}]";
                         throw new InvalidOperationException(string.Format(messageFormat,
@@ -67,7 +67,7 @@ namespace Simple1C.Impl.Sql
             }
         }
 
-        private bool CheckColumnsConsistent(ReadOnlyCollection<NpgsqlDbColumn> npgsqlColumns)
+        private bool CheckColumnsConsistency(ReadOnlyCollection<NpgsqlDbColumn> npgsqlColumns)
         {
             if (npgsqlColumns.Count != columns.Length)
                 return false;

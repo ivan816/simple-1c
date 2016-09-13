@@ -19,9 +19,8 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             if (!currentPart.HasValue)
                 throw new InvalidOperationException("assertion failure");
-            var queryField = queryEntityAccessor.GetOrCreateQueryField(expression.Declaration,
-                expression.Name.Split('.'), isPresentation,
-                currentPart.GetValueOrDefault());
+            var queryField = queryEntityAccessor.GetOrCreateQueryField(expression,
+                isPresentation, currentPart.GetValueOrDefault());
             expression.Name = queryField.alias ?? queryField.properties[0].GetDbColumnName();
             return expression;
         }

@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.SqlAccess.Syntax
+namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     internal class ColumnReferenceTableNameRewriter : SqlVisitor
     {
