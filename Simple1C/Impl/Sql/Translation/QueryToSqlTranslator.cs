@@ -32,7 +32,10 @@ namespace Simple1C.Impl.Sql.Translation
                 {"квартал", "quarter"},
                 {"значение", "value"},
                 {"ложь", "false"},
-                {"истина", "true"}
+                {"истина", "true"},
+                {"упорядочить", "order"},
+                {"сгруппировать", "group"},
+                {"по", "by"}
             };
 
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",

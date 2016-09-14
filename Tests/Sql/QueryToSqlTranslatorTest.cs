@@ -22,13 +22,13 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Simple()
         {
-            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
-    from Справочник.Контрагенты aS contractors";
+            const string sourceSql = @"select ИНН as CounterpartyInn
+    from Справочник.Контрагенты";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1";
             const string expectedResult = @"select
-    contractors.c1 as CounterpartyInn
-from t1 as contractors";
+    c1 as CounterpartyInn
+from t1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         
@@ -588,7 +588,27 @@ group by contractors.__nested_field0";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
+        [Test]
+        public void FormatOrderBy()
+        {
+            const string sourceSql = @"select ИНН as CounterpartyInn
+    from Справочник.Контрагенты order by ИНН desc";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1";
+            const string expectedResult = @"select
+    c1 as CounterpartyInn
+from t1
+order by c1 desc";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void OrderByEnumValue()
+        {
+            Assert.Fail("Do I need dark representation magic??");
+        }
+
         [Test]
         public void ManyInstancesOfSameProperty()
         {

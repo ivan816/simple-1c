@@ -30,6 +30,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var termValue = ToTerm("VALUE");
             var termTrue = ToTerm("TRUE");
             var termFalse = ToTerm("FALSE");
+            var termAsc = ToTerm("ASC");
+            var termDesc = ToTerm("DESC");
 
             var termPresentation = ToTerm("PRESENTATION");
 
@@ -302,10 +304,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Empty | "WHERE" + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
-            var columnRefList = NonTerminal("columnRefListcolumnRef", null);
-            columnRefList.Rule = MakePlusRule(columnRefList, termComma, columnRef);
+            var groupColumnList = NonTerminal("groupColumnList", null);
+            groupColumnList.Rule = MakePlusRule(groupColumnList, termComma, columnRef);
             var groupClauseOpt = NonTerminal("groupClauseOpt",
-                Empty | "GROUP" + termBy + columnRefList,
+                Empty | "GROUP" + termBy + groupColumnList,
                 node => node.ChildNodes.Count == 0
                     ? null
                     : new GroupByClause
@@ -315,7 +317,33 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                             .ToList()
                     });
 
-            var unionStmt = NonTerminal("unionStmt", null,
+            var orderingExpression = NonTerminal("orderByColumn", expression + NonTerminal("orderingDirection", Empty | termAsc | termDesc),
+                node =>
+                {
+                    var orderExpression = node.ChildNodes[0].AstNode as ISqlElement;
+                    var isDesc = node.ChildNodes.Count > 1 &&
+                                 node.ChildNodes[1].ChildNodes.Count > 0 &&
+                                 node.ChildNodes[1].ChildNodes[0].Token.ValueString.EqualsIgnoringCase("desc");
+                    return new OrderByClause.OrderingElement
+                    {
+                        Expression = orderExpression,
+                        IsAsc = !isDesc
+                    };
+                });
+            var orderColumnList = NonTerminal("orderColumnList", null);
+            orderColumnList.Rule = MakePlusRule(orderColumnList, termComma, orderingExpression);
+            var orderClauseOpt = NonTerminal("orderClauseOpt",
+                Empty | "ORDER" + termBy + orderColumnList,
+                node => node.ChildNodes.Count == 0
+                    ? null
+                    : new OrderByClause
+                    {
+                        Expressions = node.ChildNodes[2].Elements()
+                        .Cast<OrderByClause.OrderingElement>()
+                        .ToList()
+                    });
+
+            var unionStmtOpt = NonTerminal("unionStmt", null,
                 delegate(ParseTreeNode node)
                 {
                     if (node.ChildNodes.Count == 0)
@@ -333,7 +361,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 });
 
             var selectStmt = NonTerminal("selectStmt",
-                termSelect + selList + fromClauseOpt + joinItemList + whereClauseOpt + groupClauseOpt + unionStmt,
+                termSelect + selList + fromClauseOpt 
+                + joinItemList + whereClauseOpt 
+                + groupClauseOpt + /*unionStmtOpt + */ orderClauseOpt,
                 delegate(ParseTreeNode n)
                 {
                     var elements = n.Elements();
@@ -341,6 +371,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     {
                         Source = elements.OfType<TableDeclarationClause>().Single()
                     };
+
                     var selectColumns = elements.OfType<SelectFieldElement>().ToArray();
                     if (selectColumns.Length == 0)
                     {
@@ -351,13 +382,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                         result.Fields.AddRange(selectColumns);
                     result.JoinClauses.AddRange(elements.OfType<JoinClause>());
                     result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
-                    result.GroupBy = n.ChildNodes[5].AstNode as GroupByClause;
-                    result.Union = n.ChildNodes[6].AstNode as UnionClause;
+                    result.GroupBy = elements.OfType<GroupByClause>().SingleOrDefault();
+                    result.OrderBy = elements.OfType<OrderByClause>().SingleOrDefault();
+                    result.Union = elements.OfType<UnionClause>().SingleOrDefault();
                     return result;
                 });
             var unionAllModifier = NonTerminal("unionAllModifier", Empty | "ALL");
 
-            unionStmt.Rule = Empty | ToTerm("UNION") + unionAllModifier + selectStmt;
+            unionStmtOpt.Rule = Empty | ToTerm("UNION") + unionAllModifier + selectStmt;
 
             RegisterOperators(10, "*", "/", "%");
             RegisterOperators(9, "+", "-");

@@ -40,6 +40,20 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
+        public override OrderByClause VisitOrderBy(OrderByClause element)
+        {
+            builder.Append("\r\norder by ");
+            VisitEnumerable(element.Expressions, ",");
+            return element;
+        }
+
+        public override ISqlElement VisitOrderingElement(OrderByClause.OrderingElement orderingElement)
+        {
+            Visit(orderingElement.Expression);
+            builder.AppendFormat(" {0}", orderingElement.IsAsc ? "asc" : "desc");
+           return orderingElement;
+        }
+
         private static string FormatAggregateFunction(AggregateFunctionType f)
         {
             switch (f)
@@ -89,6 +103,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 Visit(clause.GroupBy);
             if (clause.Union != null)
                 Visit(clause.Union);
+            if (clause.OrderBy != null)
+                Visit(clause.OrderBy);
             return clause;
         }
 

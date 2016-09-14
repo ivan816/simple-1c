@@ -57,6 +57,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             return element;
         }
 
+        public override OrderByClause VisitOrderBy(OrderByClause element)
+        {
+            WithCurrentPart(SelectPart.OrderBy, () => base.VisitOrderBy(element));
+            return element;
+        }
+
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
             isPresentation = expression.FunctionName == QueryFunctionName.Presentation;

@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Linq;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.SqlAccess
@@ -45,6 +46,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
             if (clause.Union != null)
                 clause.Union = VisitUnion(clause.Union);
+            if (clause.OrderBy != null)
+                clause.OrderBy = VisitOrderBy(clause.OrderBy);
             return clause;
         }
 
@@ -97,6 +100,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
+        public virtual OrderByClause VisitOrderBy(OrderByClause element)
+        {
+            VisitEnumerable(element.Expressions);
+            return element;
+        }
+
         public virtual ISqlElement VisitLiteral(LiteralExpression expression)
         {
             return expression;
@@ -118,6 +127,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             for (var i = 0; i < elements.Count; i++)
                 elements[i] = (T) Visit(elements[i]);
+        }
+
+        public virtual ISqlElement VisitOrderingElement(OrderByClause.OrderingElement orderingElement)
+        {
+            orderingElement.Expression = Visit(orderingElement.Expression);
+            return orderingElement;
         }
     }
 }

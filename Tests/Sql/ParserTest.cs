@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System.Linq;
+using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Tests.Helpers;
@@ -116,6 +117,20 @@ namespace Simple1C.Tests.Sql
         }
 
         [Test]
+        public void OrderBy()
+        {
+            var selectClause = Parse("select * from testTable order by FirstName, LastName asc, Patronymic desc");
+            Assert.NotNull(selectClause.OrderBy);
+            var orderings = selectClause.OrderBy.Expressions;
+            Assert.That(((ColumnReferenceExpression)orderings[0].Expression).Name, Is.EqualTo("FirstName"));
+            Assert.That(orderings[1].IsAsc, Is.True);
+            Assert.That(((ColumnReferenceExpression)orderings[1].Expression).Name, Is.EqualTo("LastName"));
+            Assert.That(orderings[1].IsAsc, Is.True);
+            Assert.That(((ColumnReferenceExpression)orderings[2].Expression).Name, Is.EqualTo("Patronymic"));
+            Assert.That(orderings[2].IsAsc, Is.False);
+        }
+
+        [Test]
         public void Union()
         {
             var selectClause = Parse(@"select a1,b1 from t1
@@ -123,7 +138,9 @@ union
 select a2,b2 from t2
 union all
 select a3,b3 from t3");
+            Assert.That(selectClause, Is.Not.Null);
             Assert.That(((ColumnReferenceExpression) selectClause.Fields[0].Expression).Name, Is.EqualTo("a1"));
+            Assert.That(selectClause.Union, Is.Not.Null);
             Assert.That(selectClause.Union.Type, Is.EqualTo(UnionType.Distinct));
             Assert.That(selectClause.Union.SelectClause.Union.Type, Is.EqualTo(UnionType.All));
             Assert.That(selectClause.Union.SelectClause.Union.SelectClause.Union, Is.Null);

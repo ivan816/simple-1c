@@ -5,6 +5,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         Select,
         Where,
         GroupBy,
-        Join
+        Join,
+        OrderBy
     }
 }
