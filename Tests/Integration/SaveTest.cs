@@ -5,8 +5,8 @@ using System.Linq.Expressions;
 using NUnit.Framework;
 using Simple1C.Impl.Com;
 using Simple1C.Interface;
-using Simple1C.Tests.Metadata1C.Перечисления;
-using Simple1C.Tests.Metadata1C.Справочники;
+using Simple1C.Tests.Metadata1C.РџРµСЂРµС‡РёСЃР»РµРЅРёСЏ;
+using Simple1C.Tests.Metadata1C.РЎРїСЂР°РІРѕС‡РЅРёРєРё;
 using Simple1C.Tests.TestEntities;
 
 namespace Simple1C.Tests.Integration
@@ -16,90 +16,90 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanAddRecursive()
         {
-            var organization = dataContext.Single<Организации>(x => x.ИНН == organizationInn);
-            var counterpartyContract = new ДоговорыКонтрагентов
+            var organization = dataContext.Single<РћСЂРіР°РЅРёР·Р°С†РёРё>(x => x.РРќРќ == organizationInn);
+            var counterpartyContract = new Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ
             {
-                ВидДоговора = ВидыДоговоровКонтрагентов.СПокупателем,
-                Наименование = "test name",
-                Владелец = new Контрагенты
+                Р’РёРґР”РѕРіРѕРІРѕСЂР° = Р’РёРґС‹Р”РѕРіРѕРІРѕСЂРѕРІРљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ.РЎРџРѕРєСѓРїР°С‚РµР»РµРј,
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test name",
+                Р’Р»Р°РґРµР»РµС† = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
                 {
-                    ИНН = "1234567890",
-                    Наименование = "test-counterparty",
-                    ЮридическоеФизическоеЛицо = ЮридическоеФизическоеЛицо.ЮридическоеЛицо
+                    РРќРќ = "1234567890",
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-counterparty",
+                    Р®СЂРёРґРёС‡РµСЃРєРѕРµР¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ = Р®СЂРёРґРёС‡РµСЃРєРѕРµР¤РёР·РёС‡РµСЃРєРѕРµР›РёС†Рѕ.Р®СЂРёРґРёС‡РµСЃРєРѕРµР›РёС†Рѕ
                 },
-                Организация = organization
+                РћСЂРіР°РЅРёР·Р°С†РёСЏ = organization
             };
             dataContext.Save(counterpartyContract);
-            Assert.That(string.IsNullOrEmpty(counterpartyContract.Код), Is.False);
-            Assert.That(string.IsNullOrEmpty(counterpartyContract.Владелец.Код), Is.False);
+            Assert.That(string.IsNullOrEmpty(counterpartyContract.РљРѕРґ), Is.False);
+            Assert.That(string.IsNullOrEmpty(counterpartyContract.Р’Р»Р°РґРµР»РµС†.РљРѕРґ), Is.False);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code", new Dictionary<string, object>
+            var valueTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ * РР— РЎРїСЂР°РІРѕС‡РЅРёРє.Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ Р“Р”Р• РљРѕРґ=&Code", new Dictionary<string, object>
             {
-                {"Code", counterpartyContract.Код}
+                {"Code", counterpartyContract.РљРѕРґ}
             }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
-            Assert.That(valueTable[0].GetString("Наименование"), Is.EqualTo("test name"));
+            Assert.That(valueTable[0].GetString("РќР°РёРјРµРЅРѕРІР°РЅРёРµ"), Is.EqualTo("test name"));
         }
 
         [Test]
         public void CanSaveNullDateTimes()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test",
-                ИНН = "123456789"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test",
+                РРќРќ = "123456789"
             };
-            dataContext.Save(контрагент);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
 
-            var контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
-            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.Null);
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Single<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РљРѕРґ == РєРѕРЅС‚СЂР°РіРµРЅС‚.РљРѕРґ);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЎРІРёРґРµС‚РµР»СЊСЃС‚РІРѕР”Р°С‚Р°Р’С‹РґР°С‡Рё, Is.Null);
 
-            контрагент2.СвидетельствоДатаВыдачи = new DateTime(2010, 7, 18);
-            dataContext.Save(контрагент2);
-            контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
-            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.EqualTo(new DateTime(2010, 7, 18)));
+            РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЎРІРёРґРµС‚РµР»СЊСЃС‚РІРѕР”Р°С‚Р°Р’С‹РґР°С‡Рё = new DateTime(2010, 7, 18);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚2);
+            РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Single<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РљРѕРґ == РєРѕРЅС‚СЂР°РіРµРЅС‚.РљРѕРґ);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЎРІРёРґРµС‚РµР»СЊСЃС‚РІРѕР”Р°С‚Р°Р’С‹РґР°С‡Рё, Is.EqualTo(new DateTime(2010, 7, 18)));
 
-            контрагент2.СвидетельствоДатаВыдачи = null;
-            dataContext.Save(контрагент2);
-            контрагент2 = dataContext.Single<Контрагенты>(x => x.Код == контрагент.Код);
-            Assert.That(контрагент2.СвидетельствоДатаВыдачи, Is.Null);
+            РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЎРІРёРґРµС‚РµР»СЊСЃС‚РІРѕР”Р°С‚Р°Р’С‹РґР°С‡Рё = null;
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚2);
+            РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Single<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РљРѕРґ == РєРѕРЅС‚СЂР°РіРµРЅС‚.РљРѕРґ);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЎРІРёРґРµС‚РµР»СЊСЃС‚РІРѕР”Р°С‚Р°Р’С‹РґР°С‡Рё, Is.Null);
         }
 
         [Test]
         public void RecursiveSave()
         {
-            var контрагентВася = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚Р’Р°СЃСЏ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "Василий"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "Р’Р°СЃРёР»РёР№"
             };
-            контрагентВася.ГоловнойКонтрагент = контрагентВася;
-            var exception = Assert.Throws<InvalidOperationException>(() => dataContext.Save(контрагентВася));
+            РєРѕРЅС‚СЂР°РіРµРЅС‚Р’Р°СЃСЏ.Р“РѕР»РѕРІРЅРѕР№РљРѕРЅС‚СЂР°РіРµРЅС‚ = РєРѕРЅС‚СЂР°РіРµРЅС‚Р’Р°СЃСЏ;
+            var exception = Assert.Throws<InvalidOperationException>(() => dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚Р’Р°СЃСЏ));
             Assert.That(exception.Message,
-                Does.Contain("cycle detected for entity type [Контрагенты]: [Контрагенты->ГоловнойКонтрагент]"));
+                Does.Contain("cycle detected for entity type [РљРѕРЅС‚СЂР°РіРµРЅС‚С‹]: [РљРѕРЅС‚СЂР°РіРµРЅС‚С‹->Р“РѕР»РѕРІРЅРѕР№РљРѕРЅС‚СЂР°РіРµРЅС‚]"));
 
-            //см. тудушку про ГоловнойКонтрагент
-            //            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code", new[]
+            //СЃРј. С‚СѓРґСѓС€РєСѓ РїСЂРѕ Р“РѕР»РѕРІРЅРѕР№РљРѕРЅС‚СЂР°РіРµРЅС‚
+            //            var valueTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ * РР— РЎРїСЂР°РІРѕС‡РЅРёРє.РљРѕРЅС‚СЂР°РіРµРЅС‚С‹ Р“Р”Р• РљРѕРґ=&Code", new[]
             //            {
-            //                new KeyValuePair<string, object>("Code", контрагентВася.Код)
+            //                new KeyValuePair<string, object>("Code", РєРѕРЅС‚СЂР°РіРµРЅС‚Р’Р°СЃСЏ.РљРѕРґ)
             //            });
             //
             //            Assert.That(valueTable.Count, Is.EqualTo(1));
-            //            Assert.That(valueTable[0]["Наименование"], Is.EqualTo("Василий"));
-            //            Assert.That(ComHelpers.GetProperty(valueTable[0]["ГоловнойКонтрагент"],
-            //                "Наименование"), Is.EqualTo("Василий"));
+            //            Assert.That(valueTable[0]["РќР°РёРјРµРЅРѕРІР°РЅРёРµ"], Is.EqualTo("Р’Р°СЃРёР»РёР№"));
+            //            Assert.That(ComHelpers.GetProperty(valueTable[0]["Р“РѕР»РѕРІРЅРѕР№РљРѕРЅС‚СЂР°РіРµРЅС‚"],
+            //                "РќР°РёРјРµРЅРѕРІР°РЅРёРµ"), Is.EqualTo("Р’Р°СЃРёР»РёР№"));
         }
 
         [Test]
         public void CanSaveNewEntityWithoutAnyPropertiesSet()
         {
-            var контрагент = new Контрагенты();
-            dataContext.Save(контрагент);
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹();
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
 
-            Assert.That(string.IsNullOrEmpty(контрагент.Код), Is.False);
-            var counterpartyTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ Код=&Code",
+            Assert.That(string.IsNullOrEmpty(РєРѕРЅС‚СЂР°РіРµРЅС‚.РљРѕРґ), Is.False);
+            var counterpartyTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ * РР— РЎРїСЂР°РІРѕС‡РЅРёРє.РљРѕРЅС‚СЂР°РіРµРЅС‚С‹ Р“Р”Р• РљРѕРґ=&Code",
                 new Dictionary<string, object>
                 {
-                    {"Code", контрагент.Код}
+                    {"Code", РєРѕРЅС‚СЂР°РіРµРЅС‚.РљРѕРґ}
                 }).Unload();
             Assert.That(counterpartyTable.Count, Is.EqualTo(1));
         }
@@ -115,7 +115,7 @@ namespace Simple1C.Tests.Integration
                 Name = "Test counterparty"
             };
             dynamic counterpartyAccessObject = testObjectsManager.CreateCounterparty(counterpart);
-            var counterpartContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartyAccessObject.Ссылка,
+            var counterpartContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartyAccessObject.РЎСЃС‹Р»РєР°,
                 new CounterpartyContract
                 {
                     CurrencyCode = "643",
@@ -124,53 +124,53 @@ namespace Simple1C.Tests.Integration
                 });
             string counterpartyContractCode = counterpartContractAccessObject.Code;
 
-            var contract = dataContext.Select<ДоговорыКонтрагентов>()
-                .Single(x => x.Код == counterpartyContractCode);
-            if (contract.Владелец.ИНН == "7711223344")
+            var contract = dataContext.Select<Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ>()
+                .Single(x => x.РљРѕРґ == counterpartyContractCode);
+            if (contract.Р’Р»Р°РґРµР»РµС†.РРќРќ == "7711223344")
             {
-                contract.Владелец.ИНН = "7711223345";
-                contract.Владелец = new Контрагенты
+                contract.Р’Р»Р°РґРµР»РµС†.РРќРќ = "7711223345";
+                contract.Р’Р»Р°РґРµР»РµС† = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
                 {
-                    ИНН = "7711223355",
-                    Наименование = "Test counterparty 2",
-                    НаименованиеПолное = "Test counterparty 2"
+                    РРќРќ = "7711223355",
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "Test counterparty 2",
+                    РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ = "Test counterparty 2"
                 };
             }
             dataContext.Save(contract);
 
-            var valueTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code",
+            var valueTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ * РР— РЎРїСЂР°РІРѕС‡РЅРёРє.Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ Р“Р”Р• РљРѕРґ=&Code",
                 new Dictionary<string, object>
                 {
-                    {"Code", contract.Код}
+                    {"Code", contract.РљРѕРґ}
                 }).Unload();
             Assert.That(valueTable.Count, Is.EqualTo(1));
-            Assert.That(ComHelpers.GetProperty(valueTable[0]["Владелец"], "Наименование"), Is.EqualTo("Test counterparty 2"));
+            Assert.That(ComHelpers.GetProperty(valueTable[0]["Р’Р»Р°РґРµР»РµС†"], "РќР°РёРјРµРЅРѕРІР°РЅРёРµ"), Is.EqualTo("Test counterparty 2"));
         }
 
         [Test]
         public void CanUnpostDocument()
         {
-            var поступлениеТоваровУслуг = CreateFullFilledDocument();
-            поступлениеТоваровУслуг.Проведен = true;
-            dataContext.Save(поступлениеТоваровУслуг);
+            var РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі = CreateFullFilledDocument();
+            РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РџСЂРѕРІРµРґРµРЅ = true;
+            dataContext.Save(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі);
 
-            поступлениеТоваровУслуг.Услуги[0].Содержание = "каре";
-            dataContext.Save(поступлениеТоваровУслуг);
+            РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РЈСЃР»СѓРіРё[0].РЎРѕРґРµСЂР¶Р°РЅРёРµ = "РєР°СЂРµ";
+            dataContext.Save(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі);
 
-            var document = GetDocumentByNumber(поступлениеТоваровУслуг.Номер);
-            Assert.That(document.Проведен, Is.True);
-            Assert.That(document.Услуги.Получить(0).Содержание, Is.EqualTo("каре"));
+            var document = GetDocumentByNumber(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РќРѕРјРµСЂ);
+            Assert.That(document.РџСЂРѕРІРµРґРµРЅ, Is.True);
+            Assert.That(document.РЈСЃР»СѓРіРё.РџРѕР»СѓС‡РёС‚СЊ(0).РЎРѕРґРµСЂР¶Р°РЅРёРµ, Is.EqualTo("РєР°СЂРµ"));
         }
 
         [Test]
         public void CanPostDocuments()
         {
-            var поступлениеТоваровУслуг = CreateFullFilledDocument();
-            dataContext.Save(поступлениеТоваровУслуг);
-            Assert.That(GetDocumentByNumber(поступлениеТоваровУслуг.Номер).Проведен, Is.False);
-            поступлениеТоваровУслуг.Проведен = true;
-            dataContext.Save(поступлениеТоваровУслуг);
-            Assert.That(GetDocumentByNumber(поступлениеТоваровУслуг.Номер).Проведен);
+            var РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі = CreateFullFilledDocument();
+            dataContext.Save(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі);
+            Assert.That(GetDocumentByNumber(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РќРѕРјРµСЂ).РџСЂРѕРІРµРґРµРЅ, Is.False);
+            РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РџСЂРѕРІРµРґРµРЅ = true;
+            dataContext.Save(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі);
+            Assert.That(GetDocumentByNumber(РїРѕСЃС‚СѓРїР»РµРЅРёРµРўРѕРІР°СЂРѕРІРЈСЃР»СѓРі.РќРѕРјРµСЂ).РџСЂРѕРІРµРґРµРЅ);
         }
 
         [Test]
@@ -178,11 +178,11 @@ namespace Simple1C.Tests.Integration
         {
             dataContext.Save(new object[]
             {
-                new Контрагенты {Наименование = "test-contragent"},
-                new СтатьиЗатрат {Наименование = "test-cost-item"}
+                new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹ {РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-contragent"},
+                new РЎС‚Р°С‚СЊРёР—Р°С‚СЂР°С‚ {РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test-cost-item"}
             });
-            Assert.That(CountOf<Контрагенты>(x => x.Наименование == "test-contragent"), Is.EqualTo(1));
-            Assert.That(CountOf<СтатьиЗатрат>(x => x.Наименование == "test-cost-item"), Is.EqualTo(1));
+            Assert.That(CountOf<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ == "test-contragent"), Is.EqualTo(1));
+            Assert.That(CountOf<РЎС‚Р°С‚СЊРёР—Р°С‚СЂР°С‚>(x => x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ == "test-cost-item"), Is.EqualTo(1));
         }
 
         private int CountOf<T>(Expression<Func<T, bool>> filter )
@@ -204,7 +204,7 @@ namespace Simple1C.Tests.Integration
                 Name = "Test counterparty"
             };
             dynamic counterpartyAccessObject = testObjectsManager.CreateCounterparty(counterpart);
-            var counterpartContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartyAccessObject.Ссылка,
+            var counterpartContractAccessObject = testObjectsManager.CreateCounterpartContract(counterpartyAccessObject.РЎСЃС‹Р»РєР°,
                 new CounterpartyContract
                 {
                     Name = "test-counterparty-contract",
@@ -213,29 +213,29 @@ namespace Simple1C.Tests.Integration
                 });
             string initialCounterpartyContractVersion = counterpartContractAccessObject.DataVersion;
             string counterpartyContractCode = counterpartContractAccessObject.Code;
-            var contract = dataContext.Select<ДоговорыКонтрагентов>()
-                .Single(x => x.Код == counterpartyContractCode);
-            contract.Владелец.ИНН = "7711223344";
-            contract.Владелец.Наименование = "Test counterparty 2";
-            contract.Владелец.НаименованиеПолное = "Test counterparty 2";
+            var contract = dataContext.Select<Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ>()
+                .Single(x => x.РљРѕРґ == counterpartyContractCode);
+            contract.Р’Р»Р°РґРµР»РµС†.РРќРќ = "7711223344";
+            contract.Р’Р»Р°РґРµР»РµС†.РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "Test counterparty 2";
+            contract.Р’Р»Р°РґРµР»РµС†.РќР°РёРјРµРЅРѕРІР°РЅРёРµРџРѕР»РЅРѕРµ = "Test counterparty 2";
             dataContext.Save(contract);
 
-            var counterpartyTable = globalContext.Execute("ВЫБРАТЬ * ИЗ Справочник.Контрагенты ГДЕ ИНН=&Inn",
+            var counterpartyTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ * РР— РЎРїСЂР°РІРѕС‡РЅРёРє.РљРѕРЅС‚СЂР°РіРµРЅС‚С‹ Р“Р”Р• РРќРќ=&Inn",
                 new Dictionary<string, object>
                 {
                     {"Inn", "7711223344"}
                 }).Unload();
             Assert.That(counterpartyTable.Count, Is.EqualTo(1));
-            Assert.That(counterpartyTable[0].GetString("Наименование"), Is.EqualTo("Test counterparty 2"));
+            Assert.That(counterpartyTable[0].GetString("РќР°РёРјРµРЅРѕРІР°РЅРёРµ"), Is.EqualTo("Test counterparty 2"));
 
-            var counterpartyContractTable = globalContext.Execute("ВЫБРАТЬ Ссылка ИЗ Справочник.ДоговорыКонтрагентов ГДЕ Код=&Code",
+            var counterpartyContractTable = globalContext.Execute("Р’Р«Р‘Р РђРўР¬ РЎСЃС‹Р»РєР° РР— РЎРїСЂР°РІРѕС‡РЅРёРє.Р”РѕРіРѕРІРѕСЂС‹РљРѕРЅС‚СЂР°РіРµРЅС‚РѕРІ Р“Р”Р• РљРѕРґ=&Code",
                 new Dictionary<string, object>
                 {
                     {"Code", counterpartyContractCode}
                 }).Unload();
             Assert.That(counterpartyContractTable.Count, Is.EqualTo(1));
 
-            var comObj = counterpartyContractTable[0]["Ссылка"];
+            var comObj = counterpartyContractTable[0]["РЎСЃС‹Р»РєР°"];
             var dataVersion = ((dynamic)comObj).DataVersion;
             Assert.That(dataVersion, Is.EqualTo(initialCounterpartyContractVersion));
         }
@@ -243,14 +243,14 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void GroupsCanSave()
         {
-            var номенклатура = new Номенклатура
+            var РЅРѕРјРµРЅРєР»Р°С‚СѓСЂР° = new РќРѕРјРµРЅРєР»Р°С‚СѓСЂР°
             {
-                Наименование = "Товары",
-                ЭтоГруппа = true
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "РўРѕРІР°СЂС‹",
+                Р­С‚РѕР“СЂСѓРїРїР° = true
             };
-            dataContext.Save(номенклатура);
-            var номенклатуры = dataContext.Single<Номенклатура>(x => x.УникальныйИдентификатор == номенклатура.УникальныйИдентификатор);
-            Assert.That(номенклатуры.ЭтоГруппа);
+            dataContext.Save(РЅРѕРјРµРЅРєР»Р°С‚СѓСЂР°);
+            var РЅРѕРјРµРЅРєР»Р°С‚СѓСЂС‹ = dataContext.Single<РќРѕРјРµРЅРєР»Р°С‚СѓСЂР°>(x => x.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ == РЅРѕРјРµРЅРєР»Р°С‚СѓСЂР°.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ);
+            Assert.That(РЅРѕРјРµРЅРєР»Р°С‚СѓСЂС‹.Р­С‚РѕР“СЂСѓРїРїР°);
         }
     }
 }
