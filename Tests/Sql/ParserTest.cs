@@ -11,7 +11,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Simple()
         {
-            var selectClause = Parse("select a,b from testTable");
+            var selectClause = ParseSelect("select a,b from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(2));
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
@@ -26,7 +26,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Bool()
         {
-            var selectClause = Parse("select a,b from testTable where c = false");
+            var selectClause = ParseSelect("select a,b from testTable where c = false");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             Assert.NotNull(binaryExpression);
             var colReference = binaryExpression.Left as ColumnReferenceExpression;
@@ -42,7 +42,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Parenthesis()
         {
-            var selectClause = Parse("select (a.b) from testTable");
+            var selectClause = ParseSelect("select (a.b) from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
@@ -52,7 +52,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void PresentationQueryFunction()
         {
-            var selectClause = Parse("select Presentation(a) x from testTable");
+            var selectClause = ParseSelect("select Presentation(a) x from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("x"));
             var function = (QueryFunctionExpression) selectClause.Fields[0].Expression;
@@ -66,7 +66,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void DateTimeQueryFunction()
         {
-            var selectClause = Parse("select a from testTable where b < DateTime(2010, 11, 12)");
+            var selectClause = ParseSelect("select a from testTable where b < DateTime(2010, 11, 12)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
             Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.DateTime));
@@ -79,7 +79,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void YearFunction()
         {
-            var selectClause = Parse("select a from testTable where b < year(c)");
+            var selectClause = ParseSelect("select a from testTable where b < year(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
             Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Year));
@@ -90,7 +90,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void QuarterFunction()
         {
-            var selectClause = Parse("select a from testTable where b < quArter(c)");
+            var selectClause = ParseSelect("select a from testTable where b < quArter(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
             Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Quarter));
@@ -101,7 +101,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void ValueFunction()
         {
-            var selectClause = Parse("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
+            var selectClause = ParseSelect("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (ValueLiteralExpression) binaryExpression.Right;
             Assert.That(queryFunction.ObjectName, Is.EqualTo("Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо"));
@@ -110,7 +110,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void GroupBy()
         {
-            var selectClause = Parse("select count(*) from testTable group by c");
+            var selectClause = ParseSelect("select count(*) from testTable group by c");
             Assert.NotNull(selectClause.GroupBy);
             Assert.That(selectClause.GroupBy.Columns[0].Name, Is.EqualTo("c"));
             Assert.That(selectClause.GroupBy.Columns[0].Declaration.Name, Is.EqualTo("testTable"));
@@ -133,23 +133,38 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Union()
         {
-            var selectClause = Parse(@"select a1,b1 from t1
+            var rootClause = Parse(@"select a1 from t1
 union
-select a2,b2 from t2
+select a1 from t2
 union all
-select a3,b3 from t3");
-            Assert.That(selectClause, Is.Not.Null);
-            Assert.That(((ColumnReferenceExpression) selectClause.Fields[0].Expression).Name, Is.EqualTo("a1"));
-            Assert.That(selectClause.Union, Is.Not.Null);
-            Assert.That(selectClause.Union.Type, Is.EqualTo(UnionType.Distinct));
-            Assert.That(selectClause.Union.SelectClause.Union.Type, Is.EqualTo(UnionType.All));
-            Assert.That(selectClause.Union.SelectClause.Union.SelectClause.Union, Is.Null);
+select a1 from t3
+order by a1");
+            Assert.That(rootClause, Is.Not.Null);
+	        Assert.That(rootClause.Unions.Count, Is.EqualTo(3));
+            var union = rootClause.Unions[0];
+            Assert.That(union.Type, Is.EqualTo(UnionType.Distinct));
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause) union.SelectClause.Source).Name, Is.EqualTo("t1"));
+
+            union = rootClause.Unions[1];
+            Assert.That(union.Type, Is.EqualTo(UnionType.All));
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)union.SelectClause.Source).Name, Is.EqualTo("t2"));
+
+            union = rootClause.Unions[2];
+            Assert.That(union.Type, Is.Null);
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)union.SelectClause.Source).Name, Is.EqualTo("t3"));
+
+            Assert.That(rootClause.OrderBy, Is.Not.Null);
+            Assert.That(((ColumnReferenceExpression) rootClause.OrderBy.Expressions[0].Expression).Name,
+                Is.EqualTo("a1"));
         }
 
         [Test]
         public void WhereCondition()
         {
-            var selectClause = Parse("select a,b from testTable where c > 12");
+            var selectClause = ParseSelect("select a,b from testTable where c > 12");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -168,7 +183,7 @@ select a3,b3 from t3");
         [Test]
         public void AndOperator()
         {
-            var selectClause = Parse("select * from testTable where c > 12 aNd c<25");
+            var selectClause = ParseSelect("select * from testTable where c > 12 aNd c<25");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -198,7 +213,7 @@ select a3,b3 from t3");
         [Test]
         public void InOperator()
         {
-            var selectClause = Parse("select a,b from testTable where c in (10,20,30)");
+            var selectClause = ParseSelect("select a,b from testTable where c in (10,20,30)");
             var inExpression = selectClause.WhereExpression as InExpression;
             
             Assert.NotNull(inExpression);
@@ -214,7 +229,7 @@ select a3,b3 from t3");
         [Test]
         public void LikeOperator()
         {
-            var selectClause = Parse("select a,b from testTable where c like \"%test%\"");
+            var selectClause = ParseSelect("select a,b from testTable where c like \"%test%\"");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -228,7 +243,7 @@ select a3,b3 from t3");
         [Test]
         public void StringLiteral()
         {
-            var selectClause = Parse("select a,b from testTable where c != \"1\\\"2\\\"\"");
+            var selectClause = ParseSelect("select a,b from testTable where c != \"1\\\"2\\\"\"");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -242,7 +257,7 @@ select a3,b3 from t3");
         [Test]
         public void Join()
         {
-            var selectClause = Parse(@"select t1.a as nested1, t2.b as nested2
+            var selectClause = ParseSelect(@"select t1.a as nested1, t2.b as nested2
 from testTable1 as t1
 left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(2));
@@ -287,7 +302,7 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
         [Test]
         public void ManyJoinClauses()
         {
-            var selectClause = Parse(@"select *
+            var selectClause = ParseSelect(@"select *
 from testTable1 as t1
 left join testTable2 as t2 on t1.id1 = t2.id2
 join testTable3 on t3.id3 = t1.id1
@@ -313,7 +328,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void FromAlias()
         {
-            var selectClause = Parse("select a,b from testTable as tt");
+            var selectClause = ParseSelect("select a,b from testTable as tt");
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
             Assert.That(aReference.Name, Is.EqualTo("a"));
             Assert.That(aReference.Declaration.Name, Is.EqualTo("testTable"));
@@ -327,7 +342,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void ColumnAliases()
         {
-            var selectClause = Parse("select a as a_alias,b b_alias from testTable");
+            var selectClause = ParseSelect("select a as a_alias,b b_alias from testTable");
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("a_alias"));
             Assert.That(selectClause.Fields[1].Alias, Is.EqualTo("b_alias"));
         }
@@ -335,7 +350,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void SelectAll()
         {
-            var selectClause = Parse("select * from testTable");
+            var selectClause = ParseSelect("select * from testTable");
             Assert.That(selectClause.IsSelectAll, Is.True);
             Assert.That(selectClause.Fields, Is.Null);
         }
@@ -343,7 +358,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void SelectAggregate()
         {
-            var selectClause = Parse("select count(*) as a, Sum(*) AS b from testTable");
+            var selectClause = ParseSelect("select count(*) as a, Sum(*) AS b from testTable");
             var columnA = selectClause.Fields[0].Expression as AggregateFunction;
             var columnB = selectClause.Fields[1].Expression as AggregateFunction;
             Assert.NotNull(columnA);
@@ -352,10 +367,14 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(columnB.Type, Is.EqualTo(AggregateFunctionType.Sum));
         }
 
-        private static SelectClause Parse(string source)
+        private static SelectClause ParseSelect(string source)
         {
-            var parser = new QueryParser();
-            return parser.Parse(source);
+            return Parse(source).GetSingleSelect();
+        }
+
+        private static RootClause Parse(string source)
+        {
+            return new QueryParser().Parse(source);
         }
     }
 }

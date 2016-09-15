@@ -20,11 +20,16 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override UnionClause VisitUnion(UnionClause clause)
         {
-            builder.Append("\r\n\r\nunion");
-            if (clause.Type == UnionType.All)
-                builder.Append(" all");
-            builder.Append("\r\n\r\n");
-            return base.VisitUnion(clause);
+            var result = base.VisitUnion(clause);
+
+            if (clause.Type.HasValue)
+            {
+                builder.Append("\r\n\r\nunion");
+                if (clause.Type == UnionType.All)
+                    builder.Append(" all");
+                builder.Append("\r\n\r\n");
+            }
+            return result;
         }
 
         public override AggregateFunction VisitAggregateFunction(AggregateFunction expression)
@@ -80,7 +85,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public override SelectClause VisitSelect(SelectClause clause)
+	    public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
             if (clause.IsSelectAll)
@@ -101,10 +106,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
             }
             if (clause.GroupBy != null)
                 Visit(clause.GroupBy);
-            if (clause.Union != null)
-                Visit(clause.Union);
-            if (clause.OrderBy != null)
-                Visit(clause.OrderBy);
             return clause;
         }
 

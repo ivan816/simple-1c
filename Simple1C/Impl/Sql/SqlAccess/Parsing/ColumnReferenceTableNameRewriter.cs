@@ -29,10 +29,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);
             if (clause.GroupBy != null)
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
-            if (clause.Union != null)
-                clause.Union = VisitUnion(clause.Union);
-            if (clause.OrderBy != null)
-                clause.OrderBy = VisitOrderBy(clause.OrderBy);
+
             return clause;
         }
 

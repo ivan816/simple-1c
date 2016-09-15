@@ -1,5 +1,4 @@
 using System.Collections.Generic;
-using System.Linq;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.SqlAccess
@@ -34,6 +33,15 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
+        public virtual ISqlElement VisitRoot(RootClause rootClause)
+        {
+            if (rootClause.Unions != null)
+                VisitEnumerable(rootClause.Unions);
+            if (rootClause.OrderBy != null)
+                rootClause.OrderBy = VisitOrderBy(rootClause.OrderBy);
+            return rootClause;
+        }
+
         public virtual SelectClause VisitSelect(SelectClause clause)
         {
             if (clause.Fields != null)
@@ -44,10 +52,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);
             if (clause.GroupBy != null)
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
-            if (clause.Union != null)
-                clause.Union = VisitUnion(clause.Union);
-            if (clause.OrderBy != null)
-                clause.OrderBy = VisitOrderBy(clause.OrderBy);
             return clause;
         }
 
