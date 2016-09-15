@@ -11,6 +11,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
     {
         private const string englishAlphabet = "abcdefghijklmnopqrstuvwxyz";
         private const string russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+
         private static readonly string validChars = englishAlphabet +
                                                     englishAlphabet.ToUpper() +
                                                     russianAlphabet +
@@ -27,12 +28,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 identifier,
                 n => new ColumnReferenceExpression
                 {
-                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
+                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value
                 });
 
             var expression = Expression(columnRef, identifier);
 
-            var columnSource = NonTerminal("columnSource", expression | "(" + expression + ")");
+            var columnSource = NonTerminal("columnSource", expression);
             columnSource.SetFlag(TermFlags.IsTransient);
 
             var asOpt = NonTerminal("asOpt", Empty | "AS");
@@ -110,6 +111,23 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             Root = RootElement(selectStatement, orderClauseOpt);
         }
 
+        private NonTerminal Identifier()
+        {
+            var idSimple = new IdentifierTerminal("Identifier")
+            {
+                AllFirstChars = validChars,
+                AllChars = validChars + "1234567890"
+            };
+            idSimple.SetFlag(TermFlags.NoAstNode);
+
+            var id = NonTerminal("identifier", null, n => new Identifier
+            {
+                Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
+            });
+            id.Rule = MakePlusRule(id, ToTerm("."), idSimple);
+            return id;
+        }
+
         private NonTerminal Expression(NonTerminal columnRef, NonTerminal identifier)
         {
             var stringLiteral = new StringLiteral("string",
@@ -136,44 +154,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Value = node.ChildNodes[0].Token.ValueString.ToLower() == "true"
                 });
 
-            var term = NonTerminal("term", boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral);
+            var term = NonTerminal("term", null);
             term.SetFlag(TermFlags.IsTransient);
-
-            var binOp = NonTerminal("binOp",
-                ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE",
-                delegate(ParseTreeNode node)
-                {
-                    var operatorText = node.ChildNodes[0].Token.ValueString;
-                    switch (operatorText.ToLower())
-                    {
-                        case "and":
-                            return SqlBinaryOperator.And;
-                        case "or":
-                            return SqlBinaryOperator.Or;
-                        case "+":
-                            return SqlBinaryOperator.Plus;
-                        case "-":
-                            return SqlBinaryOperator.Minus;
-                        case "=":
-                            return SqlBinaryOperator.Eq;
-                        case ">":
-                            return SqlBinaryOperator.GreaterThan;
-                        case "<":
-                            return SqlBinaryOperator.LessThan;
-                        case ">=":
-                            return SqlBinaryOperator.GreaterThanOrEqual;
-                        case "<=":
-                            return SqlBinaryOperator.LessThanOrEqual;
-                        case "like":
-                            return SqlBinaryOperator.Like;
-                        case "<>":
-                        case "!=":
-                            return SqlBinaryOperator.Neq;
-                        default:
-                            const string messageFormat = "unexpected operator [{0}]";
-                            throw new InvalidOperationException(string.Format(messageFormat, operatorText));
-                    }
-                });
+            var binOp = NonTerminal("binOp", null, ToBinaryOperator);
             binOp.SetFlag(TermFlags.InheritPrecedence);
 
             var inExpr = NonTerminal("inExpr", null,
@@ -183,97 +166,48 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Values = node.ChildNodes[2].Elements().Cast<ISqlElement>().ToList()
                 });
 
-            var binExpr = NonTerminal("binExpr", null, delegate(ParseTreeNode node)
-            {
-                var left = (ISqlElement) node.ChildNodes[0].AstNode;
-                var binaryOperator = (SqlBinaryOperator) node.ChildNodes[1].AstNode;
-                var right = (ISqlElement) node.ChildNodes[2].AstNode;
-                if (binaryOperator == SqlBinaryOperator.And)
-                    return new AndExpression
-                    {
-                        Left = left,
-                        Right = right
-                    };
-                if (binaryOperator == SqlBinaryOperator.Eq)
-                    return new EqualityExpression
-                    {
-                        Left = left,
-                        Right = right
-                    };
-                return new BinaryExpression(binaryOperator)
-                {
-                    Left = left,
-                    Right = right
-                };
-            });
+            var binExpr = NonTerminal("binExpr", null, ToBinaryExpression);
             var exprList = NonTerminal("exprList", null);
-            var queryFunctionName = NonTerminal("queryFunctionName",
-                ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
-                delegate(ParseTreeNode node)
-                {
-                    var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
-                    switch (queryFunctionNameString.ToLower())
-                    {
-                        case "presentation":
-                            return QueryFunctionName.Presentation;
-                        case "datetime":
-                            return QueryFunctionName.DateTime;
-                        case "year":
-                            return QueryFunctionName.Year;
-                        case "quarter":
-                            return QueryFunctionName.Quarter;
-                        case "not":
-                            return QueryFunctionName.SqlNot;
-                        default:
-                            const string messageFormat = "unexpected function [{0}]";
-                            throw new InvalidOperationException(string.Format(messageFormat, queryFunctionNameString));
-                    }
-                });
-            var queryFunctionExpr = NonTerminal("queryFunctionExpr",
-                queryFunctionName + "(" + exprList + ")",
+            var queryFunctionName = NonTerminal("queryFunctionName", null, ToQueryFunctionName);
+            var queryFunctionExpr = NonTerminal("queryFunctionExpr", null,
                 node => new QueryFunctionExpression
                 {
                     FunctionName = (QueryFunctionName) node.ChildNodes[0].AstNode,
                     Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
                 });
 
-            var aggregateArg = NonTerminal("aggregateArg", ToTerm("*") | term);
-            var aggregate = Aggregate(aggregateArg);
-
-            var expression = NonTerminal("expression",
-                term | binExpr | inExpr | queryFunctionExpr | aggregate,
-                n => n.ChildNodes[0].AstNode);
+            var aggregateArg = NonTerminal("aggregateArg", null);
+            var aggregateName = NonTerminal("aggregateName", null);
+            var aggregate = NonTerminal("aggregate", null, ToAggregateFunction);
+          
+            var expression = NonTerminal("expression", null, n => n.ChildNodes[0].AstNode);
             expression.SetFlag(TermFlags.IsTransient);
+            var parExpr = NonTerminal("parExpr", null);
+            parExpr.SetFlag(TermFlags.IsTransient);
+            
+            //rules
+            queryFunctionName.Rule = ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT";
+            queryFunctionExpr.Rule = queryFunctionName + "(" + exprList + ")";
+            
+            aggregateName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
+            aggregateArg.Rule = ToTerm("*") | term;
+            aggregate.Rule = aggregateName + "(" + aggregateArg + ")";
 
+            term.Rule = boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral | parExpr;
+            expression.Rule = term | binExpr | inExpr | queryFunctionExpr | aggregate;
+            parExpr.Rule = ToTerm("(") + expression + ToTerm(")");
+            binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
             exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
             inExpr.Rule = columnRef + ToTerm("in") + "(" + exprList + ")";
             return expression;
         }
 
-        private NonTerminal Identifier()
-        {
-            var idSimple = new IdentifierTerminal("Identifier")
-            {
-                AllFirstChars = validChars,
-                AllChars = validChars + "1234567890"
-            };
-            idSimple.SetFlag(TermFlags.NoAstNode);
-
-            var id = NonTerminal("identifier", null, n => new Identifier
-            {
-                Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
-            });
-            id.Rule = MakePlusRule(id, ToTerm("."), idSimple);
-            return id;
-        }
-
         private NonTerminal GroupBy(NonTerminal columnRef)
         {
             var groupColumnList = NonTerminal("groupColumnList", null);
-            groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), columnRef);
             var groupClauseOpt = NonTerminal("groupClauseOpt",
-                Empty | "GROUP" + ToTerm("BY") + groupColumnList,
+                null,
                 node => node.ChildNodes.Count == 0
                     ? null
                     : new GroupByClause
@@ -282,25 +216,24 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                             .Cast<ColumnReferenceExpression>()
                             .ToList()
                     });
+            groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), columnRef);
+            groupClauseOpt.Rule = Empty | "GROUP" + ToTerm("BY") + groupColumnList;
             return groupClauseOpt;
         }
 
         private NonTerminal RootElement(NonTerminal selectStatement, NonTerminal orderClauseOpt)
         {
-            var unionStmtOpt = NonTerminal("unionStmt",
-                Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL")),
-                delegate(ParseTreeNode node)
-                {
-                    if (node.ChildNodes.Count == 0)
-                        return null;
-                    var allModifierNodes = node.ChildNodes[1].ChildNodes;
-                    var unionType = allModifierNodes.Count > 0 &&
-                                    allModifierNodes[0].Token.ValueString.ToLower() == "all"
-                        ? UnionType.All
-                        : UnionType.Distinct;
-                    return unionType;
-                });
-
+            var unionStmtOpt = NonTerminal("unionStmt", null, delegate(ParseTreeNode node)
+            {
+                if (node.ChildNodes.Count == 0)
+                    return null;
+                var allModifierNodes = node.ChildNodes[1].ChildNodes;
+                var unionType = allModifierNodes.Count > 0 &&
+                                allModifierNodes[0].Token.ValueString.ToLower() == "all"
+                    ? UnionType.All
+                    : UnionType.Distinct;
+                return unionType;
+            });
             var unionList = NonTerminal("unionList", null, delegate(ParseTreeNode node)
             {
                 return node.ChildNodes.Select(child =>
@@ -309,39 +242,21 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     return new UnionClause
                     {
                         SelectClause = (SelectClause) elements[0],
-                        Type = (UnionType?) (elements.Count > 1? elements[1]: null)
+                        Type = (UnionType?) (elements.Count > 1 ? elements[1] : null)
                     };
                 }).ToList();
             });
-            unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
-            return NonTerminal("root", unionList + orderClauseOpt, node => new RootClause
+            var root = NonTerminal("root", null, node => new RootClause
             {
-                Unions = (List<UnionClause>) node.ChildNodes[0].AstNode,
-                OrderBy = (OrderByClause) (node.ChildNodes.Count > 1 ?node.ChildNodes[1].AstNode : null)
+                Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
+                OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
             });
-        }
 
-        private NonTerminal Aggregate(BnfTerm expression)
-        {
-            var aggregationFunctions = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
-            var aggregateName = NonTerminal("aggregateName", aggregationFunctions);
-
-            return NonTerminal("aggregate",
-                aggregateName + "(" + expression + ")",
-                delegate(ParseTreeNode node)
-                {
-                    var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
-                    var argumentNode = node.ChildNodes[1].ChildNodes[0];
-                    var isSelectAll = argumentNode.Token !=null && argumentNode.Token.ValueString.Equals("*");
-                    if (!isSelectAll && argumentNode.AstNode == null)
-                        throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
-                    return new AggregateFunction
-                    {
-                        Function = functionName,
-                        Argument = (ISqlElement) argumentNode.AstNode,
-                        IsSelectAll = isSelectAll
-                    };
-                });
+            //rules
+            unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
+            unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
+            root.Rule = unionList + orderClauseOpt;
+            return root;
         }
 
         private NonTerminal Join(BnfTerm declaration, BnfTerm expression)
@@ -389,7 +304,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private NonTerminal Having(BnfTerm expression)
         {
-            return NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression, 
+            return NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
         }
 
@@ -423,6 +338,100 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     });
         }
 
+        private static object ToAggregateFunction(ParseTreeNode node)
+        {
+            var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
+            var argumentNode = node.ChildNodes[1].ChildNodes[0];
+            var isSelectAll = argumentNode.Token != null && argumentNode.Token.ValueString.Equals("*");
+            if (!isSelectAll && argumentNode.AstNode == null)
+                throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
+            return new AggregateFunction
+            {
+                Function = functionName,
+                Argument = (ISqlElement) argumentNode.AstNode,
+                IsSelectAll = isSelectAll
+            };
+        }
+
+        private static object ToBinaryExpression(ParseTreeNode node)
+        {
+            var left = (ISqlElement)node.ChildNodes[0].AstNode;
+            var binaryOperator = (SqlBinaryOperator)node.ChildNodes[1].AstNode;
+            var right = (ISqlElement)node.ChildNodes[2].AstNode;
+            if (binaryOperator == SqlBinaryOperator.And)
+                return new AndExpression
+                {
+                    Left = left,
+                    Right = right
+                };
+            if (binaryOperator == SqlBinaryOperator.Eq)
+                return new EqualityExpression
+                {
+                    Left = left,
+                    Right = right
+                };
+            return new BinaryExpression(binaryOperator)
+            {
+                Left = left,
+                Right = right
+            };
+        }
+
+        private static object ToBinaryOperator(ParseTreeNode node)
+        {
+            var operatorText1 = node.ChildNodes[0].Token.ValueString;
+            switch (operatorText1.ToLower())
+            {
+                case "and":
+                    return SqlBinaryOperator.And;
+                case "or":
+                    return SqlBinaryOperator.Or;
+                case "+":
+                    return SqlBinaryOperator.Plus;
+                case "-":
+                    return SqlBinaryOperator.Minus;
+                case "=":
+                    return SqlBinaryOperator.Eq;
+                case ">":
+                    return SqlBinaryOperator.GreaterThan;
+                case "<":
+                    return SqlBinaryOperator.LessThan;
+                case ">=":
+                    return SqlBinaryOperator.GreaterThanOrEqual;
+                case "<=":
+                    return SqlBinaryOperator.LessThanOrEqual;
+                case "like":
+                    return SqlBinaryOperator.Like;
+                case "<>":
+                case "!=":
+                    return SqlBinaryOperator.Neq;
+                default:
+                    const string messageFormat1 = "unexpected operator [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat1, operatorText1));
+            }
+        }
+
+        private static object ToQueryFunctionName(ParseTreeNode node)
+        {
+            var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
+            switch (queryFunctionNameString.ToLower())
+            {
+                case "presentation":
+                    return QueryFunctionName.Presentation;
+                case "datetime":
+                    return QueryFunctionName.DateTime;
+                case "year":
+                    return QueryFunctionName.Year;
+                case "quarter":
+                    return QueryFunctionName.Quarter;
+                case "not":
+                    return QueryFunctionName.SqlNot;
+                default:
+                    const string messageFormat = "unexpected function [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, queryFunctionNameString));
+            }
+        }
+
         private static NonTerminal NonTerminal(string name, BnfExpression rule)
         {
             return NonTerminal(name, rule, n => new ElementsHolder
@@ -439,7 +448,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 {
                     n.AstNode = creator(n);
                 }
-                catch (Exception e )
+                catch (Exception e)
                 {
                     var message = string.Format("Exception creating ast node from node {0} at location ({1}:{2})",
                         n, n.Span.Location, n.Span.EndLocation);

@@ -28,27 +28,31 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             var parseTree = parser.Parse(source);
             if (parseTree.Status != ParseTreeStatus.Parsed)
-            {
-                var b = new StringBuilder();
-                foreach (var message in parseTree.ParserMessages)
-                {
-                    b.AppendLine(string.Format("{0}: {1} at {2} in state {3}", message.Level, message.Message,
-                        message.Location, message.ParserState));
-
-                    var lines = source.Split(new[] {"\r\n"}, StringSplitOptions.None)
-                        .Select((sourceLine, index) =>
-                            index == message.Location.Line
-                                ? string.Format("{0}\r\n{1}|<-Here", sourceLine,
-                                    new string('_', message.Location.Column))
-                                : sourceLine);
-                    foreach (var line in lines)
-                        b.AppendLine(line);
-                }
-                throw new InvalidOperationException(string.Format("parse error\r\n{0}", b));
-            }
+                throw new InvalidOperationException(FormatErrors(parseTree, parser.Context.TabWidth));
             var result = (RootClause) parseTree.Root.AstNode;
             new ColumnReferenceTableNameRewriter().Visit(result);
             return result;
+        }
+
+        private static string FormatErrors(ParseTree parseTree, int tabWidth)
+        {
+            var b = new StringBuilder();
+            foreach (var message in parseTree.ParserMessages)
+            {
+                b.AppendLine(string.Format("{0}: {1} at {2} in state {3}", message.Level, message.Message,
+                    message.Location, message.ParserState));
+
+                var lines = parseTree.SourceText.Replace("\t", new string(' ', tabWidth))
+                    .Split(new[] {"\r\n"}, StringSplitOptions.None)
+                    .Select((sourceLine, index) =>
+                        index == message.Location.Line
+                            ? string.Format("{0}\r\n{1}|<-Here", sourceLine,
+                                new string('_', message.Location.Column))
+                            : sourceLine);
+                foreach (var line in lines)
+                    b.AppendLine(line);
+            }
+            throw new InvalidOperationException(string.Format("parse errors\r\n:{0}", b));
         }
     }
 }

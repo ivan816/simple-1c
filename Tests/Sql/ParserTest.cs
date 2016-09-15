@@ -244,6 +244,26 @@ order by a1");
             Assert.That(((LiteralExpression) inExpression.Values[1]).Value, Is.EqualTo(20));
             Assert.That(((LiteralExpression) inExpression.Values[2]).Value, Is.EqualTo(30));
         }
+
+        [Test]
+        public void AllowExtraneousBracesInExpressions()
+        {
+            var selectClause = ParseSelect("select (a) from testTable where ((a > 10) and (a > 11))");
+
+            var binaryExperssion = selectClause.WhereExpression as BinaryExpression;
+            Assert.NotNull(binaryExperssion);
+            var left = binaryExperssion.Left as BinaryExpression;
+            var right = binaryExperssion.Right as BinaryExpression;
+            Assert.That(binaryExperssion.Op, Is.EqualTo(SqlBinaryOperator.And));
+            Assert.NotNull(left);
+            Assert.NotNull(right);
+        }
+
+        [Test]
+        public void ExtraneousBracesAroundTableName_ThrowException()
+        {
+            Assert.Throws<InvalidOperationException>(() => ParseSelect("select (a) from (testTable)"));
+        }
         
         [Test]
         public void LikeOperator()
