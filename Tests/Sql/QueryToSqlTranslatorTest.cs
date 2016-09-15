@@ -890,6 +890,25 @@ left join t312 as __nested_table2 on __nested_table2.d3 = __nested_table0.d1 and
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
+        [Test]
+        public void Having_Simple()
+        {
+            const string sourceSql = @"
+select БухСчет, count(Идентификатор) from Документы.ПоступленияНаРасчтеныйСчет
+group by БухСчет
+having count(Идентификатор) > 10";
+            const string mappings = @"Документы.ПоступленияНаРасчтеныйСчет documentsTable0 Main
+    БухСчет Single accountingCodeColumn
+    Идентификатор Single idColumn";
+            const string expectedResult = @"select
+    accountingCodeColumn,
+    count(idColumn)
+from documentsTable0
+group by accountingCodeColumn
+having count(idColumn) > 10";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
         private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
@@ -898,6 +917,9 @@ left join t312 as __nested_table2 on __nested_table2.d3 = __nested_table0.d1 and
                 CurrentDate = currentDate
             };
             var actualTranslated = sqlTranslator.Translate(sql);
+            Console.WriteLine("Input:\r\n{0}\r\n", sql);
+            Console.WriteLine("Translated:\r\n{0}\r\n", actualTranslated);
+            Console.WriteLine("Expected:\r\n{0}\r\n", expectedTranslated);
             Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
         }
 

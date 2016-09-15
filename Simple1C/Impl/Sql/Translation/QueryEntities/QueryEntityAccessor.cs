@@ -65,13 +65,14 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public QueryEntityProperty GetOrCreatePropertyIfExists(QueryEntity queryEntity, string name)
         {
-            foreach (var f in queryEntity.properties)
-                if (f.mapping.PropertyName.EqualsIgnoringCase(name))
-                    return f;
-            if (!queryEntity.mapping.HasProperty(name))
+            var property = queryEntity.properties
+                .FirstOrDefault(c => c.mapping.PropertyName.EqualsIgnoringCase(name));
+            if (property != null)
+                return property;
+            var propertyMapping = queryEntity.mapping.GetByPropertyNameOrNull(name);
+            if (propertyMapping == null)
                 return null;
-            var propertyMapping = queryEntity.mapping.GetByPropertyName(name);
-            var property = new QueryEntityProperty(queryEntity, propertyMapping);
+            property = new QueryEntityProperty(queryEntity, propertyMapping);
             if (propertyMapping.SingleLayout != null)
             {
                 if (name.EqualsIgnoringCase("Ссылка"))

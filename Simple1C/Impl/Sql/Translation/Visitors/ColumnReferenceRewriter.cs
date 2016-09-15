@@ -20,7 +20,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             if (!currentPart.HasValue)
                 throw new InvalidOperationException("assertion failure");
             var queryField = queryEntityAccessor.GetOrCreateQueryField(expression,
-                isPresentation, currentPart.GetValueOrDefault());
+                isPresentation, currentPart.Value);
             expression.Name = queryField.alias ?? queryField.properties[0].GetDbColumnName();
             return expression;
         }
@@ -41,7 +41,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override ISqlElement VisitWhere(ISqlElement element)
         {
-            WithCurrentPart(SelectPart.Where, () => base.VisitWhere(element));
+            WithCurrentPart(SelectPart.Other, () => base.VisitWhere(element));
             return element;
         }
 
@@ -53,13 +53,19 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override JoinClause VisitJoin(JoinClause element)
         {
-            WithCurrentPart(SelectPart.Join, () => base.VisitJoin(element));
+            WithCurrentPart(SelectPart.Other, () => base.VisitJoin(element));
             return element;
         }
 
         public override OrderByClause VisitOrderBy(OrderByClause element)
         {
-            WithCurrentPart(SelectPart.OrderBy, () => base.VisitOrderBy(element));
+            WithCurrentPart(SelectPart.Other, () => base.VisitOrderBy(element));
+            return element;
+        }
+
+        public override ISqlElement VisitHaving(ISqlElement element)
+        {
+            WithCurrentPart(SelectPart.Other, () => base.VisitHaving(element));
             return element;
         }
 

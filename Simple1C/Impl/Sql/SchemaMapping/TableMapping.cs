@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
@@ -66,15 +67,18 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             return byPropertyName.ContainsKey(queryName);
         }
 
+        public PropertyMapping GetByPropertyNameOrNull(string queryName)
+        {
+            return byPropertyName.GetOrDefault(queryName);
+        }
+
         public PropertyMapping GetByPropertyName(string queryName)
         {
-            PropertyMapping result;
-            if (!byPropertyName.TryGetValue(queryName, out result))
-            {
-                const string messagFormat = "can't find field [{0}] for table [{1}]";
-                throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
-            }
-            return result;
+            var result = GetByPropertyNameOrNull(queryName);
+            if (result != null)
+                return result;
+            const string messagFormat = "can't find field [{0}] for table [{1}]";
+            throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
         }
 
         public bool IsEnum()

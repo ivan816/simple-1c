@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using NUnit.Framework;
+﻿using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Tests.Helpers;
@@ -128,6 +127,26 @@ namespace Simple1C.Tests.Sql
             Assert.That(orderings[1].IsAsc, Is.True);
             Assert.That(((ColumnReferenceExpression)orderings[2].Expression).Name, Is.EqualTo("Patronymic"));
             Assert.That(orderings[2].IsAsc, Is.False);
+        }
+
+        [Test]
+        public void Having()
+        {
+            var selectClause = ParseSelect("select * from testTable group by FirstName having count(Id) > 1");
+
+            var havingClause = selectClause.Having;
+            Assert.That(havingClause, Is.TypeOf<BinaryExpression>());
+
+            var left = ((BinaryExpression)havingClause).Left;
+            Assert.That(left, Is.TypeOf<AggregateFunction>());
+            Assert.That(((BinaryExpression)havingClause).Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
+
+            Assert.That(((AggregateFunction)left).Function, Is.EqualTo("Count").IgnoreCase);
+            Assert.That(((AggregateFunction)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
+
+            var right = ((BinaryExpression)havingClause).Right;
+            Assert.That(right, Is.TypeOf<LiteralExpression>());
+            Assert.That(((LiteralExpression)right).Value, Is.EqualTo(1));
         }
 
         [Test]
@@ -356,15 +375,28 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         }
 
         [Test]
-        public void SelectAggregate()
+        public void AggregateWithWildcard()
         {
             var selectClause = ParseSelect("select count(*) as a, Sum(*) AS b from testTable");
             var columnA = selectClause.Fields[0].Expression as AggregateFunction;
             var columnB = selectClause.Fields[1].Expression as AggregateFunction;
             Assert.NotNull(columnA);
-            Assert.That(columnA.Type, Is.EqualTo(AggregateFunctionType.Count));
+            Assert.That(columnA.Function, Is.EqualTo("Count").IgnoreCase);
+            Assert.That(columnA.IsSelectAll, Is.True);
             Assert.NotNull(columnB);
-            Assert.That(columnB.Type, Is.EqualTo(AggregateFunctionType.Sum));
+            Assert.That(columnB.Function, Is.EqualTo("Sum").IgnoreCase);
+            Assert.That(columnA.IsSelectAll, Is.True);
+        }
+
+        [Test]
+        public void AggregateWithColumn()
+        {
+            var selectClause = ParseSelect("select sum(PaymentSum) from Payments");
+            var columnA = selectClause.Fields[0].Expression as AggregateFunction;
+            Assert.NotNull(columnA);
+            Assert.That(columnA.Function, Is.EqualTo("Sum").IgnoreCase);
+            Assert.That(columnA.Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(((ColumnReferenceExpression)columnA.Argument).Name, Is.EqualTo("PaymentSum"));
         }
 
         private static SelectClause ParseSelect(string source)

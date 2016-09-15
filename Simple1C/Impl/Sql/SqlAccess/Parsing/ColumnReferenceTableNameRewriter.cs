@@ -29,6 +29,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);
             if (clause.GroupBy != null)
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
+            if (clause.Having != null)
+                clause.Having = Visit(clause.Having);
 
             return clause;
         }

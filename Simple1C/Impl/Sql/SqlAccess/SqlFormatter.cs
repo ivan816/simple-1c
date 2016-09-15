@@ -34,7 +34,13 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override AggregateFunction VisitAggregateFunction(AggregateFunction expression)
         {
-            builder.Append(FormatAggregateFunction(expression.Type));
+            builder.Append(expression.Function.ToLower());
+            builder.Append("(");
+            if (expression.IsSelectAll)
+                builder.Append("*");
+            else
+                Visit(expression.Argument);
+            builder.Append(")");
             return expression;
         }
 
@@ -56,25 +62,9 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             Visit(orderingElement.Expression);
             builder.AppendFormat(" {0}", orderingElement.IsAsc ? "asc" : "desc");
-           return orderingElement;
+            return orderingElement;
         }
 
-        private static string FormatAggregateFunction(AggregateFunctionType f)
-        {
-            switch (f)
-            {
-                case AggregateFunctionType.Count:
-                    return "count(*)";
-                case AggregateFunctionType.Sum:
-                    return "sum(*)";
-                case AggregateFunctionType.Max:
-                    return "max(*)";
-                case AggregateFunctionType.Min:
-                    return "min(*)";
-                default:
-                    throw new ArgumentOutOfRangeException("f", f, null);
-            }
-        }
 
         public override ISqlElement VisitSubquery(SubqueryClause clause)
         {
@@ -85,7 +75,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-	    public override SelectClause VisitSelect(SelectClause clause)
+        public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
             if (clause.IsSelectAll)
@@ -106,6 +96,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
             }
             if (clause.GroupBy != null)
                 Visit(clause.GroupBy);
+            if (clause.Having != null)
+            {
+                builder.Append("\r\nhaving ");
+                Visit(clause.Having);
+            }
             return clause;
         }
 

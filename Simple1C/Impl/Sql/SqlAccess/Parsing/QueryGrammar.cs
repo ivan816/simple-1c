@@ -11,53 +11,107 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
     {
         private const string englishAlphabet = "abcdefghijklmnopqrstuvwxyz";
         private const string russianAlphabet = "абвгдеёжзийклмнопрстуфхцчшщъыьэюя";
+        private static readonly string validChars = englishAlphabet +
+                                                    englishAlphabet.ToUpper() +
+                                                    russianAlphabet +
+                                                    russianAlphabet.ToUpper() +
+                                                    "_";
 
         public QueryGrammar()
             : base(false)
         {
             LanguageFlags = LanguageFlags.CreateAst;
 
-            //terminals
-            var termComma = ToTerm(",");
-            var dot = ToTerm(".");
-            var termSelect = ToTerm("SELECT");
-            var termFrom = ToTerm("FROM");
-            var termAs = ToTerm("AS");
-            var termIn = ToTerm("IN");
-            var termValue = ToTerm("VALUE");
-            var termTrue = ToTerm("TRUE");
-            var termFalse = ToTerm("FALSE");
-
-            var termPresentation = ToTerm("PRESENTATION");
-
-            var validChars = englishAlphabet +
-                             englishAlphabet.ToUpper() +
-                             russianAlphabet +
-                             russianAlphabet.ToUpper() +
-                             "_";
-            var idSimple = new IdentifierTerminal("Identifier")
-            {
-                AllFirstChars = validChars,
-                AllChars = validChars + "1234567890"
-            };
-            idSimple.SetFlag(TermFlags.NoAstNode);
-
-            //nonterminals
-            var id = NonTerminal("id", null, n => new Identifier
-            {
-                Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
-            });
-            id.Rule = MakePlusRule(id, dot, idSimple);
-
-            var aggregate = Aggregate();
-
+            var identifier = Identifier();
             var columnRef = NonTerminal("columnRef",
-                id,
+                identifier,
                 n => new ColumnReferenceExpression
                 {
-                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value
+                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
                 });
 
+            var expression = Expression(columnRef, identifier);
+
+            var columnSource = NonTerminal("columnSource", expression | "(" + expression + ")");
+            columnSource.SetFlag(TermFlags.IsTransient);
+
+            var asOpt = NonTerminal("asOpt", Empty | "AS");
+            var aliasOpt = NonTerminal("aliasOpt", Empty | asOpt + identifier);
+
+            var columnItem = NonTerminal("columnItem", columnSource + aliasOpt, n =>
+            {
+                var astNode = n.ChildNodes[0].AstNode;
+                var aliasNodes = n.ChildNodes[1].ChildNodes;
+                return new SelectFieldElement
+                {
+                    Expression = (ISqlElement) astNode,
+                    Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
+                };
+            });
+
+            var declaration = NonTerminal("declaration",
+                identifier + aliasOpt,
+                delegate(ParseTreeNode n)
+                {
+                    return new TableDeclarationClause
+                    {
+                        Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
+                        Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
+                    };
+                });
+
+            var joinItemList = Join(declaration, expression);
+            var fromClause = NonTerminal("fromClauseOpt", ToTerm("FROM") + declaration);
+            var whereClauseOpt = NonTerminal("whereClauseOpt",
+                Empty | "WHERE" + expression,
+                node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
+
+            var groupClauseOpt = GroupBy(columnRef);
+            var orderClauseOpt = OrderBy(expression);
+            var havingClauseOpt = Having(expression);
+            var columnItemList = NonTerminal("columnItemList", null);
+            columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
+
+            var selList = NonTerminal("selList", columnItemList | "*");
+            var selectStatement = NonTerminal("selectStmt",
+                ToTerm("SELECT") + selList + fromClause
+                + joinItemList + whereClauseOpt
+                + groupClauseOpt + havingClauseOpt,
+                delegate(ParseTreeNode n)
+                {
+                    var elements = n.Elements();
+                    var result = new SelectClause
+                    {
+                        Source = elements.OfType<TableDeclarationClause>().Single()
+                    };
+
+                    var selectColumns = elements.OfType<SelectFieldElement>().ToArray();
+                    if (selectColumns.Length == 0)
+                    {
+                        result.IsSelectAll = true;
+                        result.Fields = null;
+                    }
+                    else
+                        result.Fields.AddRange(selectColumns);
+                    result.JoinClauses.AddRange(elements.OfType<JoinClause>());
+                    result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
+                    result.GroupBy = (GroupByClause) n.ChildNodes[5].AstNode;
+                    result.Having = (ISqlElement) n.ChildNodes[6].AstNode;
+                    return result;
+                });
+
+            RegisterOperators(10, "*", "/", "%");
+            RegisterOperators(9, "+", "-");
+            RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "LIKE", "IN");
+            RegisterOperators(5, "AND");
+            RegisterOperators(4, "OR");
+            MarkPunctuation(",", "(", ")");
+            MarkPunctuation(asOpt);
+            Root = RootElement(selectStatement, orderClauseOpt);
+        }
+
+        private NonTerminal Expression(NonTerminal columnRef, NonTerminal identifier)
+        {
             var stringLiteral = new StringLiteral("string",
                 "\"",
                 StringOptions.AllowsAllEscapes,
@@ -69,14 +123,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 });
 
             var valueLiteral = NonTerminal("valueLiteral",
-                termValue + "(" + id + ")",
+                ToTerm("value") + "(" + identifier + ")",
                 node => new ValueLiteralExpression
                 {
                     ObjectName = ((Identifier) node.ChildNodes[1].AstNode).Value
                 });
 
             var boolLiteral = NonTerminal("boolLiteral",
-                termTrue | termFalse,
+                ToTerm("true") | ToTerm("false"),
                 node => new LiteralExpression
                 {
                     Value = node.ChildNodes[0].Token.ValueString.ToLower() == "true"
@@ -154,7 +208,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             });
             var exprList = NonTerminal("exprList", null);
             var queryFunctionName = NonTerminal("queryFunctionName",
-                termPresentation | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
+                ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT",
                 delegate(ParseTreeNode node)
                 {
                     var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
@@ -183,90 +237,35 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
                 });
 
+            var aggregateArg = NonTerminal("aggregateArg", ToTerm("*") | term);
+            var aggregate = Aggregate(aggregateArg);
+
             var expression = NonTerminal("expression",
-                term | binExpr | inExpr | queryFunctionExpr,
+                term | binExpr | inExpr | queryFunctionExpr | aggregate,
                 n => n.ChildNodes[0].AstNode);
             expression.SetFlag(TermFlags.IsTransient);
 
             binExpr.Rule = expression + binOp + expression;
-            exprList.Rule = MakePlusRule(exprList, termComma, expression);
-            inExpr.Rule = columnRef + termIn + "(" + exprList + ")";
+            exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
+            inExpr.Rule = columnRef + ToTerm("in") + "(" + exprList + ")";
+            return expression;
+        }
 
-            var columnSource = NonTerminal("columnSource", expression | aggregate | "(" + expression + ")");
-            columnSource.SetFlag(TermFlags.IsTransient);
-
-            var asOpt = NonTerminal("asOpt", Empty | termAs);
-            var aliasOpt = NonTerminal("aliasOpt", Empty | asOpt + id);
-
-            var columnItem = NonTerminal("columnItem", columnSource + aliasOpt, n =>
+        private NonTerminal Identifier()
+        {
+            var idSimple = new IdentifierTerminal("Identifier")
             {
-                var astNode = n.ChildNodes[0].AstNode;
-                var aliasNodes = n.ChildNodes[1].ChildNodes;
-                return new SelectFieldElement
-                {
-                    Expression = (ISqlElement) astNode,
-                    Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
-                };
+                AllFirstChars = validChars,
+                AllChars = validChars + "1234567890"
+            };
+            idSimple.SetFlag(TermFlags.NoAstNode);
+
+            var id = NonTerminal("identifier", null, n => new Identifier
+            {
+                Value = n.ChildNodes.Select(x => x.Token.ValueString).JoinStrings(".")
             });
-
-            var declaration = NonTerminal("declaration",
-                id + aliasOpt,
-                delegate(ParseTreeNode n)
-                {
-                    return new TableDeclarationClause
-                    {
-                        Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
-                        Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
-                    };
-                });
-
-            var joinItemList = Join(declaration, expression);
-            var fromClauseOpt = NonTerminal("fromClauseOpt", termFrom + declaration);
-            var whereClauseOpt = NonTerminal("whereClauseOpt",
-                Empty | "WHERE" + expression,
-                node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
-
-            var groupClauseOpt = GroupBy(columnRef);
-            var orderClauseOpt = OrderClauseOpt(expression);
-
-            var columnItemList = NonTerminal("columnItemList", null);
-            columnItemList.Rule = MakePlusRule(columnItemList, termComma, columnItem);
-
-            var selList = NonTerminal("selList", columnItemList | "*");
-            var selectStatement = NonTerminal("selectStmt",
-                termSelect + selList + fromClauseOpt
-                + joinItemList + whereClauseOpt
-                + groupClauseOpt,
-                delegate(ParseTreeNode n)
-                {
-                    var elements = n.Elements();
-                    var result = new SelectClause
-                    {
-                        Source = elements.OfType<TableDeclarationClause>().Single()
-                    };
-
-                    var selectColumns = elements.OfType<SelectFieldElement>().ToArray();
-                    if (selectColumns.Length == 0)
-                    {
-                        result.IsSelectAll = true;
-                        result.Fields = null;
-                    }
-                    else
-                        result.Fields.AddRange(selectColumns);
-                    result.JoinClauses.AddRange(elements.OfType<JoinClause>());
-                    result.WhereExpression = (ISqlElement) n.ChildNodes[4].AstNode;
-                    result.GroupBy = elements.OfType<GroupByClause>().SingleOrDefault();
-                    return result;
-                });
-
-            RegisterOperators(10, "*", "/", "%");
-            RegisterOperators(9, "+", "-");
-            RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "LIKE", "IN");
-            RegisterOperators(5, "AND");
-            RegisterOperators(4, "OR");
-            MarkPunctuation(",", "(", ")");
-            MarkPunctuation(asOpt);
-            Root = RootElement(selectStatement, orderClauseOpt);
+            id.Rule = MakePlusRule(id, ToTerm("."), idSimple);
+            return id;
         }
 
         private NonTerminal GroupBy(NonTerminal columnRef)
@@ -322,38 +321,26 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             });
         }
 
-        private NonTerminal Aggregate()
+        private NonTerminal Aggregate(BnfTerm expression)
         {
-            var aggregateName = NonTerminal("aggregateName", ToTerm("Count") | "Min" | "Max" | "Sum");
-
-            var aggregateArg = NonTerminal("aggregateArg", "*");
+            var aggregationFunctions = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
+            var aggregateName = NonTerminal("aggregateName", aggregationFunctions);
 
             return NonTerminal("aggregate",
-                aggregateName + "(" + aggregateArg + ")",
+                aggregateName + "(" + expression + ")",
                 delegate(ParseTreeNode node)
                 {
-                    var aggregateFunctionNameString = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
-                    AggregateFunctionType aggregateFunctionType;
-                    switch (aggregateFunctionNameString.ToLower())
+                    var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
+                    var argumentNode = node.ChildNodes[1].ChildNodes[0];
+                    var isSelectAll = argumentNode.Token !=null && argumentNode.Token.ValueString.Equals("*");
+                    if (!isSelectAll && argumentNode.AstNode == null)
+                        throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
+                    return new AggregateFunction
                     {
-                        case "count":
-                            aggregateFunctionType = AggregateFunctionType.Count;
-                            break;
-                        case "min":
-                            aggregateFunctionType = AggregateFunctionType.Min;
-                            break;
-                        case "max":
-                            aggregateFunctionType = AggregateFunctionType.Max;
-                            break;
-                        case "sum":
-                            aggregateFunctionType = AggregateFunctionType.Sum;
-                            break;
-                        default:
-                            const string messageFormat1 = "unexpected aggregate function [{0}]";
-                            throw new InvalidOperationException(string.Format(messageFormat1,
-                                aggregateFunctionNameString));
-                    }
-                    return new AggregateFunction {Type = aggregateFunctionType};
+                        Function = functionName,
+                        Argument = (ISqlElement) argumentNode.AstNode,
+                        IsSelectAll = isSelectAll
+                    };
                 });
         }
 
@@ -400,7 +387,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return joinItemList;
         }
 
-        private NonTerminal OrderClauseOpt(BnfTerm expression)
+        private NonTerminal Having(BnfTerm expression)
+        {
+            return NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression, 
+                node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
+        }
+
+        private NonTerminal OrderBy(BnfTerm expression)
         {
             var orderingExpression = NonTerminal("orderByColumn",
                 expression + NonTerminal("orderingDirection", Empty | "asc" | "desc"),
@@ -440,7 +433,17 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static NonTerminal NonTerminal(string name, BnfExpression rule, Func<ParseTreeNode, object> creator)
         {
-            return new NonTerminal(name, (context, n) => n.AstNode = creator(n))
+            return new NonTerminal(name, (context, n) =>
+            {
+                try
+                {
+                    n.AstNode = creator(n);
+                }
+                catch (Exception e )
+                {
+                    throw new Exception(string.Format("Exception creating ast node from node {0} at location {1}", n, n.Span), e);
+                }
+            })
             {
                 Rule = rule
             };

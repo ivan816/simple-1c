@@ -52,7 +52,14 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);
             if (clause.GroupBy != null)
                 clause.GroupBy = VisitGroupBy(clause.GroupBy);
+            if (clause.Having != null)
+                clause.Having = VisitHaving(clause.Having);
             return clause;
+        }
+
+        public virtual ISqlElement VisitHaving(ISqlElement element)
+        {
+            return Visit(element);
         }
 
         public virtual ISqlElement VisitWhere(ISqlElement filter)
@@ -123,6 +130,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual AggregateFunction VisitAggregateFunction(AggregateFunction expression)
         {
+            if (expression.Argument != null)
+                Visit(expression.Argument);
             return expression;
         }
 

@@ -134,7 +134,6 @@
     <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SubqueryClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunction.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AndExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\BinaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseElement.cs" />
