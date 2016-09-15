@@ -44,7 +44,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     throw new InvalidOperationException("invalid function");
                 return new QueryFunctionExpression
                 {
-                    FunctionName = QueryFunctionName.SqlDateTrunc,
+                    FunctionName = QueryFunctionName.SqlDatePart,
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "quarter"},

@@ -441,7 +441,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 }
                 catch (Exception e )
                 {
-                    throw new Exception(string.Format("Exception creating ast node from node {0} at location {1}", n, n.Span), e);
+                    var message = string.Format("Exception creating ast node from node {0} at location ({1}:{2})",
+                        n, n.Span.Location, n.Span.EndLocation);
+                    throw new Exception(message, e);
                 }
             })
             {
