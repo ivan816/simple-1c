@@ -44,6 +44,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual SelectClause VisitSelect(SelectClause clause)
         {
+            if (clause.Top != null)
+                clause.Top = Visit(clause.Top);
             if (clause.Fields != null)
                 VisitEnumerable(clause.Fields);
             clause.Source = Visit(clause.Source);
@@ -146,6 +148,11 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             orderingElement.Expression = Visit(orderingElement.Expression);
             return orderingElement;
+        }
+
+        public virtual ISqlElement VisitRawSql(RawSqlElement rawSqlElement)
+        {
+            return rawSqlElement;
         }
     }
 }

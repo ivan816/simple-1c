@@ -11,9 +11,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         }
 
         public bool IsSelectAll { get; set; }
+        public bool IsDistinct { get; set; }
         public List<SelectFieldElement> Fields { get; set; }
-        public ISqlElement WhereExpression { get; set; }
+        public ISqlElement Top { get; set; }
         public ISqlElement Source { get; set; }
+        public ISqlElement WhereExpression { get; set; }
         public List<JoinClause> JoinClauses { get; private set; }
         public GroupByClause GroupBy { get; set; }
         public ISqlElement Having { get;set; }

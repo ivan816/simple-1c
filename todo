@@ -15,33 +15,22 @@ todo
 todo sql
 	В order by алиасы резолвить из первого из Union-ов
 
-	НомерДоговора <> """"
-		builder.Append("\r\nunion");
-
 	NumberLiteral
 		1.22 ?
 
-	binOp
-		ToLower
-
 	ColumnReferenceTableNameRewriter
 		запоминать филды в список, remove copypaste
-
-	!TOP N
 
 	TableDeclarationExtractor.VisitJoin ??
 		copypaste иван советует
 
 	CASE
-
-	DISTINCT
 	
 	IS NOT NULL
 
-	()
+	substring -> substring(cast())
 
-	SUM, AVG
-
+	date_trunc = отбрось все что меньше
 	NOT без скобочек
 	
 	prettyfication:

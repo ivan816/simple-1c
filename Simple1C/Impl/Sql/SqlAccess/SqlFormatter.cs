@@ -78,6 +78,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
+            if (clause.Top != null)
+                Visit(clause.Top);
+            if (clause.IsDistinct)
+                builder.AppendFormat(" distinct ");
             if (clause.IsSelectAll)
                 builder.Append("*");
             else
@@ -185,6 +189,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 : expression.Value;
             builder.Append(FormatValueAsString(value));
             return expression;
+        }
+
+        public override ISqlElement VisitRawSql(RawSqlElement rawSqlElement)
+        {
+            builder.AppendFormat(" {0} ", rawSqlElement.Sql);
+            return rawSqlElement;
         }
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)

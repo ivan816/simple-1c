@@ -420,6 +420,21 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(((ColumnReferenceExpression)columnA.Argument).Name, Is.EqualTo("PaymentSum"));
         }
 
+        [Test]
+        public void Top()
+        {
+            var selectClause = ParseSelect("select top 1 * from Payments");
+            Assert.That(selectClause.Top,Is.TypeOf<RawSqlElement>());
+            Assert.That(((RawSqlElement)selectClause.Top).Sql, Is.EqualTo("top 1"));
+        }
+
+        [Test]
+        public void SelectDistinct()
+        {
+            var selectClause = ParseSelect("select distinct * from Payments");
+            Assert.That(selectClause.IsDistinct, Is.True);
+        }
+
         private static SelectClause ParseSelect(string source)
         {
             return Parse(source).GetSingleSelect();

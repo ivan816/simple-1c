@@ -42,12 +42,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 b.AppendLine(string.Format("{0}: {1} at {2} in state {3}", message.Level, message.Message,
                     message.Location, message.ParserState));
 
+                var theMessage = message;
                 var lines = parseTree.SourceText.Replace("\t", new string(' ', tabWidth))
                     .Split(new[] {"\r\n"}, StringSplitOptions.None)
                     .Select((sourceLine, index) =>
-                        index == message.Location.Line
+                        index == theMessage.Location.Line
                             ? string.Format("{0}\r\n{1}|<-Here", sourceLine,
-                                new string('_', message.Location.Column))
+                                new string('_', theMessage.Location.Column))
                             : sourceLine);
                 foreach (var line in lines)
                     b.AppendLine(line);

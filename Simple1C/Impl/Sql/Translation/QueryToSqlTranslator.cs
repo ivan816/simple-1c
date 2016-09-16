@@ -90,8 +90,6 @@ namespace Simple1C.Impl.Sql.Translation
 
                 var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
                 var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
-                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
-                    queryEntityAccessor, areas);
 
                 TableDeclarationVisitor.Visit(selectClause, clause =>
                 {
@@ -99,19 +97,17 @@ namespace Simple1C.Impl.Sql.Translation
                     return clause;
                 });
 
-                var addAreaToJoinConditionVisitor = new AddAreaToJoinConditionVisitor();
-                addAreaToJoinConditionVisitor.Visit(selectClause);
+                new AddAreaToJoinConditionVisitor().Visit(selectClause);
 
-                var referencePatcher = new ColumnReferenceRewriter(queryEntityAccessor);
-                referencePatcher.Visit(selectClause);
+                new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
 
+                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
+                    queryEntityAccessor, areas);
                 TableDeclarationVisitor.Visit(selectClause, tableDeclarationRewriter.Rewrite);
 
-                var valueLiteralRewriter = new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry);
-                valueLiteralRewriter.Visit(selectClause);
+                new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(selectClause);
 
-                var queryFunctionRewriter = new QueryFunctionRewriter();
-                queryFunctionRewriter.Visit(selectClause);
+                new QueryFunctionRewriter().Visit(selectClause);
 
                 return result;
             }

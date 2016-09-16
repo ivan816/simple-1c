@@ -143,6 +143,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\InExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OrderByClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\RawSqlElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\RootClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\TableDeclarationClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\EqualityExpression.cs" />
