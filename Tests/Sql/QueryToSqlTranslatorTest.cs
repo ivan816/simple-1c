@@ -11,7 +11,7 @@ namespace Simple1C.Tests.Sql
 {
     public class QueryToSqlTranslatorTest : TestBase
     {
-        public DateTime? currentDate;
+        private DateTime? currentDate;
 
         protected override void SetUp()
         {
@@ -110,6 +110,19 @@ from (select
 from t1 as __nested_table0) as contracts
 where contracts.__nested_field0 = false";
             CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void EscapeSingleQuotesInStringLiterals()
+        {
+            const string sourceSql = "select * from Справочник.Контрагенты where ИНН <> \"123'456\"";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1";
+            const string expected = @"select
+    *
+from t1
+where c1 <> '123''456'";
+            CheckTranslate(mappings, sourceSql, expected);
         }
 
         [Test]

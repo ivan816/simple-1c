@@ -260,10 +260,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         private static string FormatValueAsString(object value)
         {
-            if (value is string)
-                return "'" + value + "'";
-            if (value is byte[])
-                return "E'\\\\x" + ((byte[]) value).ToHex() + "'";
+            var str = value as string;
+            if (str != null)
+                return "'" + str.Replace("\'", "\'\'") + "'";
+            var bytes = value as byte[];
+            if (bytes != null)
+                return "E'\\\\x" + bytes.ToHex() + "'";
             if (value is DateTime)
                 return "cast('" + ((DateTime) value).ToString("yyyy-MM-dd") + "' as date)";
             if (value is bool)

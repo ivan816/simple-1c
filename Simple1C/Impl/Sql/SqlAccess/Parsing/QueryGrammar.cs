@@ -132,7 +132,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             var stringLiteral = new StringLiteral("string",
                 "\"",
-                StringOptions.AllowsAllEscapes,
+                StringOptions.AllowsAllEscapes | StringOptions.AllowsDoubledQuote,
                 (context, node) => node.AstNode = new LiteralExpression {Value = node.Token.Value});
             var numberLiteral = new NumberLiteral("number", NumberOptions.Default,
                 (context, node) => node.AstNode = new LiteralExpression

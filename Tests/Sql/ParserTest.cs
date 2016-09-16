@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Tests.Helpers;
@@ -280,9 +281,9 @@ order by a1");
         }
         
         [Test]
-        public void StringLiteral()
+        public void StringLiteralWithEscapedQuote()
         {
-            var selectClause = ParseSelect("select a,b from testTable where c != \"1\\\"2\\\"\"");
+            var selectClause = ParseSelect("select a,b from testTable where c != \"ООО \"\"Название в кавычках\"\"\"");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -290,7 +291,7 @@ order by a1");
 
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
-            Assert.That(right.Value, Is.EqualTo("1\"2\""));
+            Assert.That(right.Value, Is.EqualTo("ООО \"Название в кавычках\""));
         }
 
         [Test]
