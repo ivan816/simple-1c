@@ -47,7 +47,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override GroupByClause VisitGroupBy(GroupByClause clause)
         {
             builder.Append("\r\ngroup by ");
-            VisitEnumerable(clause.Columns, ",");
+            VisitEnumerable(clause.Expressions, ",");
             return clause;
         }
 

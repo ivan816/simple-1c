@@ -603,21 +603,6 @@ group by contractors.__nested_field0";
         }
 
         [Test]
-        public void OrderBy_Simple()
-        {
-            const string sourceSql = @"
-select ИНН alias from Справочник.Контрагенты 
-order by alias desc";
-            const string mappings = @"Справочник.Контрагенты counterpartyTable0 Main
-    ИНН Single counterpartyInnColumn";
-            const string expectedResult = @"select
-    counterpartyInnColumn as alias
-from counterpartyTable0
-order by alias desc";
-            CheckTranslate(mappings, sourceSql, expectedResult);
-        }
-
-        [Test]
         public void ManyInstancesOfSameProperty()
         {
             const string sourceSql =
@@ -894,6 +879,48 @@ from documentsTable0
 group by accountingCodeColumn
 having count(idColumn) > 10";
             CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void OrderBy_ColumnName()
+        {
+            var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
+group by СчетУчетаРасчетовСКонтрагентом
+order by count(Номер) desc";
+
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documentsTable0 Main
+    СчетУчетаРасчетовСКонтрагентом Single accountingCodeColumn
+    Номер Single numberColumn";
+
+            const string expected =
+               @"select
+    accountingCodeColumn,
+    count(numberColumn)
+from documentsTable0
+group by accountingCodeColumn
+order by count(numberColumn) desc";
+            CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
+        public void OrderBy_Alias()
+        {
+            var source = @"select СчетУчетаРасчетовСКонтрагентом accCode, count(Номер) docsCount from Документ.ПоступлениеНаРасчетныйСчет
+group by СчетУчетаРасчетовСКонтрагентом
+order by docsCount desc";
+
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documentsTable0 Main
+    СчетУчетаРасчетовСКонтрагентом Single accountingCodeColumn
+    Номер Single numberColumn";
+
+            const string expected =
+               @"select
+    accountingCodeColumn as accCode,
+    count(numberColumn) as docsCount
+from documentsTable0
+group by accountingCodeColumn
+order by docsCount desc";
+            CheckTranslate(mappings, source, expected);
         }
 
         private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)

@@ -110,12 +110,23 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
-        public void GroupBy()
+        public void GroupByColumn()
         {
             var selectClause = ParseSelect("select count(*) from testTable group by c");
             Assert.NotNull(selectClause.GroupBy);
-            Assert.That(selectClause.GroupBy.Columns[0].Name, Is.EqualTo("c"));
-            Assert.That(selectClause.GroupBy.Columns[0].Declaration.Name, Is.EqualTo("testTable"));
+            var columnReference = (ColumnReferenceExpression) selectClause.GroupBy.Expressions[0];
+            Assert.NotNull(columnReference);
+            Assert.That(columnReference.Name, Is.EqualTo("c"));
+            Assert.That(columnReference.Declaration.Name, Is.EqualTo("testTable"));
+        }
+        
+        [Test]
+        public void CanGroupByExpression()
+        {
+            var selectClause = ParseSelect("select count(*) from testTable group by (c+1), presentation(d)");
+            Assert.NotNull(selectClause.GroupBy);
+            Assert.That(selectClause.GroupBy.Expressions[0], Is.TypeOf<BinaryExpression>());
+            Assert.That(selectClause.GroupBy.Expressions[1], Is.TypeOf<QueryFunctionExpression>());
         }
 
         [Test]

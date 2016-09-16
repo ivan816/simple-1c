@@ -23,7 +23,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual GroupByClause VisitGroupBy(GroupByClause clause)
         {
-            VisitEnumerable(clause.Columns);
+            VisitEnumerable(clause.Expressions);
             return clause;
         }
 

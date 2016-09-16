@@ -69,7 +69,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var whereClauseOpt = NonTerminal("whereClauseOpt", null,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
-            var groupClauseOpt = GroupBy(columnRef);
+            var groupClauseOpt = GroupBy(expression);
             var orderClauseOpt = OrderBy(expression);
             var havingClauseOpt = Having(expression);
             var columnItemList = NonTerminal("columnItemList", null);
@@ -201,7 +201,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return expression;
         }
 
-        private NonTerminal GroupBy(NonTerminal columnRef)
+        private NonTerminal GroupBy(NonTerminal expression)
         {
             var groupColumnList = NonTerminal("groupColumnList", null);
             var groupClauseOpt = NonTerminal("groupClauseOpt",
@@ -210,11 +210,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     ? null
                     : new GroupByClause
                     {
-                        Columns = node.ChildNodes[2].Elements()
-                            .Cast<ColumnReferenceExpression>()
+                        Expressions = node.ChildNodes[2].Elements()
+                            .Cast<ISqlElement>()
                             .ToList()
                     });
-            groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), columnRef);
+            groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), expression);
             groupClauseOpt.Rule = Empty | "GROUP" + ToTerm("BY") + groupColumnList;
             return groupClauseOpt;
         }
