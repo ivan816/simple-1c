@@ -47,7 +47,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             {
                 var astNode = n.ChildNodes[0].AstNode;
                 var aliasNodes = n.ChildNodes[1].ChildNodes;
-                return new SelectFieldElement
+                return new SelectFieldExpression
                 {
                     Expression = (ISqlElement) astNode,
                     Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
@@ -189,8 +189,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             term.Rule = boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral | parExpr;
             expression.Rule = term | binExpr | inExpr | queryFunctionExpr | aggregate | isNullExpression;
+            
             isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
             isNullExpression.Rule = term + isNull;
+
             parExpr.Rule = ToTerm("(") + expression + ToTerm(")");
             binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
@@ -342,7 +344,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Source = elements.OfType<TableDeclarationClause>().Single()
             };
 
-            var selectColumns = elements.OfType<SelectFieldElement>().ToArray();
+            var selectColumns = elements.OfType<SelectFieldExpression>().ToArray();
             if (selectColumns.Length == 0)
             {
                 result.IsSelectAll = true;
@@ -350,8 +352,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
             else
                 result.Fields.AddRange(selectColumns);
-            var topSql = n.ChildNodes[1].ChildNodes.Select(c => c.Token.ValueString).JoinStrings(" ");
-            result.Top = !string.IsNullOrEmpty(topSql) ? new RawSqlElement {Sql = topSql} : null;
+            var topNode = n.ChildNodes[1].ChildNodes.ElementAtOrDefault(1);
+            result.Top = topNode != null && topNode.Token != null ? int.Parse(topNode.Token.ValueString) : (int?) null;
             result.IsDistinct = n.ChildNodes[2].ChildNodes.Any();
             result.JoinClauses.AddRange(elements.OfType<JoinClause>());
             result.WhereExpression = (ISqlElement) n.ChildNodes[6].AstNode;
@@ -360,14 +362,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return result;
         }
 
-        private static AggregateFunction ToAggregateFunction(ParseTreeNode node)
+        private static AggregateFunctionExpression ToAggregateFunction(ParseTreeNode node)
         {
             var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
             var argumentNode = node.ChildNodes[1].ChildNodes[0];
             var isSelectAll = argumentNode.Token != null && argumentNode.Token.ValueString.Equals("*");
             if (!isSelectAll && argumentNode.AstNode == null)
                 throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
-            return new AggregateFunction
+            return new AggregateFunctionExpression
             {
                 Function = functionName,
                 Argument = (ISqlElement) argumentNode.AstNode,
@@ -401,8 +403,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static IsNullExpression ToIsNullExpression(ParseTreeNode arg)
         {
-            var trash = arg.ChildNodes[1].ChildNodes[1];
-            var notToken = trash.ChildNodes.Any() ? trash.ChildNodes[0].Token : null;
+            var notNode = arg.ChildNodes[1].ChildNodes[1];
+            var notToken = notNode.ChildNodes.Any() ? notNode.ChildNodes[0].Token : null;
             return new IsNullExpression
             {
                 Argument = (ISqlElement) arg.ChildNodes[0].AstNode,

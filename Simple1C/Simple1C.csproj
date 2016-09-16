@@ -133,7 +133,7 @@
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SubqueryClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunction.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AndExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\BinaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseElement.cs" />
@@ -144,7 +144,6 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\IsNullExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OrderByClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\RawSqlElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\RootClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\TableDeclarationClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\EqualityExpression.cs" />
@@ -153,7 +152,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\LiteralExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldElement.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />

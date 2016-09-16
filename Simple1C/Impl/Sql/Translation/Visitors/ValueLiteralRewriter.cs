@@ -1,4 +1,4 @@
-using Simple1C.Impl.Sql.SqlAccess;
+﻿using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
 
@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             var enumValueItems = expression.ObjectName.Split('.');
             var table = queryEntityRegistry.CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
             var selectClause = new SelectClause {Source = queryEntityAccessor.GetTableDeclaration(table)};
-            selectClause.Fields.Add(new SelectFieldElement
+            selectClause.Fields.Add(new SelectFieldExpression
             {
                 Expression = new ColumnReferenceExpression
                 {

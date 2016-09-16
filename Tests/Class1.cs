@@ -12,6 +12,9 @@ namespace Simple1C.Tests
 {
     internal class Class1 : TestBase
     {
+        private static readonly Regex nowMacroRegex = new Regex(@"&Now",
+           RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
         private static readonly Dictionary<string, string> keywordsMap =
           new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
             {
@@ -38,6 +41,7 @@ namespace Simple1C.Tests
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         [Test]
+        [Ignore("")]
         public void Test1()
         {
             var inputs = Directory.GetFiles("C:\\Users\\mskr\\Desktop\\queries")
@@ -49,7 +53,11 @@ namespace Simple1C.Tests
             {
                 try
                 {
-                    queryParser.Parse(keywordsRegex.Replace(input, m => keywordsMap[m.Groups[1].Value]));
+                    var source = input;
+                    var currentDateString = string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", DateTime.Today);
+                    source = nowMacroRegex.Replace(source, currentDateString);
+                    source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
+                    queryParser.Parse(source);
                     Console.WriteLine("ok");
                 }
                 catch (Exception e)

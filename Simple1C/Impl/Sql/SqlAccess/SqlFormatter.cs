@@ -32,7 +32,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return result;
         }
 
-        public override AggregateFunction VisitAggregateFunction(AggregateFunction expression)
+        public override AggregateFunctionExpression VisitAggregateFunction(AggregateFunctionExpression expression)
         {
             builder.Append(expression.Function.ToLower());
             builder.Append("(");
@@ -79,7 +79,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             builder.Append("select\r\n\t");
             if (clause.Top != null)
-                Visit(clause.Top);
+                builder.AppendFormat("top {0} ", clause.Top.Value);
             if (clause.IsDistinct)
                 builder.AppendFormat(" distinct ");
             if (clause.IsSelectAll)
@@ -108,7 +108,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public override SelectFieldElement VisitSelectField(SelectFieldElement clause)
+        public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
         {
             Visit(clause.Expression);
             WriteAlias(clause.Alias);
@@ -189,12 +189,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 : expression.Value;
             builder.Append(FormatValueAsString(value));
             return expression;
-        }
-
-        public override ISqlElement VisitRawSql(RawSqlElement sqlElement)
-        {
-            builder.AppendFormat(" {0} ", sqlElement.Sql);
-            return sqlElement;
         }
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)

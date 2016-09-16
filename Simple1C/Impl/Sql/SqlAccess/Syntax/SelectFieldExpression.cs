@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SelectFieldElement : ISqlElement
+    internal class SelectFieldExpression : ISqlElement
     {
         public ISqlElement Expression { get; set; }
         public string Alias { get; set; }

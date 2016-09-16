@@ -33,7 +33,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             currentPart = oldPart;
         }
 
-        public override SelectFieldElement VisitSelectField(SelectFieldElement clause)
+        public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
         {
             WithCurrentPart(SelectPart.Select, () => base.VisitSelectField(clause));
             return clause;

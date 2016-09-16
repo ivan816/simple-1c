@@ -44,8 +44,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public virtual SelectClause VisitSelect(SelectClause clause)
         {
-            if (clause.Top != null)
-                clause.Top = Visit(clause.Top);
             if (clause.Fields != null)
                 VisitEnumerable(clause.Fields);
             clause.Source = Visit(clause.Source);
@@ -59,17 +57,19 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
+        //TODO. this trash is only because of selectParts
         public virtual ISqlElement VisitHaving(ISqlElement element)
         {
             return Visit(element);
         }
 
+        //TODO. this trash is only because of selectParts
         public virtual ISqlElement VisitWhere(ISqlElement filter)
         {
             return Visit(filter);
         }
 
-        public virtual SelectFieldElement VisitSelectField(SelectFieldElement clause)
+        public virtual SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
         {
             clause.Expression = Visit(clause.Expression);
             return clause;
@@ -130,7 +130,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public virtual AggregateFunction VisitAggregateFunction(AggregateFunction expression)
+        public virtual AggregateFunctionExpression VisitAggregateFunction(AggregateFunctionExpression expression)
         {
             if (expression.Argument != null)
                 Visit(expression.Argument);
@@ -148,11 +148,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             orderingElement.Expression = Visit(orderingElement.Expression);
             return orderingElement;
-        }
-
-        public virtual ISqlElement VisitRawSql(RawSqlElement sqlElement)
-        {
-            return sqlElement;
         }
 
         public virtual ISqlElement VisitIsNullExpression(IsNullExpression expression)

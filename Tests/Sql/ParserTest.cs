@@ -141,11 +141,11 @@ namespace Simple1C.Tests.Sql
             Assert.That(havingClause, Is.TypeOf<BinaryExpression>());
 
             var left = ((BinaryExpression)havingClause).Left;
-            Assert.That(left, Is.TypeOf<AggregateFunction>());
+            Assert.That(left, Is.TypeOf<AggregateFunctionExpression>());
             Assert.That(((BinaryExpression)havingClause).Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
 
-            Assert.That(((AggregateFunction)left).Function, Is.EqualTo("Count").IgnoreCase);
-            Assert.That(((AggregateFunction)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(((AggregateFunctionExpression)left).Function, Is.EqualTo("Count").IgnoreCase);
+            Assert.That(((AggregateFunctionExpression)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
 
             var right = ((BinaryExpression)havingClause).Right;
             Assert.That(right, Is.TypeOf<LiteralExpression>());
@@ -401,8 +401,8 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         public void AggregateWithWildcard()
         {
             var selectClause = ParseSelect("select count(*) as a, Sum(*) AS b from testTable");
-            var columnA = selectClause.Fields[0].Expression as AggregateFunction;
-            var columnB = selectClause.Fields[1].Expression as AggregateFunction;
+            var columnA = selectClause.Fields[0].Expression as AggregateFunctionExpression;
+            var columnB = selectClause.Fields[1].Expression as AggregateFunctionExpression;
             Assert.NotNull(columnA);
             Assert.That(columnA.Function, Is.EqualTo("Count").IgnoreCase);
             Assert.That(columnA.IsSelectAll, Is.True);
@@ -415,7 +415,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         public void AggregateWithColumn()
         {
             var selectClause = ParseSelect("select sum(PaymentSum) from Payments");
-            var columnA = selectClause.Fields[0].Expression as AggregateFunction;
+            var columnA = selectClause.Fields[0].Expression as AggregateFunctionExpression;
             Assert.NotNull(columnA);
             Assert.That(columnA.Function, Is.EqualTo("Sum").IgnoreCase);
             Assert.That(columnA.Argument, Is.TypeOf<ColumnReferenceExpression>());
@@ -425,9 +425,8 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void Top()
         {
-            var selectClause = ParseSelect("select top 1 * from Payments");
-            Assert.That(selectClause.Top,Is.TypeOf<RawSqlElement>());
-            Assert.That(((RawSqlElement)selectClause.Top).Sql, Is.EqualTo("top 1"));
+            Assert.That(ParseSelect("select top 1 * from Payments").Top, Is.EqualTo(1));
+            Assert.That(ParseSelect("select * from Payments").Top, Is.Null);
         }
 
         [Test]

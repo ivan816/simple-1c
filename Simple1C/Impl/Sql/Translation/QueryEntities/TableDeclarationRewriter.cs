@@ -123,7 +123,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         FunctionName = QueryFunctionName.SqlNot,
                         Arguments = new List<ISqlElement> { expression }
                     };
-                target.Fields.Add(new SelectFieldElement
+                target.Fields.Add(new SelectFieldExpression
                 {
                     Expression = expression,
                     Alias = f.alias

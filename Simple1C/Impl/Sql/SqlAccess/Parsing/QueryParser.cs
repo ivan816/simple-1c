@@ -53,7 +53,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 foreach (var line in lines)
                     b.AppendLine(line);
             }
-            throw new InvalidOperationException(string.Format("parse errors\r\n:{0}", b));
+            return string.Format("parse errors\r\n:{0}", b);
         }
     }
 }

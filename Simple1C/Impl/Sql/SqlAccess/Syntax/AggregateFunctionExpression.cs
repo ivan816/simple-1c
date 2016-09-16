@@ -1,6 +1,6 @@
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class AggregateFunction : ISqlElement
+    internal class AggregateFunctionExpression : ISqlElement
     {
         public string Function { get; set; }
         public ISqlElement Argument { get; set; }
