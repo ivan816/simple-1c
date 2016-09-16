@@ -618,32 +618,6 @@ order by alias desc";
         }
 
         [Test]
-        public void OrderByWithUnion_ResolveOrderingColumnFromFirstUnionClause()
-        {
-            const string sourceSql = @"
-select ИНН from Справочник.Контрагенты 
-union select ИНН from Справочник.ФизическиеЛица
-order by ИНН desc";
-            const string mappings = @"Справочник.Контрагенты counterpartyTable0 Main
-    ИНН Single counterpartyInnColumn
-Справочник.ФизическиеЛица physicTable1 Main
-    ИНН Single physicInnColumn";
-            const string expectedResult = @"select counterpartyInnColumn from counterpartyTable0
-
-union
-
-select physicInnColumn from physicTable1
-order by contractorInnColumn desc";
-            CheckTranslate(mappings, sourceSql, expectedResult);
-        }
-
-        [Test]
-        public void OrderByEnumValue()
-        {
-            Assert.Fail("Если хотим поддержать order by (колонка с енумом), то нужно заджойнить на енум и смотреть на порядок");
-        }
-
-        [Test]
         public void ManyInstancesOfSameProperty()
         {
             const string sourceSql =

@@ -12,6 +12,8 @@ namespace Simple1C.Tests.Sql
         public void Simple()
         {
             var selectClause = ParseSelect("select a,b from testTable");
+            Assert.That(selectClause.IsDistinct, Is.False);
+            Assert.That(selectClause.Top, Is.Null);
             Assert.That(selectClause.Fields.Count, Is.EqualTo(2));
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
@@ -433,6 +435,23 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         {
             var selectClause = ParseSelect("select distinct * from Payments");
             Assert.That(selectClause.IsDistinct, Is.True);
+        }
+
+        [Test]
+        public void FilterByNullCondition()
+        {
+            var selectWhereNull = ParseSelect("select * from Payments where Contractor is null");
+            var selectNotNull = ParseSelect("select * from Payments where Contractor is not null");
+            
+            var isNullExpression = selectWhereNull.WhereExpression as IsNullExpression;
+            Assert.NotNull(isNullExpression);
+            Assert.That(isNullExpression.Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(isNullExpression.IsNotNull, Is.False);
+
+            var notNullExpression = selectNotNull.WhereExpression as IsNullExpression;
+            Assert.NotNull(notNullExpression);
+            Assert.That(notNullExpression.Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(notNullExpression.IsNotNull, Is.True);
         }
 
         private static SelectClause ParseSelect(string source)

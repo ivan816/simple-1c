@@ -142,6 +142,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\GroupByClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\InExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\IsNullExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OrderByClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\RawSqlElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\RootClause.cs" />

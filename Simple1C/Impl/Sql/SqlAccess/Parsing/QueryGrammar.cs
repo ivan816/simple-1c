@@ -171,6 +171,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var aggregateArg = NonTerminal("aggregateArg", null);
             var aggregateName = NonTerminal("aggregateName", null);
             var aggregate = NonTerminal("aggregate", null, ToAggregateFunction);
+            var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
+            var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
           
             var expression = NonTerminal("expression", null, n => n.ChildNodes[0].AstNode);
             expression.SetFlag(TermFlags.IsTransient);
@@ -186,7 +188,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             aggregate.Rule = aggregateName + "(" + aggregateArg + ")";
 
             term.Rule = boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral | parExpr;
-            expression.Rule = term | binExpr | inExpr | queryFunctionExpr | aggregate;
+            expression.Rule = term | binExpr | inExpr | queryFunctionExpr | aggregate | isNullExpression;
+            isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
+            isNullExpression.Rule = term + isNull;
             parExpr.Rule = ToTerm("(") + expression + ToTerm(")");
             binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
@@ -215,7 +219,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private NonTerminal RootElement(NonTerminal selectStatement, NonTerminal orderClauseOpt)
         {
-            var unionStmtOpt = NonTerminal("unionStmt", null, delegate(ParseTreeNode node)
+            var unionStmtOpt = NonTerminal<UnionType?>("unionStmt", null, delegate(ParseTreeNode node)
             {
                 if (node.ChildNodes.Count == 0)
                     return null;
@@ -330,7 +334,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     });
         }
 
-        private static object ToSelectClause(ParseTreeNode n)
+        private static SelectClause ToSelectClause(ParseTreeNode n)
         {
             var elements = n.Elements();
             var result = new SelectClause
@@ -356,7 +360,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return result;
         }
 
-        private static object ToAggregateFunction(ParseTreeNode node)
+        private static AggregateFunction ToAggregateFunction(ParseTreeNode node)
         {
             var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
             var argumentNode = node.ChildNodes[1].ChildNodes[0];
@@ -371,7 +375,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             };
         }
 
-        private static object ToBinaryExpression(ParseTreeNode node)
+        private static BinaryExpression ToBinaryExpression(ParseTreeNode node)
         {
             var left = (ISqlElement)node.ChildNodes[0].AstNode;
             var binaryOperator = (SqlBinaryOperator)node.ChildNodes[1].AstNode;
@@ -395,7 +399,18 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             };
         }
 
-        private static object ToBinaryOperator(ParseTreeNode node)
+        private static IsNullExpression ToIsNullExpression(ParseTreeNode arg)
+        {
+            var trash = arg.ChildNodes[1].ChildNodes[1];
+            var notToken = trash.ChildNodes.Any() ? trash.ChildNodes[0].Token : null;
+            return new IsNullExpression
+            {
+                Argument = (ISqlElement) arg.ChildNodes[0].AstNode,
+                IsNotNull = notToken != null && notToken.ValueString.EqualsIgnoringCase("not")
+            };
+        }
+
+        private static SqlBinaryOperator ToBinaryOperator(ParseTreeNode node)
         {
             var operatorText1 = node.ChildNodes[0].Token.ValueString;
             switch (operatorText1.ToLower())
@@ -429,7 +444,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
         }
 
-        private static object ToQueryFunctionName(ParseTreeNode node)
+        private static QueryFunctionName ToQueryFunctionName(ParseTreeNode node)
         {
             var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
             switch (queryFunctionNameString.ToLower())
@@ -450,15 +465,17 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
         }
 
-        private static NonTerminal NonTerminal(string name, BnfExpression rule)
+        private static NonTerminal NonTerminal(string name, BnfExpression rule, TermFlags flags = TermFlags.None)
         {
-            return NonTerminal(name, rule, n => new ElementsHolder
+            var nonTerminal = NonTerminal(name, rule, n => new ElementsHolder
             {
                 Elements = n.Elements()
             });
+            nonTerminal.SetFlag(flags);
+            return nonTerminal;
         }
 
-        private static NonTerminal NonTerminal(string name, BnfExpression rule, Func<ParseTreeNode, object> creator)
+        private static NonTerminal NonTerminal<T>(string name, BnfExpression rule, Func<ParseTreeNode, T> creator)
         {
             return new NonTerminal(name, (context, n) =>
             {

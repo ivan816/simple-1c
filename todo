@@ -13,7 +13,6 @@ todo
    	* объединить логику получения метаданных в генераторе и в MetadataAccessor-е
 
 todo sql
-	В order by алиасы резолвить из первого из Union-ов
 
 	NumberLiteral
 		1.22 ?
@@ -25,15 +24,16 @@ todo sql
 		copypaste иван советует
 
 	CASE
-	
-	IS NOT NULL
 
-	substring -> substring(cast())
-
-	date_trunc = отбрось все что меньше
 	NOT без скобочек
-	
-	prettyfication:
-		make star (select *) ISQLElement?
-		kill SelectPart, make select list of parts, explicitly generate join instead of ПРЕДСТАВЛЕНИЕ for enums?
-		kill useless enums for functions/ joins?
+
+	substring -> substring(cast()). проверить что работает в postgres. 1с юзает дурацкий custom char mvarchar.
+
+	поддержать НачалоПериода -> date_trunc = отбрось все что меньше
+
+	В order by алиасы резолвить из первого из Union-ов
+
+	order by по колонке с енумом -> нужен join
+
+	поддержать (функция или выражение) is not null ??
+

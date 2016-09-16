@@ -191,10 +191,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
-        public override ISqlElement VisitRawSql(RawSqlElement rawSqlElement)
+        public override ISqlElement VisitRawSql(RawSqlElement sqlElement)
         {
-            builder.AppendFormat(" {0} ", rawSqlElement.Sql);
-            return rawSqlElement;
+            builder.AppendFormat(" {0} ", sqlElement.Sql);
+            return sqlElement;
         }
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
@@ -225,6 +225,16 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public override ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
         {
             NotSupported(expression, expression.ObjectName);
+            return expression;
+        }
+
+        public override ISqlElement VisitIsNullExpression(IsNullExpression expression)
+        {
+            Visit(expression.Argument);
+            builder.Append(" is ");
+            if (expression.IsNotNull)
+                builder.Append("not ");
+            builder.Append("null");
             return expression;
         }
 

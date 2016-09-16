@@ -150,9 +150,15 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return orderingElement;
         }
 
-        public virtual ISqlElement VisitRawSql(RawSqlElement rawSqlElement)
+        public virtual ISqlElement VisitRawSql(RawSqlElement sqlElement)
         {
-            return rawSqlElement;
+            return sqlElement;
+        }
+
+        public virtual ISqlElement VisitIsNullExpression(IsNullExpression expression)
+        {
+            expression.Argument = Visit(expression.Argument);
+            return expression;
         }
     }
 }
