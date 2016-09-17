@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using Simple1C.Impl.Sql.Translation;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class RootClause : ISqlElement
+    internal class SqlQuery : ISqlElement
     {
-        public RootClause()
+        public SqlQuery()
         {
             Unions = new List<UnionClause>();
         }
@@ -16,7 +17,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public ISqlElement Accept(SqlVisitor visitor)
         {
-            return visitor.VisitRoot(this);
+            return visitor.VisitSqlQuery(this);
         }
 
         public SelectClause GetSingleSelect()

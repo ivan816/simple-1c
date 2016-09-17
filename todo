@@ -14,9 +14,6 @@ todo
 
 todo sql
 
-	NumberLiteral
-		1.22 ?
-
 	ColumnReferenceTableNameRewriter
 		запоминать филды в список, remove copypaste
 

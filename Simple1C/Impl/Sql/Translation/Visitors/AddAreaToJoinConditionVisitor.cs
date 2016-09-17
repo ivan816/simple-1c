@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class AddAreaToJoinConditionVisitor : SingleSelectSqlVisitorBase
+    internal class AddAreaToJoinConditionVisitor : SingleQuerySqlVisitorBase
     {
         private TableDeclarationClause mainTable;
 
@@ -16,12 +16,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Left = new ColumnReferenceExpression
                     {
                         Name = "ОбластьДанныхОсновныеДанные",
-                        Declaration = mainTable
+                        Table = mainTable
                     },
                     Right = new ColumnReferenceExpression
                     {
                         Name = "ОбластьДанныхОсновныеДанные",
-                        Declaration = joinTable
+                        Table = joinTable
                     }
                 },
                 Right = clause.Condition

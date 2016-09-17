@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
@@ -42,15 +41,15 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Column = new ColumnReferenceExpression
                     {
                         Name = queryRoot.entity.GetAreaColumnName(),
-                        Declaration = (TableDeclarationClause)selectClause.Source
+                        Table = (TableDeclarationClause)selectClause.Source
                     },
-                    Values = areas
+                    Source = new ListExpression {Elements = areas}
                 };
             AddJoinClauses(queryRoot.entity, selectClause);
             AddColumns(queryRoot, selectClause);
             return new SubqueryClause
             {
-                SelectClause = selectClause,
+                Query = new SqlQuery {Unions = {new UnionClause {SelectClause = selectClause}}},
                 Alias = declaration.GetRefName()
             };
         }
@@ -69,12 +68,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                             Left = new ColumnReferenceExpression
                             {
                                 Name = nestedEntity.GetAreaColumnName(),
-                                Declaration = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                                Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
                             },
                             Right = new ColumnReferenceExpression
                             {
                                 Name = p.referer.GetAreaColumnName(),
-                                Declaration = queryEntityAccessor.GetTableDeclaration(p.referer)
+                                Table = queryEntityAccessor.GetTableDeclaration(p.referer)
                             }
                         });
                     if (p.mapping.UnionLayout != null)
@@ -93,12 +92,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         Left = new ColumnReferenceExpression
                         {
                             Name = nestedEntity.GetIdColumnName(),
-                            Declaration = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                            Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = referenceColumnName,
-                            Declaration = queryEntityAccessor.GetTableDeclaration(p.referer)
+                            Table = queryEntityAccessor.GetTableDeclaration(p.referer)
                         }
                     });
                     var joinClause = new JoinClause
@@ -167,13 +166,13 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    Declaration = (TableDeclarationClause)enumMappingsJoinClause.Source
+                    Table = (TableDeclarationClause)enumMappingsJoinClause.Source
                 };
             }
             return new ColumnReferenceExpression
             {
                 Name = property.GetDbColumnName(),
-                Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                Table = queryEntityAccessor.GetTableDeclaration(property.referer)
             };
         }
 
@@ -225,7 +224,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Left = new ColumnReferenceExpression
                     {
                         Name = typeColumnName,
-                        Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {
@@ -238,7 +237,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Left = new ColumnReferenceExpression
                     {
                         Name = tableIndexColumnName,
-                        Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {

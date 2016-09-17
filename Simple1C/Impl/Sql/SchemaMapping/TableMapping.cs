@@ -67,14 +67,9 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             return byPropertyName.ContainsKey(queryName);
         }
 
-        public PropertyMapping GetByPropertyNameOrNull(string queryName)
-        {
-            return byPropertyName.GetOrDefault(queryName);
-        }
-
         public PropertyMapping GetByPropertyName(string queryName)
         {
-            var result = GetByPropertyNameOrNull(queryName);
+            var result = byPropertyName.GetOrDefault(queryName);
             if (result != null)
                 return result;
             const string messagFormat = "can't find field [{0}] for table [{1}]";

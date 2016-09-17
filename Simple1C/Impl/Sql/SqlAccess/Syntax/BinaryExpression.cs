@@ -1,3 +1,5 @@
+using Simple1C.Impl.Sql.Translation;
+
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class BinaryExpression : ISqlElement

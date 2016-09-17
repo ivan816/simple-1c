@@ -4,7 +4,6 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SchemaMapping;
-using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
@@ -54,7 +53,7 @@ namespace Simple1C.Impl.Sql.Translation
                     .ToList();
         }
 
-        public DateTime? CurrentDate { get; set; }
+        public DateTime? CurrentDate { private get; set; }
 
         public string Translate(string source)
         {
@@ -84,13 +83,12 @@ namespace Simple1C.Impl.Sql.Translation
                 this.areas = areas;
             }
 
-            public override SelectClause VisitSelect(SelectClause selectClause)
+            public override SqlQuery VisitSqlQuery(SqlQuery selectClause)
             {
-                var result = base.VisitSelect(selectClause);
+                var result = base.VisitSqlQuery(selectClause);
 
                 var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
                 var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
-
                 TableDeclarationVisitor.Visit(selectClause, clause =>
                 {
                     queryEntityRegistry.Register(clause);
@@ -101,8 +99,7 @@ namespace Simple1C.Impl.Sql.Translation
 
                 new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
 
-                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
-                    queryEntityAccessor, areas);
+                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry, queryEntityAccessor, areas);
                 TableDeclarationVisitor.Visit(selectClause, tableDeclarationRewriter.Rewrite);
 
                 new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(selectClause);

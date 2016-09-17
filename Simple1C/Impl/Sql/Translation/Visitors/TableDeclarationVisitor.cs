@@ -3,11 +3,11 @@ using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class TableDeclarationVisitor : SingleSelectSqlVisitorBase
+    internal class TableDeclarationVisitor : SingleQuerySqlVisitorBase
     {
         private readonly Func<TableDeclarationClause, ISqlElement> visit;
 
-        public static void Visit(SelectClause selectClause, Func<TableDeclarationClause, ISqlElement> visit)
+        public static void Visit(ISqlElement selectClause, Func<TableDeclarationClause, ISqlElement> visit)
         {
             var visitor = new TableDeclarationVisitor(visit);
             visitor.Visit(selectClause);

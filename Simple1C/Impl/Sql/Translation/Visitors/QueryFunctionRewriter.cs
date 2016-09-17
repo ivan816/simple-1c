@@ -4,7 +4,7 @@ using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class QueryFunctionRewriter : SingleSelectSqlVisitorBase
+    internal class QueryFunctionRewriter : SingleQuerySqlVisitorBase
     {
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {

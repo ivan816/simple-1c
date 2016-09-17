@@ -175,25 +175,25 @@ where contractors.c1 = 'test-inn1'
 union all
 
 select
-    contractors.__nested_field0 as Type
+    contractors.__nested_field1 as Type
 from (select
-    __nested_table2.enumValueName as __nested_field0,
-    __nested_table0.c1
-from t1 as __nested_table0
-left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
-left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+    __nested_table5.enumValueName as __nested_field1,
+    __nested_table3.c1
+from t1 as __nested_table3
+left join t2 as __nested_table4 on __nested_table4.c3 = __nested_table3.c2
+left join simple1c__enumMappings as __nested_table5 on __nested_table5.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table5.orderIndex = __nested_table4.c4) as contractors
 where contractors.c1 = 'test-inn2'
 
 union
 
 select
-    contractors.__nested_field0 as Type
+    contractors.__nested_field2 as Type
 from (select
-    __nested_table2.enumValueName as __nested_field0,
-    __nested_table0.c1
-from t1 as __nested_table0
-left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
-left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+    __nested_table8.enumValueName as __nested_field2,
+    __nested_table6.c1
+from t1 as __nested_table6
+left join t2 as __nested_table7 on __nested_table7.c3 = __nested_table6.c2
+left join simple1c__enumMappings as __nested_table8 on __nested_table8.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table8.orderIndex = __nested_table7.c4) as contractors
 where contractors.c1 = 'test-inn3'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -397,7 +397,7 @@ where contractors.c2 = 'test-name'";
         }
 
         [Test]
-        public void Nested()
+        public void RewriteNestedPropertyAccessToJoin()
         {
             const string sourceSql = @"select contracts.наименование, contracts.владелец.ИНН as ContractorInn
 from справочник.ДоговорыКонтрагентов as contracts";
@@ -882,7 +882,7 @@ having count(idColumn) > 10";
         }
 
         [Test]
-        public void OrderBy_ColumnName()
+        public void OrderBy_Simple()
         {
             var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
 group by СчетУчетаРасчетовСКонтрагентом
@@ -903,24 +903,65 @@ order by count(numberColumn) desc";
         }
 
         [Test]
-        public void OrderBy_Alias()
+        public void SelectFromSubquery()
         {
-            var source = @"select СчетУчетаРасчетовСКонтрагентом accCode, count(Номер) docsCount from Документ.ПоступлениеНаРасчетныйСчет
-group by СчетУчетаРасчетовСКонтрагентом
-order by docsCount desc";
+            const string source = "select ИНН, Наименование from (select ИНН, Наименование as naim_alias from Справочник.Контрагенты) t0";
 
-            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documentsTable0 Main
-    СчетУчетаРасчетовСКонтрагентом Single accountingCodeColumn
-    Номер Single numberColumn";
+            const string mappings = @"Справочник.Контрагенты contractors0 Main
+    ИНН Single inn
+    Наименование Single name";
 
             const string expected =
                @"select
-    accountingCodeColumn as accCode,
-    count(numberColumn) as docsCount
-from documentsTable0
-group by accountingCodeColumn
-order by docsCount desc";
+    ИНН,
+    naim_alias
+from (select inn, name from contractors0) t0";
             CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
+        public void UseSubqueryInFilterExpression()
+        {
+            const string source = @"select * from Документ.ПоступлениеНаРасчетныйСчет 
+                            where ИННКонтрагента in (select ИНН from Справочник.Контрагенты where ИННВведенКорректно = true)";
+            const string mappings = @"Справочник.Контрагенты contractors0 Main
+    ИНН Single inn
+    ИННВведенКорректно Single innIsCorrect
+Документ.ПоступлениеНаРасчетныйСчет documents1 Main
+    ИННКонтрагента Single contractorInn";
+
+            const string expected = @"select
+    *
+from documents1
+where contractorInn in (select
+    inn
+from contractors0
+where innIsCorrect = true)";
+            CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
+        public void SubqueryRefersToOuterTable()
+        {
+            var source = @"select Номер from Документ.ПоступлениеНаРасчетныйСчет dOuter 
+    where СуммаДокумента in 
+    (select СуммаДокумента from Документ.ПоступлениеНаРасчетныйСчет where Номер <> dOuter.Номер)";
+
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
+    Номер Single number
+    СуммаДокумента Single sum";
+
+            string expected = @"select 
+    number 
+from documents0 dOuter
+where sum in (select sum from documents0 where number <> dOuter.number)";
+            CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
+        public void SubqueryUsesNestedPropertyOfOuterTable()
+        {
+            Assert.Fail("");
         }
 
         private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
@@ -955,7 +996,7 @@ order by docsCount desc";
                 StringComparer.OrdinalIgnoreCase));
         }
 
-        internal class InMemoryMappingStore : IMappingSource
+        private class InMemoryMappingStore : IMappingSource
         {
             private readonly Dictionary<string, TableMapping> mappings;
 
@@ -966,7 +1007,10 @@ order by docsCount desc";
 
             public TableMapping ResolveTable(string queryName)
             {
-                return mappings[queryName];
+                TableMapping mapping;
+                if (mappings.TryGetValue(queryName, out mapping))
+                    return mapping;
+                throw new InvalidOperationException(string.Format("Could not find mapping by name {0}", queryName));
             }
         }
     }

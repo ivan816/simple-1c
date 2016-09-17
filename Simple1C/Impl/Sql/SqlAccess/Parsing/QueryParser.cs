@@ -24,13 +24,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             parser = new Parser(languageData);
         }
 
-        public RootClause Parse(string source)
+        public SqlQuery Parse(string source)
         {
             var parseTree = parser.Parse(source);
             if (parseTree.Status != ParseTreeStatus.Parsed)
                 throw new InvalidOperationException(FormatErrors(parseTree, parser.Context.TabWidth));
-            var result = (RootClause) parseTree.Root.AstNode;
-            new ColumnReferenceTableNameRewriter().Visit(result);
+            var result = (SqlQuery) parseTree.Root.AstNode;
+            new ColumnReferenceTableNameResolver().Visit(result);
             return result;
         }
 

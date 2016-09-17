@@ -4,7 +4,7 @@ using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class ColumnReferenceRewriter : SingleSelectSqlVisitorBase
+    internal class ColumnReferenceRewriter : SingleQuerySqlVisitorBase
     {
         private readonly QueryEntityAccessor queryEntityAccessor;
         private bool isPresentation;
@@ -17,6 +17,8 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
+            if (expression.Table is SubqueryClause)
+                return expression;
             if (!currentPart.HasValue)
                 throw new InvalidOperationException("assertion failure");
             var queryField = queryEntityAccessor.GetOrCreateQueryField(expression,

@@ -5,7 +5,7 @@ using System.Text;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.SqlAccess
+namespace Simple1C.Impl.Sql.Translation
 {
     internal class SqlFormatter : SqlVisitor
     {
@@ -65,11 +65,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return orderingElement;
         }
 
-
-        public override ISqlElement VisitSubquery(SubqueryClause clause)
+        public override SubqueryClause VisitSubquery(SubqueryClause clause)
         {
             builder.Append("(");
-            Visit(clause.SelectClause);
+            Visit(clause.Query);
             builder.Append(")");
             WriteAlias(clause.Alias);
             return clause;
@@ -146,9 +145,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
-            if (!string.IsNullOrEmpty(expression.Declaration.Alias))
+            var alias = expression.Table.Alias;
+            if (!string.IsNullOrEmpty(alias))
             {
-                builder.Append(expression.Declaration.Alias);
+                builder.Append(alias);
                 builder.Append(".");
             }
             builder.Append(expression.Name);
@@ -166,9 +166,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             Visit(expression.Column);
             builder.Append(" in ");
-            builder.Append('(');
-            VisitEnumerable(expression.Values, ",");
-            builder.Append(')');
+            Visit(expression.Source);
             return expression;
         }
 
@@ -198,6 +196,14 @@ namespace Simple1C.Impl.Sql.SqlAccess
             VisitEnumerable(expression.Arguments, ",");
             builder.Append(')');
             return expression;
+        }
+
+        public override ISqlElement VisitList(ListExpression listExpression)
+        {
+            builder.Append('(');
+            VisitEnumerable(listExpression.Elements, ",");
+            builder.Append(')');
+            return listExpression;
         }
 
         private static string FormatQueryFunctionName(QueryFunctionName name)

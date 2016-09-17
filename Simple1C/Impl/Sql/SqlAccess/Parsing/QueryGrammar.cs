@@ -28,63 +28,42 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             LanguageFlags = LanguageFlags.CreateAst;
 
             var identifier = Identifier();
-            var columnRef = NonTerminal("columnRef",
-                identifier,
-                n => new ColumnReferenceExpression
-                {
-                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value
-                });
 
-            var expression = Expression(columnRef, identifier);
-
-            var columnSource = NonTerminal("columnSource", expression);
-            columnSource.SetFlag(TermFlags.IsTransient);
+            var root = NonTerminal("root", null, ToSqlQuery);
+            var selectStatement = NonTerminal("selectStmt", null, ToSelectClause);
+            var expression = Expression(identifier, root);
 
             var asOpt = NonTerminal("asOpt", Empty | "AS");
             var aliasOpt = NonTerminal("aliasOpt", null);
 
-            var columnItem = NonTerminal("columnItem", null, n =>
-            {
-                var astNode = n.ChildNodes[0].AstNode;
-                var aliasNodes = n.ChildNodes[1].ChildNodes;
-                return new SelectFieldExpression
-                {
-                    Expression = (ISqlElement) astNode,
-                    Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
-                };
-            });
+            var columnItem = NonTerminal("columnItem", null, ToSelectFieldExpression);
 
-            var declaration = NonTerminal("declaration", null,
-                delegate(ParseTreeNode n)
-                {
-                    return new TableDeclarationClause
-                    {
-                        Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
-                        Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
-                    };
-                });
+            var tableDeclaration = NonTerminal("declaration", null, ToTableDeclaration);
 
-            var joinItemList = Join(declaration, expression);
-            var fromClause = NonTerminal("fromClauseOpt", null);
+            var joinItemList = Join(tableDeclaration, expression);
+            var fromClause = NonTerminal("fromClause", null, TermFlags.IsTransient);
             var whereClauseOpt = NonTerminal("whereClauseOpt", null,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
             var groupClauseOpt = GroupBy(expression);
             var orderClauseOpt = OrderBy(expression);
-            var havingClauseOpt = Having(expression);
+            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression,
+                node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
             var columnItemList = NonTerminal("columnItemList", null);
 
             var topOpt = NonTerminal("topOpt", null);
             var distinctOpt = NonTerminal("distinctOpt", null);
             var selectList = NonTerminal("selectList", null);
-            var selectStatement = NonTerminal("selectStmt", null, ToSelectClause);
+            var unionStmtOpt = NonTerminal("unionStmt", null, ToUnionType);
+            var unionList = NonTerminal("unionList", null, ToUnionList);
 
+            var subquery = NonTerminal("subQuery", null, ToSubquery);
             //rules
             selectStatement.Rule = ToTerm("SELECT")
                                    + topOpt
                                    + distinctOpt
                                    + selectList
-                                   + fromClause
+                                   + ToTerm("FROM") + fromClause
                                    + joinItemList + whereClauseOpt
                                    + groupClauseOpt + havingClauseOpt;
             selectList.Rule = columnItemList | "*";
@@ -92,11 +71,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             distinctOpt.Rule = Empty | "distinct";
 
             aliasOpt.Rule = Empty | asOpt + identifier;
-            columnItem.Rule = columnSource + aliasOpt;
-            declaration.Rule = identifier + aliasOpt;
+            columnItem.Rule = expression + aliasOpt;
+            tableDeclaration.Rule = identifier + aliasOpt;
             columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
-            fromClause.Rule = ToTerm("FROM") + declaration;
-            whereClauseOpt.Rule = Empty | "WHERE" + expression;
+            subquery.Rule = ToTerm("(") + root + ")" + aliasOpt;
+            fromClause.Rule = tableDeclaration | subquery;
+            whereClauseOpt.Rule = Empty | ("WHERE" + expression);
+            unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
+            unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
+            root.Rule = unionList + orderClauseOpt;
 
             RegisterOperators(10, "*", "/", "%");
             RegisterOperators(9, "+", "-");
@@ -105,7 +88,27 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             RegisterOperators(4, "OR");
             MarkPunctuation(",", "(", ")");
             MarkPunctuation(asOpt);
-            Root = RootElement(selectStatement, orderClauseOpt);
+           
+            Root = root;
+        }
+
+        private static SelectFieldExpression ToSelectFieldExpression(ParseTreeNode n)
+        {
+            var aliasNodes = n.ChildNodes[1].ChildNodes;
+            return new SelectFieldExpression
+            {
+                Expression = (ISqlElement) n.ChildNodes[0].AstNode,
+                Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
+            };
+        }
+
+        private static TableDeclarationClause ToTableDeclaration(ParseTreeNode n)
+        {
+            return new TableDeclarationClause
+            {
+                Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
+                Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
+            };
         }
 
         private NonTerminal Identifier()
@@ -125,7 +128,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return id;
         }
 
-        private NonTerminal Expression(NonTerminal columnRef, NonTerminal identifier)
+        private NonTerminal Expression(NonTerminal identifier, NonTerminal selectStatement)
         {
             var stringLiteral = new StringLiteral("string",
                 "\"",
@@ -143,62 +146,77 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 ToTerm("true") | ToTerm("false"),
                 node => new LiteralExpression
                 {
-                    Value = node.ChildNodes[0].Token.ValueString.ToLower() == "true"
+                    Value = node.FindTokenAndGetText() == "true"
+                });
+            var columnRef = NonTerminal("columnRef",
+                identifier,
+                n => new ColumnReferenceExpression
+                {
+                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
                 });
 
-            var term = NonTerminal("term", null);
-            term.SetFlag(TermFlags.IsTransient);
+            var term = NonTerminal("term", null, TermFlags.IsTransient);
             var binOp = NonTerminal("binOp", null, ToBinaryOperator);
             binOp.SetFlag(TermFlags.InheritPrecedence);
 
-            var inExpr = NonTerminal("inExpr", null,
-                node => new InExpression
-                {
-                    Column = (ColumnReferenceExpression) node.ChildNodes[0].AstNode,
-                    Values = node.ChildNodes[2].Elements().Cast<ISqlElement>().ToList()
-                });
+            var inExpr = NonTerminal("inExpr", null, ToInExpression);
 
             var binExpr = NonTerminal("binExpr", null, ToBinaryExpression);
             var exprList = NonTerminal("exprList", null);
-            var queryFunctionName = NonTerminal("queryFunctionName", null, ToQueryFunctionName);
-            var queryFunctionExpr = NonTerminal("queryFunctionExpr", null,
-                node => new QueryFunctionExpression
-                {
-                    FunctionName = (QueryFunctionName) node.ChildNodes[0].AstNode,
-                    Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
-                });
-
-            var aggregateArg = NonTerminal("aggregateArg", null);
-            var aggregateName = NonTerminal("aggregateName", null);
+            var aggregateFunctionName = NonTerminal("aggregationFunctionName", null, TermFlags.IsTransient);
+            var aggregateArg = NonTerminal("aggregateArg", null, TermFlags.IsTransient);
             var aggregate = NonTerminal("aggregate", null, ToAggregateFunction);
+            var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
+            var queryFunctionName = NonTerminal("queryFunctionName", null, ToQueryFunctionName);
+            
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
-          
-            var expression = NonTerminal("expression", null, n => n.ChildNodes[0].AstNode);
-            expression.SetFlag(TermFlags.IsTransient);
-            var parExpr = NonTerminal("parExpr", null);
-            parExpr.SetFlag(TermFlags.IsTransient);
-            
+            var expression = NonTerminal("expression", null, TermFlags.IsTransient);
+
+            var unExpr = NonTerminal("unExpr", null, ToUnaryExpression);
+            var parSelectStmt = NonTerminal("parSelectStatement", null,
+                node => new SubqueryClause {Query = (SqlQuery) node.ChildNodes[0].AstNode});
+            var unOp = NonTerminal("unOp", null);
+            var functionArgs = NonTerminal("funArgs", null, TermFlags.IsTransient);
+            var parExpr = NonTerminal("parExpr", null, TermFlags.IsTransient);
+            var parExprList = NonTerminal("parExprList", null, TermFlags.IsTransient);
             //rules
-            queryFunctionName.Rule = ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT";
-            queryFunctionExpr.Rule = queryFunctionName + "(" + exprList + ")";
-            
-            aggregateName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
-            aggregateArg.Rule = ToTerm("*") | term;
-            aggregate.Rule = aggregateName + "(" + aggregateArg + ")";
-
-            term.Rule = boolLiteral | valueLiteral | columnRef | numberLiteral | stringLiteral | parExpr;
-            expression.Rule = term | binExpr | inExpr | queryFunctionExpr | aggregate | isNullExpression;
-            
-            isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
-            isNullExpression.Rule = term + isNull;
-
-            parExpr.Rule = ToTerm("(") + expression + ToTerm(")");
+            exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
+            parExprList.Rule = "(" + exprList + ")";
+            parExpr.Rule = "(" + expression + ")";
+            term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral
+                        | aggregate | queryFunctionExpr
+                        | parExpr | parSelectStmt;
+            parSelectStmt.Rule = "(" + selectStatement + ")";
+            unExpr.Rule = unOp + term;
+            unOp.Rule = "NOT"; //| "+" | "-" | "~";
             binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
-            exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
-            inExpr.Rule = columnRef + ToTerm("in") + "(" + exprList + ")";
+            expression.Rule = term | binExpr | inExpr | isNullExpression;
+
+            functionArgs.Rule = parExprList | parSelectStmt;
+            
+            queryFunctionName.Rule = ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT";
+            queryFunctionExpr.Rule = queryFunctionName + functionArgs;
+            
+            aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
+            aggregateArg.Rule = ToTerm("(")+ "*" + ")" | functionArgs;
+            aggregate.Rule = aggregateFunctionName + aggregateArg;
+            inExpr.Rule = columnRef + ToTerm("in") + functionArgs;
+
+            isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
+            isNullExpression.Rule = term + isNull;
+            
             return expression;
+        }
+
+        private static SqlQuery ToSqlQuery(ParseTreeNode node)
+        {
+            return new SqlQuery
+            {
+                Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
+                OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
+            };
         }
 
         private NonTerminal GroupBy(NonTerminal expression)
@@ -219,121 +237,88 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return groupClauseOpt;
         }
 
-        private NonTerminal RootElement(NonTerminal selectStatement, NonTerminal orderClauseOpt)
-        {
-            var unionStmtOpt = NonTerminal<UnionType?>("unionStmt", null, delegate(ParseTreeNode node)
-            {
-                if (node.ChildNodes.Count == 0)
-                    return null;
-                var allModifierNodes = node.ChildNodes[1].ChildNodes;
-                var unionType = allModifierNodes.Count > 0 &&
-                                allModifierNodes[0].Token.ValueString.ToLower() == "all"
-                    ? UnionType.All
-                    : UnionType.Distinct;
-                return unionType;
-            });
-            var unionList = NonTerminal("unionList", null, delegate(ParseTreeNode node)
-            {
-                return node.ChildNodes.Select(child =>
-                {
-                    var elements = child.Elements();
-                    return new UnionClause
-                    {
-                        SelectClause = (SelectClause) elements[0],
-                        Type = (UnionType?) (elements.Count > 1 ? elements[1] : null)
-                    };
-                }).ToList();
-            });
-            var root = NonTerminal("root", null, node => new RootClause
-            {
-                Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
-                OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
-            });
-
-            //rules
-            unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
-            unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
-            root.Rule = unionList + orderClauseOpt;
-            return root;
-        }
-
         private NonTerminal Join(BnfTerm declaration, BnfTerm expression)
         {
             var joinKindOpt = NonTerminal("joinKindOpt", Empty | "OUTER" | "INNER" | "LEFT" | "RIGHT");
             var joinItem = NonTerminal("joinItem",
                 joinKindOpt + "JOIN" + declaration + "ON" + expression,
-                delegate(ParseTreeNode node)
-                {
-                    var joinKindNodes = node.ChildNodes[0];
-                    var joinKindString = joinKindNodes.ChildNodes.Count > 0
-                        ? joinKindNodes.ChildNodes[0].Token.ValueString
-                        : "inner";
-                    JoinKind joinKind;
-                    switch (joinKindString.ToLower())
-                    {
-                        case "inner":
-                            joinKind = JoinKind.Inner;
-                            break;
-                        case "outer":
-                            joinKind = JoinKind.Outer;
-                            break;
-                        case "left":
-                            joinKind = JoinKind.Left;
-                            break;
-                        case "right":
-                            joinKind = JoinKind.Right;
-                            break;
-                        default:
-                            const string messageFormat = "unexpected join kind [{0}]";
-                            throw new InvalidOperationException(string.Format(messageFormat, joinKindString));
-                    }
-                    return new JoinClause
-                    {
-                        Source = (TableDeclarationClause) node.ChildNodes[2].AstNode,
-                        JoinKind = joinKind,
-                        Condition = (ISqlElement) node.ChildNodes[4].AstNode
-                    };
-                });
+                ToJoinClause);
 
             var joinItemList = NonTerminal("joinItemList", null);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
             return joinItemList;
         }
 
-        private NonTerminal Having(BnfTerm expression)
+        private static InExpression ToInExpression(ParseTreeNode node)
         {
-            return NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression,
-                node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
+            var sourceNode = node.ChildNodes[2];
+            var sqlSource = sourceNode.AstNode as ISqlElement;
+            return new InExpression
+            {
+                Column = (ColumnReferenceExpression) node.ChildNodes[0].AstNode,
+                Source = sqlSource ?? new ListExpression
+                {
+                    Elements = sourceNode.Elements().Cast<ISqlElement>().ToList()
+                }
+            };
+        }
+
+        private static QueryFunctionExpression ToQueryFunctionExpression(ParseTreeNode node)
+        {
+            return new QueryFunctionExpression
+            {
+                FunctionName = (QueryFunctionName) node.ChildNodes[0].AstNode,
+                Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
+            };
+        }
+
+        private static List<UnionClause> ToUnionList(ParseTreeNode node)
+        {
+            return node.ChildNodes.Select(child =>
+            {
+                var elements = child.Elements();
+                return new UnionClause
+                {
+                    SelectClause = (SelectClause) elements[0],
+                    Type = (UnionType?) (elements.Count > 1 ? elements[1] : null)
+                };
+            }).ToList();
         }
 
         private NonTerminal OrderBy(BnfTerm expression)
         {
             var orderingExpression = NonTerminal("orderByColumn",
                 expression + NonTerminal("orderingDirection", Empty | "asc" | "desc"),
-                node =>
-                {
-                    var orderExpression = node.ChildNodes[0].AstNode as ISqlElement;
-                    var isDesc = node.ChildNodes.Count > 1 &&
-                                 node.ChildNodes[1].ChildNodes.Count > 0 &&
-                                 node.ChildNodes[1].ChildNodes[0].Token.ValueString.EqualsIgnoringCase("desc");
-                    return new OrderByClause.OrderingElement
-                    {
-                        Expression = orderExpression,
-                        IsAsc = !isDesc
-                    };
-                });
+                ToOrderingElement);
             var orderColumnList = NonTerminal("orderColumnList", null);
             orderColumnList.Rule = MakePlusRule(orderColumnList, ToTerm(","), orderingExpression);
             return NonTerminal("orderClauseOpt",
                 Empty | "ORDER" + ToTerm("BY") + orderColumnList,
-                node => node.ChildNodes.Count == 0
-                    ? null
-                    : new OrderByClause
-                    {
-                        Expressions = node.ChildNodes[2].Elements()
-                            .Cast<OrderByClause.OrderingElement>()
-                            .ToList()
-                    });
+                ToOrderByClause);
+        }
+
+        private static OrderByClause ToOrderByClause(ParseTreeNode node)
+        {
+            return node.ChildNodes.Count == 0
+                ? null
+                : new OrderByClause
+                {
+                    Expressions = node.ChildNodes[2].Elements()
+                        .Cast<OrderByClause.OrderingElement>()
+                        .ToList()
+                };
+        }
+
+        private static OrderByClause.OrderingElement ToOrderingElement(ParseTreeNode node)
+        {
+            var orderExpression = node.ChildNodes[0].AstNode as ISqlElement;
+            var isDesc = node.ChildNodes.Count > 1 &&
+                         node.ChildNodes[1].FindTokenAndGetText().EqualsIgnoringCase("desc");
+            return new OrderByClause.OrderingElement
+            {
+                Expression = orderExpression,
+                IsAsc = !isDesc
+            };
         }
 
         private static SelectClause ToSelectClause(ParseTreeNode n)
@@ -341,7 +326,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var elements = n.Elements();
             var result = new SelectClause
             {
-                Source = elements.OfType<TableDeclarationClause>().Single()
+                Source = (ISqlElement) n.ChildNodes[5].AstNode
             };
 
             var selectColumns = elements.OfType<SelectFieldExpression>().ToArray();
@@ -356,24 +341,80 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             result.Top = topNode != null && topNode.Token != null ? int.Parse(topNode.Token.ValueString) : (int?) null;
             result.IsDistinct = n.ChildNodes[2].ChildNodes.Any();
             result.JoinClauses.AddRange(elements.OfType<JoinClause>());
-            result.WhereExpression = (ISqlElement) n.ChildNodes[6].AstNode;
-            result.GroupBy = (GroupByClause)n.ChildNodes[7].AstNode;
-            result.Having = (ISqlElement)n.ChildNodes[8].AstNode;
+            result.WhereExpression = (ISqlElement) n.ChildNodes[7].AstNode;
+            result.GroupBy = (GroupByClause)n.ChildNodes[8].AstNode;
+            result.Having = (ISqlElement)n.ChildNodes[9].AstNode;
             return result;
+        }
+
+        private static UnionType? ToUnionType(ParseTreeNode node)
+        {
+            if (node.ChildNodes.Count == 0)
+                return null;
+            var allModifierNodes = node.ChildNodes[1].ChildNodes;
+            var unionType = allModifierNodes.Count > 0 &&
+                            allModifierNodes[0].Token.ValueString.ToLower() == "all"
+                ? UnionType.All
+                : UnionType.Distinct;
+            return unionType;
+        }
+
+        private static JoinClause ToJoinClause(ParseTreeNode node)
+        {
+            var joinKindNodes = node.ChildNodes[0];
+            var joinKindString = joinKindNodes.ChildNodes.Count > 0
+                ? joinKindNodes.ChildNodes[0].Token.ValueString
+                : "inner";
+            JoinKind joinKind;
+            switch (joinKindString.ToLower())
+            {
+                case "inner":
+                    joinKind = JoinKind.Inner;
+                    break;
+                case "outer":
+                    joinKind = JoinKind.Outer;
+                    break;
+                case "left":
+                    joinKind = JoinKind.Left;
+                    break;
+                case "right":
+                    joinKind = JoinKind.Right;
+                    break;
+                default:
+                    const string messageFormat = "unexpected join kind [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, joinKindString));
+            }
+            return new JoinClause
+            {
+                Source = (TableDeclarationClause) node.ChildNodes[2].AstNode,
+                JoinKind = joinKind,
+                Condition = (ISqlElement) node.ChildNodes[4].AstNode
+            };
         }
 
         private static AggregateFunctionExpression ToAggregateFunction(ParseTreeNode node)
         {
-            var functionName = node.ChildNodes[0].ChildNodes[0].Token.ValueString;
-            var argumentNode = node.ChildNodes[1].ChildNodes[0];
-            var isSelectAll = argumentNode.Token != null && argumentNode.Token.ValueString.Equals("*");
+            var functionName = node.ChildNodes[0].FindTokenAndGetText();
+            var argumentNode = node.ChildNodes[1];
+            var argumentText = argumentNode.FindTokenAndGetText();
+            var isSelectAll = argumentText.Equals("*");
             if (!isSelectAll && argumentNode.AstNode == null)
                 throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
             return new AggregateFunctionExpression
             {
                 Function = functionName,
-                Argument = (ISqlElement) argumentNode.AstNode,
+                Argument = isSelectAll ? null : (ISqlElement) argumentNode.ChildNodes[0].AstNode,
                 IsSelectAll = isSelectAll
+            };
+        }
+
+        private static SubqueryClause ToSubquery(ParseTreeNode node)
+        {
+            var alias = node.ChildNodes[1].FindTokenAndGetText();
+            return new SubqueryClause
+            {
+                Query = (SqlQuery) node.ChildNodes[0].AstNode,
+                Alias = alias
             };
         }
 
@@ -414,7 +455,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static SqlBinaryOperator ToBinaryOperator(ParseTreeNode node)
         {
-            var operatorText1 = node.ChildNodes[0].Token.ValueString;
+            var operatorText1 = node.FindTokenAndGetText();
             switch (operatorText1.ToLower())
             {
                 case "and":
@@ -467,10 +508,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
         }
 
+        private static object ToUnaryExpression(ParseTreeNode node)
+        {
+            return null;
+        }
+
         private static NonTerminal NonTerminal(string name, BnfExpression rule, TermFlags flags = TermFlags.None)
         {
             var nonTerminal = NonTerminal(name, rule, n => new ElementsHolder
             {
+                DebugName = name,
                 Elements = n.Elements()
             });
             nonTerminal.SetFlag(flags);
@@ -487,14 +534,21 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 }
                 catch (Exception e)
                 {
-                    var message = string.Format("Exception creating ast node from node {0} at location ({1}:{2})",
-                        n, n.Span.Location, n.Span.EndLocation);
+                    var input = GetTokens(n).JoinStrings(" ");
+                    var message = string.Format("Exception creating ast node from node {0} [{1}]", n, input);
                     throw new Exception(message, e);
                 }
             })
             {
                 Rule = rule
             };
+        }
+
+        private static IEnumerable<Token> GetTokens(ParseTreeNode node)
+        {
+            if (node.Token != null)
+                return new[] {node.Token};
+            return node.ChildNodes.SelectMany(GetTokens);
         }
     }
 }

@@ -1,18 +1,18 @@
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.SqlAccess
+namespace Simple1C.Impl.Sql.Translation
 {
     internal abstract class SqlVisitor
     {
-        public ISqlElement Visit(ISqlElement element)
+        public virtual ISqlElement Visit(ISqlElement element)
         {
             return element.Accept(this);
         }
 
-        public virtual ISqlElement VisitSubquery(SubqueryClause clause)
+        public virtual SubqueryClause VisitSubquery(SubqueryClause clause)
         {
-            clause.SelectClause = VisitSelect(clause.SelectClause);
+            clause.Query = VisitSqlQuery(clause.Query);
             return clause;
         }
 
@@ -33,13 +33,13 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return clause;
         }
 
-        public virtual ISqlElement VisitRoot(RootClause rootClause)
+        public virtual SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
         {
-            if (rootClause.Unions != null)
-                VisitEnumerable(rootClause.Unions);
-            if (rootClause.OrderBy != null)
-                rootClause.OrderBy = VisitOrderBy(rootClause.OrderBy);
-            return rootClause;
+            if (sqlQuery.Unions != null)
+                VisitEnumerable(sqlQuery.Unions);
+            if (sqlQuery.OrderBy != null)
+                sqlQuery.OrderBy = VisitOrderBy(sqlQuery.OrderBy);
+            return sqlQuery;
         }
 
         public virtual SelectClause VisitSelect(SelectClause clause)
@@ -102,7 +102,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         public virtual ISqlElement VisitIn(InExpression expression)
         {
             expression.Column = (ColumnReferenceExpression) Visit(expression.Column);
-            VisitEnumerable(expression.Values);
+            Visit(expression.Source);
             return expression;
         }
 
@@ -154,6 +154,12 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             expression.Argument = Visit(expression.Argument);
             return expression;
+        }
+
+        public virtual ISqlElement VisitList(ListExpression listExpression)
+        {
+            VisitEnumerable(listExpression.Elements);
+            return listExpression;
         }
     }
 }

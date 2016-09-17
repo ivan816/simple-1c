@@ -1,4 +1,6 @@
-﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
+﻿using Simple1C.Impl.Sql.Translation;
+
+namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class JoinClause : ISqlElement
     {
