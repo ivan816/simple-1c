@@ -190,7 +190,9 @@ namespace Simple1C.Impl.Sql.Translation
                 if (index > position.index)
                     return position.part;
             }
-            throw new InvalidOperationException("asserton failure");
+            var positionsStr = positions.Select(c => string.Format("{0} at {1}", c.part, c.index)).JoinStrings(",");
+            var message = string.Format("asserton failure. Could not get select part by index [{0}] from positions [{1}]", index, positionsStr);
+            throw new InvalidOperationException(message);
         }
 
         private string GetEnumValueSql(string enumValue)
@@ -238,10 +240,10 @@ namespace Simple1C.Impl.Sql.Translation
         {
             var fromPosition = queryText.LastIndexOf("from", joinPosition, StringComparison.OrdinalIgnoreCase);
             if (fromPosition < 0)
-                throw new InvalidOperationException("assertion failure");
+                throw new InvalidOperationException(string.Format("assertion failure. Could not find 'from' in join text [{0}] after position [{1}]",joinText, joinPosition));
             var tableMatch = tableNameRegex.Match(queryText, fromPosition);
             if (!tableMatch.Success)
-                throw new InvalidOperationException("assertion failure");
+                throw new InvalidOperationException(string.Format("on failure. Could not match table name from [{0}] starting at [{1}]", queryText, fromPosition));
             var mainTableAlias = tableMatch.Groups[3].Value;
             GetOrCreateQueryField(new[] {mainTableAlias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
             GetOrCreateQueryField(new[] {alias, "ОбластьДанныхОсновныеДанные"}, false, SelectPart.Join);
@@ -292,7 +294,7 @@ namespace Simple1C.Impl.Sql.Translation
                 var referencedProperties = new List<QueryEntityProperty>();
                 EnumProperties(propertyNames, mainEntity.queryEntity, 1, referencedProperties);
                 if (referencedProperties.Count == 0)
-                    throw new InvalidOperationException("assertion failure");
+                    throw new InvalidOperationException(string.Format("assertion failure. No referenced properties from propertyNames [{0}], isRepresentation [{1}], selectPart [{2}]", propertyNames.JoinStrings(","), isRepresentation, selectPart));
                 if (isRepresentation)
                     if (ReplaceWithRepresentation(referencedProperties))
                         subqueryRequired = true;
@@ -437,7 +439,9 @@ namespace Simple1C.Impl.Sql.Translation
             if (mainEntity.subqueryRequired)
             {
                 if (Strip(mainEntity.queryEntity) == StripResult.HasNoReferences)
-                    throw new InvalidOperationException("assertion failure");
+                    throw new InvalidOperationException(
+                        string.Format("assertion failure. QueryEntity [{0}] by alias [{1}] had no references",
+                            mainEntity.queryEntity.mapping.QueryTableName, alias));
                 var selectClause = new SelectClause
                 {
                     Table = GetDeclarationClause(mainEntity.queryEntity)
@@ -483,7 +487,12 @@ namespace Simple1C.Impl.Sql.Translation
         private ISqlElement GetFieldExpression(QueryField field, SelectClause selectClause)
         {
             if (field.properties.Length < 1)
-                throw new InvalidOperationException("assertion failure");
+            {
+                var fieldDescription = string.Format("{0} {1} {2}", field.alias, field.functionName,
+                    field.parts.JoinStrings(","));
+                var message = string.Format("assertion failure. Query field [{0}] had no properties ", fieldDescription);
+                throw new InvalidOperationException(message);
+            }
             if (field.properties.Length == 1)
                 return GetPropertyReference(field.properties[0], selectClause);
             var result = new CaseExpression();
