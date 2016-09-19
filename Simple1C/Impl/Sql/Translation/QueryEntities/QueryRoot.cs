@@ -6,11 +6,11 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
     internal class QueryRoot
     {
         public readonly QueryEntity entity;
-        public readonly TableDeclarationClause tableDeclaration;
+        public readonly IColumnSource tableDeclaration;
         public readonly Dictionary<string, QueryField> fields = new Dictionary<string, QueryField>();
         public bool subqueryRequired;
 
-        public QueryRoot(QueryEntity entity, TableDeclarationClause tableDeclaration)
+        public QueryRoot(QueryEntity entity, IColumnSource tableDeclaration)
         {
             this.entity = entity;
             this.tableDeclaration = tableDeclaration;

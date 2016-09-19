@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
@@ -31,7 +31,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public string GetSingleColumnName(string propertyName)
         {
-            return mapping.GetByPropertyName(propertyName).SingleLayout.ColumnName;
+            return mapping.GetByPropertyName(propertyName).SingleLayout.DbColumnName;
         }
     }
 }

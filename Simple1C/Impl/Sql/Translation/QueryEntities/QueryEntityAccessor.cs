@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
             bool isRepresentation, SelectPart selectPart)
         {
-            var queryRoot = queryEntityRegistry.Get((TableDeclarationClause) columnReference.Table);
+            var queryRoot = queryEntityRegistry.Get(columnReference.Table);
             if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;

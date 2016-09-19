@@ -18,6 +18,16 @@ namespace Simple1C.Impl.Sql.Translation
             return formatter.builder.ToString();
         }
 
+        public override SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
+        {
+            if (!sqlQuery.IsTopLevel)
+                builder.Append("(");
+            var result = base.VisitSqlQuery(sqlQuery);
+            if (!sqlQuery.IsTopLevel)
+                builder.Append(")");
+            return result;
+        }
+
         public override UnionClause VisitUnion(UnionClause clause)
         {
             var result = base.VisitUnion(clause);
@@ -67,9 +77,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override SubqueryClause VisitSubquery(SubqueryClause clause)
         {
-            builder.Append("(");
             Visit(clause.Query);
-            builder.Append(")");
             WriteAlias(clause.Alias);
             return clause;
         }

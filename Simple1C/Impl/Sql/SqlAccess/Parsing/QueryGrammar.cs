@@ -29,7 +29,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var identifier = Identifier();
 
-            var root = NonTerminal("root", null, ToSqlQuery);
+            var root = NonTerminal("root", null, c => ToSqlQuery(c, true));
             var selectStatement = NonTerminal("selectStmt", null, ToSelectClause);
             var expression = Expression(identifier, root);
 
@@ -174,8 +174,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var expression = NonTerminal("expression", null, TermFlags.IsTransient);
 
             var unExpr = NonTerminal("unExpr", null, ToUnaryExpression);
-            var parSelectStmt = NonTerminal("parSelectStatement", null,
-                node => new SubqueryClause {Query = (SqlQuery) node.ChildNodes[0].AstNode});
+            var parSelectStmt = NonTerminal("parSelectStatement", null, c => ToSqlQuery(c.ChildNodes[0], false));
             var unOp = NonTerminal("unOp", null);
             var functionArgs = NonTerminal("funArgs", null, TermFlags.IsTransient);
             var parExpr = NonTerminal("parExpr", null, TermFlags.IsTransient);
@@ -210,10 +209,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return expression;
         }
 
-        private static SqlQuery ToSqlQuery(ParseTreeNode node)
+        private static SqlQuery ToSqlQuery(ParseTreeNode node, bool isTopLevel)
         {
             return new SqlQuery
             {
+                IsTopLevel = isTopLevel,
                 Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
                 OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
             };
@@ -326,7 +326,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var elements = n.Elements();
             var result = new SelectClause
             {
-                Source = (ISqlElement) n.ChildNodes[5].AstNode
+                Source = (IColumnSource) n.ChildNodes[5].AstNode
             };
 
             var selectColumns = elements.OfType<SelectFieldExpression>().ToArray();
@@ -413,7 +413,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var alias = node.ChildNodes[1].FindTokenAndGetText();
             return new SubqueryClause
             {
-                Query = (SqlQuery) node.ChildNodes[0].AstNode,
+                Query = ToSqlQuery(node.ChildNodes[0], false),
                 Alias = alias
             };
         }

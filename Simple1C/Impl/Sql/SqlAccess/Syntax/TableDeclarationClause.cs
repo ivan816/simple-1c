@@ -19,7 +19,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override string ToString()
         {
-            return string.Format("{0} Name: {1}, Alias: {2}", typeof(TableDeclarationClause).Name, Name, Alias);
+            return string.Format("{0} Name: [{1}], Alias: [{2}]", typeof(TableDeclarationClause).Name, Name, Alias);
         }
     }
 }

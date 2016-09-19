@@ -74,27 +74,32 @@ namespace Simple1C.Impl.Sql.Translation
 
         private class TranslationVisitor : SqlVisitor
         {
-            private readonly IMappingSource mappingSource;
             private readonly List<ISqlElement> areas;
+            private readonly QueryEntityAccessor queryEntityAccessor;
+            private readonly QueryEntityRegistry queryEntityRegistry;
 
             public TranslationVisitor(IMappingSource mappingSource, List<ISqlElement> areas)
             {
-                this.mappingSource = mappingSource;
                 this.areas = areas;
+                queryEntityRegistry = new QueryEntityRegistry(mappingSource);
+                queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
             }
 
             public override SqlQuery VisitSqlQuery(SqlQuery selectClause)
             {
-                var result = base.VisitSqlQuery(selectClause);
-
-                var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-                var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
                 TableDeclarationVisitor.Visit(selectClause, clause =>
                 {
-                    queryEntityRegistry.Register(clause);
+                    queryEntityRegistry.RegisterTable(clause);
+                    return clause;
+                });
+                SubqueryVisitor.Visit(selectClause, clause =>
+                {
+                    queryEntityRegistry.RegisterSubquery(clause);
                     return clause;
                 });
 
+                var result = base.VisitSqlQuery(selectClause);
+               
                 new AddAreaToJoinConditionVisitor().Visit(selectClause);
 
                 new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
@@ -107,6 +112,26 @@ namespace Simple1C.Impl.Sql.Translation
                 new QueryFunctionRewriter().Visit(selectClause);
 
                 return result;
+            }
+        }
+
+        private class SubqueryVisitor : SqlVisitor
+        {
+            private readonly Func<SubqueryClause, SubqueryClause> visit;
+
+            public static void Visit(ISqlElement element, Func<SubqueryClause, SubqueryClause> visit)
+            {
+                new SubqueryVisitor(visit).Visit(element);
+            }
+
+            private SubqueryVisitor(Func<SubqueryClause, SubqueryClause> visit)
+            {
+                this.visit = visit;
+            }
+
+            public override SubqueryClause VisitSubquery(SubqueryClause clause)
+            {
+                return visit(base.VisitSubquery(clause));
             }
         }
     }

@@ -247,12 +247,6 @@ order by a1");
         }
 
         [Test]
-        public void NotOperator()
-        {
-            Assert.Fail("Not implemented");
-        }
-        
-        [Test]
         public void InOperator()
         {
             var selectClause = ParseSelect("select a,b from testTable where c in (10, 20, 30)");
@@ -507,7 +501,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(inExpression.Column.Name, Is.EqualTo("counterparty"));
             Assert.That(inExpression.Column.Table, Is.EqualTo(query.Source));
 
-            var embeddedQuery = ((SubqueryClause) inExpression.Source).Query.GetSingleSelect();
+            var embeddedQuery = ((SqlQuery) inExpression.Source).GetSingleSelect();
             Assert.That(embeddedQuery.Source, Is.TypeOf<TableDeclarationClause>());
             Assert.That(((TableDeclarationClause)embeddedQuery.Source).Name, Is.EqualTo("counterparty"));
             var subqueryColumn = embeddedQuery.Fields.First().Expression as ColumnReferenceExpression;
@@ -534,9 +528,9 @@ WHERE table2Key =
             var table1 = query.Source;
             var table1Filter = (BinaryExpression) query.WhereExpression;
             AssertIsColumnReference(table1Filter.Left, "table2Key", table1);
-            Assert.That(table1Filter.Right, Is.TypeOf<SubqueryClause>());
-            
-            var table2Query = ((SubqueryClause) table1Filter.Right).Query.GetSingleSelect();
+            Assert.That(table1Filter.Right, Is.TypeOf<SqlQuery>());
+
+            var table2Query = ((SqlQuery)table1Filter.Right).GetSingleSelect();
             var table2 = (TableDeclarationClause) table2Query.Source;
             Assert.That(table2.Name, Is.EqualTo("table2"));
 
@@ -546,9 +540,9 @@ WHERE table2Key =
 
             var table2Filter2 = (BinaryExpression)((BinaryExpression)table2Query.WhereExpression).Right;
             AssertIsColumnReference(table2Filter2.Left, "table3Key", table2);
-            Assert.That(table2Filter2.Right, Is.TypeOf<SubqueryClause>());
-            
-            var table3Query = ((SubqueryClause)table2Filter2.Right).Query.GetSingleSelect();
+            Assert.That(table2Filter2.Right, Is.TypeOf<SqlQuery>());
+
+            var table3Query = ((SqlQuery)table2Filter2.Right).GetSingleSelect();
             var table3 = (TableDeclarationClause) table3Query.Source;
             Assert.That(table3.Name, Is.EqualTo("table3"));
             var table3Filter1 = (BinaryExpression)((BinaryExpression)table3Query.WhereExpression).Left;

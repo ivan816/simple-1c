@@ -22,7 +22,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         //todo remove copypaste
         public override SelectClause VisitSelect(SelectClause clause)
         {
-            clause.Source = Visit(clause.Source);
+            clause.Source = (IColumnSource) Visit(clause.Source);
             VisitEnumerable(clause.JoinClauses);
             if (clause.Fields != null)
                 VisitEnumerable(clause.Fields);

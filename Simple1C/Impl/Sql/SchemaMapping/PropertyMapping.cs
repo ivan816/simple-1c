@@ -23,7 +23,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             {
                 b.Append(PropertyLauout.Single);
                 b.Append(" ");
-                b.Append(SingleLayout.ColumnName);
+                b.Append(SingleLayout.DbColumnName);
                 b.Append(" ");
                 b.Append(SingleLayout.NestedTableName);
             }

@@ -145,7 +145,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
                     additionalProperties.Add(new PropertyMapping("Ссылка", refLayout, null));
                     var areaLayout = new SingleLayout(
-                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").SingleLayout.ColumnName,
+                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").SingleLayout.DbColumnName,
                         null);
                     var areaMapping = new PropertyMapping("ОбластьДанныхОсновныеДанные", areaLayout, null);
                     additionalProperties.Add(areaMapping);

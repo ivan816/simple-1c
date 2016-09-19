@@ -14,7 +14,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override string ToString()
         {
-            return string.Format("({0} as {1})", Query, Alias);
+            return string.Format("{0}. ({1} as {2})", typeof(SubqueryClause),Query, Alias);
         }
     }
 }

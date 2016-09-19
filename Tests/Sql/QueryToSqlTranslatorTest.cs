@@ -905,7 +905,7 @@ order by count(numberColumn) desc";
         [Test]
         public void SelectFromSubquery()
         {
-            const string source = "select ИНН, Наименование from (select ИНН, Наименование as naim_alias from Справочник.Контрагенты) t0";
+            const string source = "select ИНН, Наименование_Alias from (select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t0";
 
             const string mappings = @"Справочник.Контрагенты contractors0 Main
     ИНН Single inn
@@ -913,9 +913,29 @@ order by count(numberColumn) desc";
 
             const string expected =
                @"select
-    ИНН,
-    naim_alias
-from (select inn, name from contractors0) t0";
+    t.inn,
+    t.Наименование_Alias
+from (select
+    inn,
+    name as Наименование_Alias
+from contractors0) as t";
+            CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
+        public void CanSelectAllInSubquery()
+        {
+            const string source = "select t0.ИНН, t0.Наименование from (select * from Справочник.Контрагенты) t";
+            const string mappings = @"Справочник.Контрагенты contractors0 Main
+    ИНН Single inn
+    Наименование Single name";
+
+            const string expected = @"select
+    t.inn,
+    t.name
+from (select
+    *
+from contractors0) as t";
             CheckTranslate(mappings, source, expected);
         }
 
@@ -941,7 +961,7 @@ where innIsCorrect = true)";
         }
 
         [Test]
-        public void SubqueryRefersToOuterTable()
+        public void SubqueryInFilterExpressionRefersToOuterTable()
         {
             var source = @"select Номер from Документ.ПоступлениеНаРасчетныйСчет dOuter 
     where СуммаДокумента in 
@@ -951,17 +971,38 @@ where innIsCorrect = true)";
     Номер Single number
     СуммаДокумента Single sum";
 
-            string expected = @"select 
-    number 
-from documents0 dOuter
-where sum in (select sum from documents0 where number <> dOuter.number)";
+            string expected = @"select
+    dOuter.number
+from documents1 as dOuter
+where dOuter.sum in (select
+    sum
+from documents1
+where number <> dOuter.number)";
             CheckTranslate(mappings, source, expected);
         }
 
         [Test]
         public void SubqueryUsesNestedPropertyOfOuterTable()
         {
-            Assert.Fail("");
+            const string source = @"select * from Документ.ПоступлениеНаРасчетныйСчет as cOuter 
+    where Контрагент.Наименование in (select Наименование from 
+                    Справочник.Контрагенты cInner 
+                    where cOuter.ДоговорКонтрагента.Наименование like cInner.Наименование )";
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
+    Ссылка Single id
+    Контрагент Single contractorId Справочник.Контрагенты
+    ДоговорКонтрагента Single contractId Справочник.ДоговорыКонтрагентов
+    ОбластьДанныхОсновныеДанные Single mainData
+Справочник.Контрагенты contractors2 Main
+    Ссылка Single id
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData
+Справочник.ДоговорыКонтрагентов contracts3 Main
+    Ссылка Single id
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData";
+            const string expected = "";
+            CheckTranslate(mappings, source, expected);
         }
 
         private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)

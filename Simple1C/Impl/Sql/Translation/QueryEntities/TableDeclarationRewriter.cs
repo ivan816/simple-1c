@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
@@ -80,7 +81,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
                     var referenceColumnName = p.mapping.SingleLayout == null
                         ? p.mapping.UnionLayout.ReferenceColumnName
-                        : p.mapping.SingleLayout.ColumnName;
+                        : p.mapping.SingleLayout.DbColumnName;
                     if (string.IsNullOrEmpty(referenceColumnName))
                     {
                         const string messageFormat = "ref column is not defined for [{0}.{1}]";
@@ -209,6 +210,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 const string messageFormat = "type column is not defined for [{0}.{1}]";
                 throw new InvalidOperationException(string.Format(messageFormat,
                     property.referer.mapping.QueryTableName, property.mapping.PropertyName));
+            }
+            if (!nestedEntity.mapping.Index.HasValue)
+            {
+                var message = string.Format("Invalid table name {0}. Table name must contain index.",
+                    nestedEntity.mapping.DbTableName);
+                throw new InvalidOperationException(message);
             }
             var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
             if (string.IsNullOrEmpty(tableIndexColumnName))

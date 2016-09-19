@@ -46,7 +46,7 @@ namespace Simple1C.Impl.Sql.Translation
         {
             if (clause.Fields != null)
                 VisitEnumerable(clause.Fields);
-            clause.Source = Visit(clause.Source);
+            clause.Source = (IColumnSource) Visit(clause.Source);
             VisitEnumerable(clause.JoinClauses);
             if (clause.WhereExpression != null)
                 clause.WhereExpression = VisitWhere(clause.WhereExpression);

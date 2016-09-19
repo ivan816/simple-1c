@@ -11,5 +11,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         {
             return visitor.VisitUnion(this);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} {1}", SelectClause, Type == null ? "" : Type.ToString());
+        }
     }
 }

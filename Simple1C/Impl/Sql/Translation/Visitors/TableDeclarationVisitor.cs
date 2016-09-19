@@ -3,7 +3,7 @@ using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class TableDeclarationVisitor : SingleQuerySqlVisitorBase
+    internal class TableDeclarationVisitor : SqlVisitor
     {
         private readonly Func<TableDeclarationClause, ISqlElement> visit;
 

@@ -3,7 +3,7 @@ using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class ValueLiteralRewriter : SingleQuerySqlVisitorBase
+    internal class ValueLiteralRewriter : SqlVisitor
     {
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly QueryEntityRegistry queryEntityRegistry;
