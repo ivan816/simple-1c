@@ -77,8 +77,7 @@ namespace Simple1C.Impl.Sql.Translation
         public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
-            if (clause.Top != null)
-                builder.AppendFormat("top {0} ", clause.Top.Value);
+            
             if (clause.IsDistinct)
                 builder.AppendFormat(" distinct ");
             if (clause.IsSelectAll)
@@ -104,6 +103,8 @@ namespace Simple1C.Impl.Sql.Translation
                 builder.Append("\r\nhaving ");
                 Visit(clause.Having);
             }
+            if (clause.Top.HasValue)
+                builder.AppendFormat("\r\nlimit {0}", clause.Top.Value);
             return clause;
         }
 
