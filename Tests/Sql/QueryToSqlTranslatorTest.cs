@@ -981,30 +981,6 @@ where number <> dOuter.number)";
             CheckTranslate(mappings, source, expected);
         }
 
-        [Test]
-        public void SubqueryUsesNestedPropertyOfOuterTable()
-        {
-            const string source = @"select * from Документ.ПоступлениеНаРасчетныйСчет as cOuter 
-    where Контрагент.Наименование in (select Наименование from 
-                    Справочник.Контрагенты cInner 
-                    where cOuter.ДоговорКонтрагента.Наименование like cInner.Наименование )";
-            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
-    Ссылка Single id
-    Контрагент Single contractorId Справочник.Контрагенты
-    ДоговорКонтрагента Single contractId Справочник.ДоговорыКонтрагентов
-    ОбластьДанныхОсновныеДанные Single mainData
-Справочник.Контрагенты contractors2 Main
-    Ссылка Single id
-    Наименование Single name
-    ОбластьДанныхОсновныеДанные Single mainData
-Справочник.ДоговорыКонтрагентов contracts3 Main
-    Ссылка Single id
-    Наименование Single name
-    ОбластьДанныхОсновныеДанные Single mainData";
-            const string expected = "";
-            CheckTranslate(mappings, source, expected);
-        }
-
         private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
