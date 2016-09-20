@@ -61,7 +61,7 @@ namespace Simple1C.Tests.Sql
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("x"));
             var function = (QueryFunctionExpression) selectClause.Fields[0].Expression;
-            Assert.That(function.FunctionName, Is.EqualTo(QueryFunctionName.Presentation));
+            Assert.That(function.Function, Is.EqualTo(KnownQueryFunction.Presentation));
 
             var columnReference = (ColumnReferenceExpression)function.Arguments[0];
             Assert.That(columnReference.Name, Is.EqualTo("a"));
@@ -74,7 +74,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < DateTime(2010, 11, 12)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.DateTime));
+            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.DateTime));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(3));
             Assert.That(((LiteralExpression)queryFunction.Arguments[0]).Value, Is.EqualTo(2010));
             Assert.That(((LiteralExpression)queryFunction.Arguments[1]).Value, Is.EqualTo(11));
@@ -87,7 +87,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < year(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Year));
+            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.Year));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
@@ -98,7 +98,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < quArter(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Quarter));
+            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.Quarter));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
@@ -365,7 +365,7 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
 from testTable1 as t1
 left join testTable2 as t2 on t1.id1 = t2.id2
 join testTable3 on t3.id3 = t1.id1
-outer join testTable4 as t4 on t4.id4 = t1.id1");
+full outer join testTable4 as t4 on t4.id4 = t1.id1");
 
             Assert.That(selectClause.JoinClauses.Count, Is.EqualTo(3));
             var joinTable0 = (TableDeclarationClause)selectClause.JoinClauses[0].Source;
@@ -379,7 +379,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(joinTable1.Alias, Is.Null);
 
             var joinTable2 = (TableDeclarationClause)selectClause.JoinClauses[2].Source;
-            Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Outer));
+            Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Full));
             Assert.That(joinTable2.Name, Is.EqualTo("testTable4"));
             Assert.That(joinTable2.Alias, Is.EqualTo("t4"));
         }
@@ -473,7 +473,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void SelectFromSubquery()
         {
-            var selectStatement = ParseSelect("select t.DocumentSum from (select DocumentSum from Payments) t " +
+            var selectStatement = ParseSelect("select DocumentSum from (select DocumentSum from Payments) t " +
                                            "where t.DocumentSum > 0");
 
             var subquery = selectStatement.Source as SubqueryClause;

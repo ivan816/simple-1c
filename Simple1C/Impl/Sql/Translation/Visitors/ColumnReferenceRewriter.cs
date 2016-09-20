@@ -71,7 +71,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            isPresentation = expression.FunctionName == QueryFunctionName.Presentation;
+            isPresentation = expression.Function == KnownQueryFunction.Presentation;
             base.VisitQueryFunction(expression);
             isPresentation = false;
             return expression;

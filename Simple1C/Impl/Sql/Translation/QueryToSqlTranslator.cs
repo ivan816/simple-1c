@@ -26,6 +26,8 @@ namespace Simple1C.Impl.Sql.Translation
                 {"где", "where"},
                 {"и", "and"},
                 {"или", "or"},
+                {"в", "in"},
+                {"по", "by"},
                 {"датавремя", "datetime"},
                 {"год", "year"},
                 {"квартал", "quarter"},
@@ -34,7 +36,13 @@ namespace Simple1C.Impl.Sql.Translation
                 {"истина", "true"},
                 {"упорядочить", "order"},
                 {"сгруппировать", "group"},
-                {"по", "by"}
+                {"соединение", "join"},
+                {"полное", "full"},
+                {"левое", "left"},
+                {"правое", "right"},
+                {"внешнее", "outer"},
+                {"внутреннее", "outer"},
+                {"естьnull", "isnull"},
             };
 
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",

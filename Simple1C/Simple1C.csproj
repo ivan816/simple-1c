@@ -158,7 +158,7 @@
     <Compile Include="Impl\Sql\Translation\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\QueryFunctionName.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\KnownQueryFunction.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteralExpression.cs" />

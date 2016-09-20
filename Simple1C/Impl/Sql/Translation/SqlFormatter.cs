@@ -200,7 +200,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            builder.Append(FormatQueryFunctionName(expression.FunctionName));
+            builder.Append(FormatQueryFunctionName(expression.Function));
             builder.Append('(');
             VisitEnumerable(expression.Arguments, ",");
             builder.Append(')');
@@ -215,15 +215,15 @@ namespace Simple1C.Impl.Sql.Translation
             return listExpression;
         }
 
-        private static string FormatQueryFunctionName(QueryFunctionName name)
+        private static string FormatQueryFunctionName(KnownQueryFunction name)
         {
             switch (name)
             {
-                case QueryFunctionName.SqlDatePart:
+                case KnownQueryFunction.SqlDatePart:
                     return "date_part";
-                case QueryFunctionName.SqlDateTrunc:
+                case KnownQueryFunction.SqlDateTrunc:
                     return "date_trunc";
-                case QueryFunctionName.SqlNot:
+                case KnownQueryFunction.SqlNot:
                     return "not";
                 default:
                     const string messageFormat = "unexpected function [{0}]";
@@ -332,11 +332,10 @@ namespace Simple1C.Impl.Sql.Translation
                     return "right";
                 case JoinKind.Inner:
                     return "inner";
-                case JoinKind.Outer:
-                    return "outer";
+                case JoinKind.Full:
+                    return "full outer";
                 default:
-                    const string messageFormat = "unexpected join kind [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, joinClause.JoinKind));
+                    throw new InvalidOperationException(string.Format("unexpected join kind [{0}]", joinClause.JoinKind));
             }
         }
 

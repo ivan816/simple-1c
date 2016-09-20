@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
@@ -8,15 +9,18 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     {
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            if (expression.FunctionName == QueryFunctionName.DateTime)
+            if (expression.Function == KnownQueryFunction.DateTime)
             {
-                if (expression.Arguments.Count != 3)
-                    throw new InvalidOperationException("invalid function");
+                ExpectArgumentCount(expression, 3);
                 var yearLiteral = expression.Arguments[0] as LiteralExpression;
                 var monthLiteral = expression.Arguments[1] as LiteralExpression;
                 var dayLiteral = expression.Arguments[2] as LiteralExpression;
                 if (yearLiteral == null || monthLiteral == null || dayLiteral == null)
-                    throw new InvalidOperationException("invalid function");
+                {
+                    var message = string.Format("Expected DateTime function parameter to be literals, " +
+                                                "but was [{0}]", expression.Arguments.JoinStrings(","));
+                    throw new InvalidOperationException(message);
+                }
                 return new LiteralExpression
                 {
                     Value = new DateTime((int) yearLiteral.Value,
@@ -24,13 +28,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                         (int) dayLiteral.Value)
                 };
             }
-            if (expression.FunctionName == QueryFunctionName.Year)
+            if (expression.Function == KnownQueryFunction.Year)
             {
-                if (expression.Arguments.Count != 1)
-                    throw new InvalidOperationException("invalid function");
+                ExpectArgumentCount(expression, 1);
                 return new QueryFunctionExpression
                 {
-                    FunctionName = QueryFunctionName.SqlDatePart,
+                    Function = KnownQueryFunction.SqlDatePart,
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "year"},
@@ -38,13 +41,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.FunctionName == QueryFunctionName.Quarter)
+            if (expression.Function == KnownQueryFunction.Quarter)
             {
-                if (expression.Arguments.Count != 1)
-                    throw new InvalidOperationException("invalid function");
+                ExpectArgumentCount(expression, 1);
                 return new QueryFunctionExpression
                 {
-                    FunctionName = QueryFunctionName.SqlDatePart,
+                    Function = KnownQueryFunction.SqlDatePart,
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "quarter"},
@@ -52,13 +54,38 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.FunctionName == QueryFunctionName.Presentation)
+            if (expression.Function == KnownQueryFunction.Presentation)
             {
-                if (expression.Arguments.Count != 1)
-                    throw new InvalidOperationException("invalid function");
+                ExpectArgumentCount(expression, 1);
                 return expression.Arguments[0];
             }
+            if (expression.Function == KnownQueryFunction.IsNull)
+            {
+                ExpectArgumentCount(expression, 2);
+                return new CaseExpression
+                {
+                    Elements =
+                    {
+                        new CaseElement
+                        {
+                            Condition = new IsNullExpression {Argument = expression.Arguments[0]},
+                            Value = expression.Arguments[1]
+                        }
+                    },
+                    DefaultValue = expression.Arguments[0]
+                };
+            }
             return base.VisitQueryFunction(expression);
+        }
+
+        private static void ExpectArgumentCount(QueryFunctionExpression expression, int expectedCount)
+        {
+            if (expression.Arguments.Count != expectedCount)
+            {
+                var message = string.Format("IsNull function expected exactly {0} arguments but was {1}",
+                    expectedCount, expression.Arguments.Count);
+                throw new InvalidOperationException(message);
+            }
         }
     }
 }

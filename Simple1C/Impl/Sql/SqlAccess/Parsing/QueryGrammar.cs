@@ -88,6 +88,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             RegisterOperators(4, "OR");
             MarkPunctuation(",", "(", ")");
             MarkPunctuation(asOpt);
+            MarkPunctuation("OUTER");
            
             Root = root;
         }
@@ -167,7 +168,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var aggregateArg = NonTerminal("aggregateArg", null, TermFlags.IsTransient);
             var aggregate = NonTerminal("aggregate", null, ToAggregateFunction);
             var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
-            var queryFunctionName = NonTerminal("queryFunctionName", null, ToQueryFunctionName);
             
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
@@ -195,8 +195,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             functionArgs.Rule = parExprList | parSelectStmt;
             
-            queryFunctionName.Rule = ToTerm("presentation") | "DATETIME" | "YEAR" | "QUARTER" | "NOT";
-            queryFunctionExpr.Rule = queryFunctionName + functionArgs;
+            queryFunctionExpr.Rule = identifier + functionArgs;
             
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
             aggregateArg.Rule = ToTerm("(")+ "*" + ")" | functionArgs;
@@ -239,13 +238,20 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private NonTerminal Join(BnfTerm declaration, BnfTerm expression)
         {
-            var joinKindOpt = NonTerminal("joinKindOpt", Empty | "OUTER" | "INNER" | "LEFT" | "RIGHT");
-            var joinItem = NonTerminal("joinItem",
-                joinKindOpt + "JOIN" + declaration + "ON" + expression,
-                ToJoinClause);
-
+            var joinKindOpt = NonTerminal("joinKindOpt", null);
+            var joinItem = NonTerminal("joinItem", null, ToJoinClause);
             var joinItemList = NonTerminal("joinItemList", null);
+            var outerJoinKind = NonTerminal("outerJoinKind", null, TermFlags.IsTransient);
+            var outerKeywordOpt = NonTerminal("outerKeywordOpt", null, TermFlags.NoAstNode | TermFlags.IsPunctuation);
+
+            outerKeywordOpt.Rule = "OUTER" | Empty;
+            outerJoinKind.Rule = ToTerm("FULL") | "LEFT" | "RIGHT" ;
+            joinItem.Rule = joinKindOpt + "JOIN" + declaration + "ON" + expression;
+
+            joinKindOpt.Rule = Empty | "INNER" | (outerJoinKind + outerKeywordOpt);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
+
+            MarkPunctuation(outerKeywordOpt);
             return joinItemList;
         }
 
@@ -265,9 +271,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static QueryFunctionExpression ToQueryFunctionExpression(ParseTreeNode node)
         {
+            var queryFunction = ToQueryFunctionName(node.ChildNodes[0].FindTokenAndGetText().ToLower());
             return new QueryFunctionExpression
             {
-                FunctionName = (QueryFunctionName) node.ChildNodes[0].AstNode,
+                Function = queryFunction,
                 Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
             };
         }
@@ -361,18 +368,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static JoinClause ToJoinClause(ParseTreeNode node)
         {
-            var joinKindNodes = node.ChildNodes[0];
-            var joinKindString = joinKindNodes.ChildNodes.Count > 0
-                ? joinKindNodes.ChildNodes[0].Token.ValueString
-                : "inner";
+            var joinKindString = node.ChildNodes[0].FindTokenAndGetText() ?? "inner";
             JoinKind joinKind;
             switch (joinKindString.ToLower())
             {
                 case "inner":
                     joinKind = JoinKind.Inner;
                     break;
-                case "outer":
-                    joinKind = JoinKind.Outer;
+                case "full":
+                    joinKind = JoinKind.Full;
                     break;
                 case "left":
                     joinKind = JoinKind.Left;
@@ -487,24 +491,24 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
         }
 
-        private static QueryFunctionName ToQueryFunctionName(ParseTreeNode node)
+        private static KnownQueryFunction ToQueryFunctionName(string name)
         {
-            var queryFunctionNameString = node.ChildNodes[0].Token.ValueString;
-            switch (queryFunctionNameString.ToLower())
+            switch (name)
             {
                 case "presentation":
-                    return QueryFunctionName.Presentation;
+                    return KnownQueryFunction.Presentation;
                 case "datetime":
-                    return QueryFunctionName.DateTime;
+                    return KnownQueryFunction.DateTime;
                 case "year":
-                    return QueryFunctionName.Year;
+                    return KnownQueryFunction.Year;
                 case "quarter":
-                    return QueryFunctionName.Quarter;
+                    return KnownQueryFunction.Quarter;
                 case "not":
-                    return QueryFunctionName.SqlNot;
+                    return KnownQueryFunction.SqlNot;
+                case "isnull":
+                    return KnownQueryFunction.IsNull;
                 default:
-                    const string messageFormat = "unexpected function [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, queryFunctionNameString));
+                    throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
         }
 

@@ -223,6 +223,22 @@ from t1 as contracts";
 from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+
+        [Test]
+        public void PatchIsNullFunction()
+        {
+            const string sourceSql = @"select ISNULL(КПП,""Нет КПП"") as kpp
+    from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты contracts Main
+    КПП Single kpp";
+            const string expectedResult = @"select
+    case
+    when kpp is null then 'Нет КПП'
+    else kpp
+end as kpp
+from contracts";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
         
         [Test]
         public void CanUseNowParameter()
@@ -905,7 +921,7 @@ order by count(numberColumn) desc";
         [Test]
         public void SelectFromSubquery()
         {
-            const string source = "select ИНН, Наименование_Alias from (select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t0";
+            const string source = "select ИНН, Наименование_Alias from (select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t";
 
             const string mappings = @"Справочник.Контрагенты contractors0 Main
     ИНН Single inn
@@ -925,7 +941,7 @@ from contractors0) as t";
         [Test]
         public void CanSelectAllInSubquery()
         {
-            const string source = "select t0.ИНН, t0.Наименование from (select * from Справочник.Контрагенты) t";
+            const string source = "select t.ИНН, t.Наименование from (select * from Справочник.Контрагенты) t";
             const string mappings = @"Справочник.Контрагенты contractors0 Main
     ИНН Single inn
     Наименование Single name";

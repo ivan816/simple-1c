@@ -1,6 +1,6 @@
 ﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal enum QueryFunctionName
+    internal enum KnownQueryFunction
     {
         Presentation,
         DateTime,
@@ -8,6 +8,7 @@
         Quarter,
         SqlDatePart,
         SqlDateTrunc,
-        SqlNot
+        SqlNot,
+        IsNull
     }
 }

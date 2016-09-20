@@ -120,7 +120,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 if (f.invert)
                     expression = new QueryFunctionExpression
                     {
-                        FunctionName = QueryFunctionName.SqlNot,
+                        Function = KnownQueryFunction.SqlNot,
                         Arguments = new List<ISqlElement> { expression }
                     };
                 target.Fields.Add(new SelectFieldExpression
