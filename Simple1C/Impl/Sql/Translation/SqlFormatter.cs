@@ -145,7 +145,7 @@ namespace Simple1C.Impl.Sql.Translation
         public override ISqlElement VisitBinary(BinaryExpression expression)
         {
             Visit(expression.Left);
-            builder.Append(GetOperatorText(expression.Op));
+            builder.AppendFormat(" {0} ", GetOperatorText(expression.Op));
             Visit(expression.Right);
             return expression;
         }
@@ -259,27 +259,33 @@ namespace Simple1C.Impl.Sql.Translation
             switch (op)
             {
                 case SqlBinaryOperator.Eq:
-                    return " = ";
+                    return "=";
                 case SqlBinaryOperator.Neq:
-                    return " <> ";
+                    return "<>";
                 case SqlBinaryOperator.And:
-                    return " and ";
+                    return "and";
                 case SqlBinaryOperator.Or:
-                    return " or ";
+                    return "or";
                 case SqlBinaryOperator.LessThan:
-                    return " < ";
+                    return "<";
                 case SqlBinaryOperator.LessThanOrEqual:
-                    return " <= ";
+                    return "<=";
                 case SqlBinaryOperator.GreaterThan:
-                    return " > ";
+                    return ">";
                 case SqlBinaryOperator.GreaterThanOrEqual:
-                    return " >= ";
+                    return ">=";
                 case SqlBinaryOperator.Plus:
-                    return " + ";
+                    return "+";
                 case SqlBinaryOperator.Minus:
-                    return " - ";
+                    return "-";
+                case SqlBinaryOperator.Mult:
+                    return "*";
+                case SqlBinaryOperator.Div:
+                    return "/";
+                case SqlBinaryOperator.Remainder:
+                    return "%";
                 case SqlBinaryOperator.Like:
-                    return " like ";
+                    return "like";
                 default:
                     throw new ArgumentOutOfRangeException("op", op, null);
             }

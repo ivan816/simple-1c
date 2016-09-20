@@ -187,13 +187,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                         | parExpr | subquery;
             subquery.Rule = "(" + selectStatement + ")";
             unExpr.Rule = unOp + term;
-            unOp.Rule = "NOT"; //| "+" | "-" | "~";
-            binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
+            unOp.Rule = "NOT";
+            binOp.Rule = ToTerm("+") | "-" | "*" | "/" |
+                         "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
+                         | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
             expression.Rule = term | binExpr | inExpr | isNullExpression;
 
             functionArgs.Rule = parExprList | subquery;
-            
+
             queryFunctionExpr.Rule = identifier + functionArgs;
             
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
@@ -490,6 +492,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 case "<>":
                 case "!=":
                     return SqlBinaryOperator.Neq;
+                case "*":
+                    return SqlBinaryOperator.Mult;
+                case "/":
+                    return SqlBinaryOperator.Div;
+                case "%":
+                    return SqlBinaryOperator.Remainder;
                 default:
                     const string messageFormat1 = "unexpected operator [{0}]";
                     throw new InvalidOperationException(string.Format(messageFormat1, operatorText1));

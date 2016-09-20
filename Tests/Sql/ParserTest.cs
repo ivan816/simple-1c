@@ -427,14 +427,19 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
         }
 
         [Test]
-        public void AggregateWithColumn()
+        public void AggregateWithColumnExpression()
         {
-            var selectClause = ParseSelect("select sum(PaymentSum) from Payments");
-            var columnA = selectClause.Fields[0].Expression as AggregateFunctionExpression;
-            Assert.NotNull(columnA);
-            Assert.That(columnA.Function, Is.EqualTo("Sum").IgnoreCase);
-            Assert.That(columnA.Argument, Is.TypeOf<ColumnReferenceExpression>());
-            Assert.That(((ColumnReferenceExpression)columnA.Argument).Name, Is.EqualTo("PaymentSum"));
+            var selectClause = ParseSelect("select sum(PaymentSum*2) from Payments");
+            var aggregateArg = selectClause.Fields[0].Expression as AggregateFunctionExpression;
+            Assert.NotNull(aggregateArg);
+            Assert.That(aggregateArg.Function, Is.EqualTo("Sum").IgnoreCase);
+            var binary = aggregateArg.Argument as BinaryExpression;
+            Assert.NotNull(binary);
+            var left = binary.Left as ColumnReferenceExpression;
+            var right = binary.Right as LiteralExpression;
+            Assert.NotNull(left);
+            Assert.NotNull(right);
+            Assert.That(binary.Op, Is.EqualTo(SqlBinaryOperator.Mult));
         }
 
         [Test]
