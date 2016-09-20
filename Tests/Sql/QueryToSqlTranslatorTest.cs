@@ -1053,18 +1053,23 @@ where cOuter.__nested_field0 like cInner.name)";
             CheckTranslate(mappings, source, expected);
         }
 
-        private void CheckTranslate(string mappings, string sql, string expectedTranslated, params int[] areas)
+        private void CheckTranslate(string mappings, string sql, string expected, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
             var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore, areas)
             {
                 CurrentDate = currentDate
             };
-            var actualTranslated = sqlTranslator.Translate(sql);
+            var translated = sqlTranslator.Translate(sql);
+            var translatedLines = SpacesToTabs(translated)
+                .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
+            var expectedLines = SpacesToTabs(expected)
+                .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
+            
             Console.WriteLine("Input:\r\n{0}\r\n", sql);
-            Console.WriteLine("Translated:\r\n{0}\r\n", actualTranslated);
-            Console.WriteLine("Expected:\r\n{0}\r\n", expectedTranslated);
-            Assert.That(SpacesToTabs(actualTranslated), Is.EqualTo(SpacesToTabs(expectedTranslated)));
+            Console.WriteLine("Translated:\r\n{0}\r\n", translated);
+            Console.WriteLine("Expected:\r\n{0}\r\n", expected);
+            Assert.That(translatedLines, Is.EqualTo(expectedLines));
         }
 
         private static string SpacesToTabs(string s)
