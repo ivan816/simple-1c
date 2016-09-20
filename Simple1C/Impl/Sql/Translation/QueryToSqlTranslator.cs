@@ -125,21 +125,21 @@ namespace Simple1C.Impl.Sql.Translation
 
         private class SubqueryVisitor : SqlVisitor
         {
-            private readonly Func<SubqueryClause, SubqueryClause> visit;
+            private readonly Func<SubqueryTable, SubqueryTable> visit;
 
-            public static void Visit(ISqlElement element, Func<SubqueryClause, SubqueryClause> visit)
+            public static void Visit(ISqlElement element, Func<SubqueryTable, SubqueryTable> visit)
             {
                 new SubqueryVisitor(visit).Visit(element);
             }
 
-            private SubqueryVisitor(Func<SubqueryClause, SubqueryClause> visit)
+            private SubqueryVisitor(Func<SubqueryTable, SubqueryTable> visit)
             {
                 this.visit = visit;
             }
 
-            public override SubqueryClause VisitSubquery(SubqueryClause clause)
+            public override SubqueryTable VisitSubqueryTable(SubqueryTable expression)
             {
-                return visit(base.VisitSubquery(clause));
+                return visit(base.VisitSubqueryTable(expression));
             }
         }
     }

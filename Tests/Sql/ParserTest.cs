@@ -1,10 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
-using Simple1C.Impl.Sql.Translation;
 using Simple1C.Tests.Helpers;
 
 namespace Simple1C.Tests.Sql
@@ -476,18 +474,20 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             var selectStatement = ParseSelect("select DocumentSum from (select DocumentSum from Payments) t " +
                                            "where t.DocumentSum > 0");
 
-            var subquery = selectStatement.Source as SubqueryClause;
-            Assert.NotNull(subquery);
-            Assert.That(subquery.Alias, Is.EqualTo("t"));
+            var subqueryTable = selectStatement.Source as SubqueryTable;
+            Assert.NotNull(subqueryTable);
             
             var selectedField = selectStatement.Fields[0].Expression as ColumnReferenceExpression;
             Assert.NotNull(selectedField);
-            Assert.That(subquery.Alias, Is.EqualTo("t"));
+            Assert.That(subqueryTable.Alias, Is.EqualTo("t"));
             Assert.That(selectedField.Name, Is.EqualTo("DocumentSum"));
-            Assert.That(selectedField.Table, Is.EqualTo(subquery));
+            Assert.That(selectedField.Table, Is.EqualTo(subqueryTable));
 
-            var filteredField = SelectElements<ColumnReferenceExpression>(selectStatement.WhereExpression).Single();
-            Assert.That(filteredField.Table, Is.EqualTo(subquery));
+            var whereExpression = selectStatement.WhereExpression as BinaryExpression;
+            Assert.NotNull(whereExpression);
+            var left = whereExpression.Left as ColumnReferenceExpression;
+            Assert.NotNull(left);
+            Assert.That(left.Table, Is.EqualTo(subqueryTable));
         }
 
         [Test]
@@ -501,10 +501,10 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(inExpression.Column.Name, Is.EqualTo("counterparty"));
             Assert.That(inExpression.Column.Table, Is.EqualTo(query.Source));
 
-            var embeddedQuery = ((SqlQuery) inExpression.Source).GetSingleSelect();
-            Assert.That(embeddedQuery.Source, Is.TypeOf<TableDeclarationClause>());
-            Assert.That(((TableDeclarationClause)embeddedQuery.Source).Name, Is.EqualTo("counterparty"));
-            var subqueryColumn = embeddedQuery.Fields.First().Expression as ColumnReferenceExpression;
+            var innerQuery = ((SubqueryClause) inExpression.Source).Query.GetSingleSelect();
+            Assert.That(innerQuery.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)innerQuery.Source).Name, Is.EqualTo("counterparty"));
+            var subqueryColumn = innerQuery.Fields.First().Expression as ColumnReferenceExpression;
             Assert.NotNull(subqueryColumn);
             Assert.That(((TableDeclarationClause)subqueryColumn.Table).Name, Is.EqualTo("counterparty"));
         }
@@ -528,9 +528,9 @@ WHERE table2Key =
             var table1 = query.Source;
             var table1Filter = (BinaryExpression) query.WhereExpression;
             AssertIsColumnReference(table1Filter.Left, "table2Key", table1);
-            Assert.That(table1Filter.Right, Is.TypeOf<SqlQuery>());
+            Assert.That(table1Filter.Right, Is.TypeOf<SubqueryClause>());
 
-            var table2Query = ((SqlQuery)table1Filter.Right).GetSingleSelect();
+            var table2Query = ((SubqueryClause)table1Filter.Right).Query.GetSingleSelect();
             var table2 = (TableDeclarationClause) table2Query.Source;
             Assert.That(table2.Name, Is.EqualTo("table2"));
 
@@ -540,9 +540,9 @@ WHERE table2Key =
 
             var table2Filter2 = (BinaryExpression)((BinaryExpression)table2Query.WhereExpression).Right;
             AssertIsColumnReference(table2Filter2.Left, "table3Key", table2);
-            Assert.That(table2Filter2.Right, Is.TypeOf<SqlQuery>());
+            Assert.That(table2Filter2.Right, Is.TypeOf<SubqueryClause>());
 
-            var table3Query = ((SqlQuery)table2Filter2.Right).GetSingleSelect();
+            var table3Query = ((SubqueryClause)table2Filter2.Right).Query.GetSingleSelect();
             var table3 = (TableDeclarationClause) table3Query.Source;
             Assert.That(table3.Name, Is.EqualTo("table3"));
             var table3Filter1 = (BinaryExpression)((BinaryExpression)table3Query.WhereExpression).Left;
@@ -564,30 +564,12 @@ WHERE table2Key =
             return new QueryParser().Parse(source);
         }
 
-        private static IEnumerable<T> SelectElements<T>(ISqlElement element)
-        {
-            var visitor = new TreeEnumerator();
-            visitor.Visit(element);
-            return visitor.elements.OfType<T>();
-        }
-
         private static void AssertIsColumnReference(ISqlElement element, string name, ISqlElement source)
         {
             Assert.That(element, Is.TypeOf<ColumnReferenceExpression>());
             var columnReference = (ColumnReferenceExpression) element;
             Assert.That(columnReference.Table, Is.EqualTo(source));
             Assert.That(columnReference.Name, Is.EqualTo(name));
-        }
-
-        private class TreeEnumerator : SqlVisitor
-        {
-            public readonly List<ISqlElement> elements = new List<ISqlElement>();
-
-            public override ISqlElement Visit(ISqlElement element)
-            {
-                elements.Add(element);
-                return base.Visit(element);
-            }
         }
     }
 }

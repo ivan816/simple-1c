@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
@@ -48,10 +47,16 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 };
             AddJoinClauses(queryRoot.entity, selectClause);
             AddColumns(queryRoot, selectClause);
-            return new SubqueryClause
+            return new SubqueryTable
             {
-                Query = new SqlQuery {Unions = {new UnionClause {SelectClause = selectClause}}},
-                Alias = declaration.GetRefName()
+                Alias = declaration.GetRefName(),
+                Query = new SubqueryClause
+                {
+                    Query = new SqlQuery
+                    {
+                        Unions = {new UnionClause {SelectClause = selectClause}}
+                    }
+                }
             };
         }
 

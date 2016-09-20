@@ -27,11 +27,11 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             queryTables.Add(declaration, queryRoot);
         }
 
-        public void RegisterSubquery(SubqueryClause clause)
+        public void RegisterSubquery(SubqueryTable clause)
         {
             QueryRoot queryRoot;
             if (queryTables.TryGetValue(clause, out queryRoot)) return;
-            var subqueryProperties = CreateSubqueryProperties(clause.Query.Unions.First().SelectClause);
+            var subqueryProperties = CreateSubqueryProperties(clause.Query.Query.Unions.First().SelectClause);
             var mapping = new TableMapping(clause.Alias, clause.Alias, TableType.Main, subqueryProperties);
             var queryEntity = new QueryEntity(mapping, null);
             queryRoot = new QueryRoot(queryEntity, clause);

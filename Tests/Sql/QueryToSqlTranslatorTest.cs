@@ -919,9 +919,31 @@ order by count(numberColumn) desc";
         }
 
         [Test]
+        public void OrderBy_Alias()
+        {
+            var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
+group by СчетУчетаРасчетовСКонтрагентом
+order by number_count desc";
+
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documentsTable0 Main
+    СчетУчетаРасчетовСКонтрагентом Single accountingCodeColumn
+    Номер Single numberColumn";
+
+            const string expected =
+               @"select
+    accountingCodeColumn,
+    count(numberColumn) as number_count
+from documentsTable0
+group by accountingCodeColumn
+order by number_count desc";
+            CheckTranslate(mappings, source, expected);
+        }
+
+        [Test]
         public void SelectFromSubquery()
         {
-            const string source = "select ИНН, Наименование_Alias from (select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t";
+            const string source = "select ИНН, Наименование_Alias from " +
+                                  "(select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t";
 
             const string mappings = @"Справочник.Контрагенты contractors0 Main
     ИНН Single inn
@@ -994,6 +1016,40 @@ where dOuter.sum in (select
     sum
 from documents1
 where number <> dOuter.number)";
+            CheckTranslate(mappings, source, expected);
+        }
+        [Test]
+        public void SubqueryUsesNestedPropertyOfOuterTable()
+        {
+            const string source = @"select * from Документ.ПоступлениеНаРасчетныйСчет as cOuter 
+    where Контрагент.Наименование in (select Наименование from 
+                    Справочник.Контрагенты cInner 
+                    where cOuter.ДоговорКонтрагента.Наименование like cInner.Наименование )";
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
+    Ссылка Single id
+    Контрагент Single contractorId Справочник.Контрагенты
+    ДоговорКонтрагента Single contractId Справочник.ДоговорыКонтрагентов
+    ОбластьДанныхОсновныеДанные Single mainData
+Справочник.Контрагенты contractors2 Main
+    Ссылка Single id
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData
+Справочник.ДоговорыКонтрагентов contracts3 Main
+    Ссылка Single id
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData";
+            const string expected = @"select
+    *
+from (select
+    __nested_table1.name as __nested_field0,
+    __nested_table2.name as __nested_field1
+from documents1 as __nested_table0
+left join contracts3 as __nested_table1 on __nested_table1.mainData = __nested_table0.mainData and __nested_table1.id = __nested_table0.contractId
+left join contractors2 as __nested_table2 on __nested_table2.mainData = __nested_table0.mainData and __nested_table2.id = __nested_table0.contractorId) as cOuter
+where cOuter.__nested_field1 in (select
+    cInner.name
+from contractors2 as cInner
+where cOuter.__nested_field0 like cInner.name)";
             CheckTranslate(mappings, source, expected);
         }
 

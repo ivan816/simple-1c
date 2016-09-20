@@ -13,8 +13,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             Unions = new List<UnionClause>();
         }
 
-        //TODO. мерзость. kill?
-        public bool IsTopLevel { get; set; }
         public List<UnionClause> Unions { get; set; }
         public OrderByClause OrderBy { get; set; }
 

@@ -161,5 +161,11 @@ namespace Simple1C.Impl.Sql.Translation
             VisitEnumerable(listExpression.Elements);
             return listExpression;
         }
+
+        public virtual SubqueryTable VisitSubqueryTable(SubqueryTable expression)
+        {
+            Visit(expression.Query);
+            return expression;
+        }
     }
 }

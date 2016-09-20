@@ -29,7 +29,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var identifier = Identifier();
 
-            var root = NonTerminal("root", null, c => ToSqlQuery(c, true));
+            var root = NonTerminal("root", null, ToSqlQuery);
             var selectStatement = NonTerminal("selectStmt", null, ToSelectClause);
             var expression = Expression(identifier, root);
 
@@ -57,7 +57,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var unionStmtOpt = NonTerminal("unionStmt", null, ToUnionType);
             var unionList = NonTerminal("unionList", null, ToUnionList);
 
-            var subquery = NonTerminal("subQuery", null, ToSubquery);
+            var subqueryTable = NonTerminal("subQuery", null, ToSubqueryTable);
             //rules
             selectStatement.Rule = ToTerm("SELECT")
                                    + topOpt
@@ -74,8 +74,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             columnItem.Rule = expression + aliasOpt;
             tableDeclaration.Rule = identifier + aliasOpt;
             columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
-            subquery.Rule = ToTerm("(") + root + ")" + aliasOpt;
-            fromClause.Rule = tableDeclaration | subquery;
+            subqueryTable.Rule = ToTerm("(") + root + ")" + aliasOpt;
+            fromClause.Rule = tableDeclaration | subqueryTable;
             whereClauseOpt.Rule = Empty | ("WHERE" + expression);
             unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
             unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
@@ -88,7 +88,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             RegisterOperators(4, "OR");
             MarkPunctuation(",", "(", ")");
             MarkPunctuation(asOpt);
-            MarkPunctuation("OUTER");
            
             Root = root;
         }
@@ -174,7 +173,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var expression = NonTerminal("expression", null, TermFlags.IsTransient);
 
             var unExpr = NonTerminal("unExpr", null, ToUnaryExpression);
-            var parSelectStmt = NonTerminal("parSelectStatement", null, c => ToSqlQuery(c.ChildNodes[0], false));
+            var subquery = NonTerminal("parSelectStatement", null, ToSubquery);
             var unOp = NonTerminal("unOp", null);
             var functionArgs = NonTerminal("funArgs", null, TermFlags.IsTransient);
             var parExpr = NonTerminal("parExpr", null, TermFlags.IsTransient);
@@ -185,15 +184,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             parExpr.Rule = "(" + expression + ")";
             term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral
                         | aggregate | queryFunctionExpr
-                        | parExpr | parSelectStmt;
-            parSelectStmt.Rule = "(" + selectStatement + ")";
+                        | parExpr | subquery;
+            subquery.Rule = "(" + selectStatement + ")";
             unExpr.Rule = unOp + term;
             unOp.Rule = "NOT"; //| "+" | "-" | "~";
             binOp.Rule = ToTerm("+") | "-" | "=" | ">" | "<" | ">=" | "<=" | "<>" | "!=" | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
             expression.Rule = term | binExpr | inExpr | isNullExpression;
 
-            functionArgs.Rule = parExprList | parSelectStmt;
+            functionArgs.Rule = parExprList | subquery;
             
             queryFunctionExpr.Rule = identifier + functionArgs;
             
@@ -208,11 +207,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return expression;
         }
 
-        private static SqlQuery ToSqlQuery(ParseTreeNode node, bool isTopLevel)
+        private static SqlQuery ToSqlQuery(ParseTreeNode node)
         {
             return new SqlQuery
             {
-                IsTopLevel = isTopLevel,
                 Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
                 OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
             };
@@ -251,7 +249,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             joinKindOpt.Rule = Empty | "INNER" | (outerJoinKind + outerKeywordOpt);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
 
-            MarkPunctuation(outerKeywordOpt);
             return joinItemList;
         }
 
@@ -412,12 +409,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             };
         }
 
-        private static SubqueryClause ToSubquery(ParseTreeNode node)
+        private static SubqueryTable ToSubqueryTable(ParseTreeNode node)
         {
             var alias = node.ChildNodes[1].FindTokenAndGetText();
-            return new SubqueryClause
+            return new SubqueryTable
             {
-                Query = ToSqlQuery(node.ChildNodes[0], false),
+                Query = new SubqueryClause {Query = ToSqlQuery(node.ChildNodes[0])},
                 Alias = alias
             };
         }
@@ -443,6 +440,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             {
                 Left = left,
                 Right = right
+            };
+        }
+
+        private static SubqueryClause ToSubquery(ParseTreeNode node)
+        {
+            return new SubqueryClause
+            {
+                Query = (SqlQuery) node.ChildNodes[0].AstNode
             };
         }
 

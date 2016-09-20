@@ -2,10 +2,9 @@ using Simple1C.Impl.Sql.Translation;
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class SubqueryClause : IColumnSource
+    internal class SubqueryClause : ISqlElement
     {
         public SqlQuery Query { get; set; }
-        public string Alias { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
         {
@@ -14,7 +13,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override string ToString()
         {
-            return string.Format("{0}. ({1} as {2})", typeof(SubqueryClause),Query, Alias);
+            return string.Format("{0}. ({1})", typeof (SubqueryClause), Query);
         }
     }
 }

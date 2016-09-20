@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
@@ -9,7 +9,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     internal class ColumnReferenceTableNameResolver : SqlVisitor
     {
-        private readonly List<Context> stack = new List<Context>();
+        private readonly List<Context> contexts = new List<Context>();
 
         public override SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
         {
@@ -35,17 +35,17 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return clause;
         }
 
-        public override SubqueryClause VisitSubquery(SubqueryClause clause)
+        public override SubqueryTable VisitSubqueryTable(SubqueryTable clause)
         {
-            var result = base.VisitSubquery(clause);
-            RegisterSubquery(result);
+            var result = base.VisitSubqueryTable(clause);
+            Register(result.Alias, result);
             return result;
         }
 
         public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
-            Register(clause);
-            return clause;
+            Register(clause.GetRefName(), clause);
+            return base.VisitTableDeclaration(clause);
         }
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
@@ -53,35 +53,24 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var resolvedColumn = ResolveColumn(expression.Name);
             expression.Name = resolvedColumn.LocalName;
             expression.Table = resolvedColumn.Table;
-            return expression;
+            return base.VisitColumnReference(expression);
         }
 
         private void PushContext()
         {
-            stack.Add(new Context());
+            contexts.Add(new Context());
         }
 
         private void PopContext()
         {
-            if (stack.Count == 0)
+            if (contexts.Count == 0)
                 throw new InvalidOperationException("Assertion failure. Context popped too many times");
-            stack.RemoveAt(stack.Count - 1);
-        }
-
-        private void Register(TableDeclarationClause clause)
-        {
-            Register(clause.GetRefName(), clause);
-        }
-
-        private void RegisterSubquery(SubqueryClause clause)
-        {
-            if (!string.IsNullOrEmpty(clause.Alias))
-                Register(clause.Alias, clause);
+            contexts.RemoveAt(contexts.Count - 1);
         }
 
         private void Register(string refName, IColumnSource clause)
         {
-            var current = stack.Last();
+            var current = contexts.Last();
             current.LastDeclaration = clause;
             current.TablesByName[refName] = clause;
         }
@@ -90,7 +79,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             var items = name.Split('.');
             var possiblyAlias = items[0];
-            foreach (var tablesByName in Enumerable.Reverse(stack))
+            foreach (var tablesByName in Enumerable.Reverse(contexts))
             {
                 IColumnSource table;
                 if (tablesByName.TablesByName.TryGetValue(possiblyAlias, out table))
@@ -102,7 +91,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     };
                 }
             }
-            var context = stack.LastOrDefault();
+            var context = contexts.LastOrDefault();
             if (context != null)
                 return new ResolvedColumn
                 {
