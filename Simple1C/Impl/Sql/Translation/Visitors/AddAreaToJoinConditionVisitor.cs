@@ -8,7 +8,9 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override JoinClause VisitJoin(JoinClause clause)
         {
-            var joinTable = (TableDeclarationClause) clause.Source;
+            if (mainTable == null || !(clause.Source is TableDeclarationClause))
+                return clause;
+
             clause.Condition = new AndExpression
             {
                 Left = new EqualityExpression
@@ -21,7 +23,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Right = new ColumnReferenceExpression
                     {
                         Name = "ОбластьДанныхОсновныеДанные",
-                        Table = joinTable
+                        Table = clause.Source
                     }
                 },
                 Right = clause.Condition

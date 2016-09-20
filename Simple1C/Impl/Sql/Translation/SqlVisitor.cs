@@ -108,7 +108,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         public virtual JoinClause VisitJoin(JoinClause clause)
         {
-            clause.Source = Visit(clause.Source);
+            clause.Source = (IColumnSource) Visit(clause.Source);
             clause.Condition = Visit(clause.Condition);
             return clause;
         }
@@ -162,10 +162,10 @@ namespace Simple1C.Impl.Sql.Translation
             return listExpression;
         }
 
-        public virtual SubqueryTable VisitSubqueryTable(SubqueryTable expression)
+        public virtual SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
-            Visit(expression.Query);
-            return expression;
+            Visit(subqueryTable.Query);
+            return subqueryTable;
         }
     }
 }

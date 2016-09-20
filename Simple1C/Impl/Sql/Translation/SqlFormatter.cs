@@ -73,11 +73,11 @@ namespace Simple1C.Impl.Sql.Translation
             return clause;
         }
 
-        public override SubqueryTable VisitSubqueryTable(SubqueryTable expression)
+        public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
-            Visit(expression.Query);
-            builder.AppendFormat(" as {0}", expression.Alias);
-            return expression;
+            Visit(subqueryTable.Query);
+            builder.AppendFormat(" as {0}", subqueryTable.Alias);
+            return subqueryTable;
         }
 
         public override SelectClause VisitSelect(SelectClause clause)

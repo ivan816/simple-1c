@@ -35,9 +35,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return clause;
         }
 
-        public override SubqueryTable VisitSubqueryTable(SubqueryTable clause)
+        public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
-            var result = base.VisitSubqueryTable(clause);
+            var result = base.VisitSubqueryTable(subqueryTable);
             Register(result.Alias, result);
             return result;
         }

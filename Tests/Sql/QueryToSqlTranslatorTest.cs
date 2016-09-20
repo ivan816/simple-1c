@@ -1053,6 +1053,33 @@ where cOuter.__nested_field0 like cInner.name)";
             CheckTranslate(mappings, source, expected);
         }
 
+        [Test]
+        public void JoinOnSubquery()
+        {
+            const string source = @"
+select contracts.Наименование, contractor.Наименование from (select Наименование, Ссылка from Справочник.Контрагенты) contractor
+left join Справочник.ДоговорыКонтрагентов contracts
+on contracts.Владелец = contractor.Ссылка ";
+
+            const string mappings = @"Справочник.ДоговорыКонтрагентов contracts1 Main
+    Ссылка Single id
+    Наименование Single name
+    Владелец Single contractorId Справочник.Контрагенты
+Справочник.Контрагенты contractors2 Main
+    Ссылка Single id
+    Наименование Single name";
+
+            const string expected = @"select
+    contracts.name,
+    contractor.name
+from (select
+    name,
+    id
+from contractors2) as contractor
+left join contracts1 as contracts on contracts.contractorId = contractor.id";
+            CheckTranslate(mappings, source, expected);
+        }
+
         private void CheckTranslate(string mappings, string sql, string expected, params int[] areas)
         {
             var inmemoryMappingStore = Parse(SpacesToTabs(mappings));

@@ -38,10 +38,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var columnItem = NonTerminal("columnItem", null, ToSelectFieldExpression);
 
-            var tableDeclaration = NonTerminal("declaration", null, ToTableDeclaration);
+            var tableDeclaration = NonTerminal("joinSource", null, ToTableDeclaration);
 
-            var joinItemList = Join(tableDeclaration, expression);
-            var fromClause = NonTerminal("fromClause", null, TermFlags.IsTransient);
+            var columnSource = NonTerminal("columnSource", null, TermFlags.IsTransient);
+            var joinItemList = Join(columnSource, expression);
             var whereClauseOpt = NonTerminal("whereClauseOpt", null,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
 
@@ -63,19 +63,19 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                                    + topOpt
                                    + distinctOpt
                                    + selectList
-                                   + ToTerm("FROM") + fromClause
+                                   + ToTerm("FROM") + columnSource
                                    + joinItemList + whereClauseOpt
                                    + groupClauseOpt + havingClauseOpt;
             selectList.Rule = columnItemList | "*";
             topOpt.Rule = Empty | ("top" + numberLiteral);
             distinctOpt.Rule = Empty | "distinct";
 
+            columnSource.Rule = tableDeclaration | subqueryTable;
             aliasOpt.Rule = Empty | asOpt + identifier;
             columnItem.Rule = expression + aliasOpt;
             tableDeclaration.Rule = identifier + aliasOpt;
             columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
             subqueryTable.Rule = ToTerm("(") + root + ")" + aliasOpt;
-            fromClause.Rule = tableDeclaration | subqueryTable;
             whereClauseOpt.Rule = Empty | ("WHERE" + expression);
             unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
             unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
@@ -170,7 +170,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
-            var expression = NonTerminal("expression", null, TermFlags.IsTransient);
+            var expression = NonTerminal("joinCondition", null, TermFlags.IsTransient);
 
             var unExpr = NonTerminal("unExpr", null, ToUnaryExpression);
             var subquery = NonTerminal("parSelectStatement", null, ToSubquery);
@@ -234,7 +234,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return groupClauseOpt;
         }
 
-        private NonTerminal Join(BnfTerm declaration, BnfTerm expression)
+        private NonTerminal Join(BnfTerm columnSource, BnfTerm joinCondition)
         {
             var joinKindOpt = NonTerminal("joinKindOpt", null);
             var joinItem = NonTerminal("joinItem", null, ToJoinClause);
@@ -244,7 +244,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             outerKeywordOpt.Rule = "OUTER" | Empty;
             outerJoinKind.Rule = ToTerm("FULL") | "LEFT" | "RIGHT" ;
-            joinItem.Rule = joinKindOpt + "JOIN" + declaration + "ON" + expression;
+            joinItem.Rule = joinKindOpt + "JOIN" + columnSource + "ON" + joinCondition;
 
             joinKindOpt.Rule = Empty | "INNER" | (outerJoinKind + outerKeywordOpt);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
@@ -387,7 +387,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
             return new JoinClause
             {
-                Source = (TableDeclarationClause) node.ChildNodes[2].AstNode,
+                Source = (IColumnSource) node.ChildNodes[2].AstNode,
                 JoinKind = joinKind,
                 Condition = (ISqlElement) node.ChildNodes[4].AstNode
             };

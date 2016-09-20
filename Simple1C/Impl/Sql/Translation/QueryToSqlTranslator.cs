@@ -27,7 +27,6 @@ namespace Simple1C.Impl.Sql.Translation
                 {"и", "and"},
                 {"или", "or"},
                 {"в", "in"},
-                {"по", "by"},
                 {"датавремя", "datetime"},
                 {"год", "year"},
                 {"квартал", "quarter"},
@@ -43,6 +42,11 @@ namespace Simple1C.Impl.Sql.Translation
                 {"внешнее", "outer"},
                 {"внутреннее", "outer"},
                 {"естьnull", "isnull"},
+                {"количество", "count"},
+                {"сумма", "sum"},
+                {"минимум", "min"},
+                {"максимум", "max"},
+                {"среднее", "avg"},
             };
 
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
@@ -137,9 +141,9 @@ namespace Simple1C.Impl.Sql.Translation
                 this.visit = visit;
             }
 
-            public override SubqueryTable VisitSubqueryTable(SubqueryTable expression)
+            public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
             {
-                return visit(base.VisitSubqueryTable(expression));
+                return visit(base.VisitSubqueryTable(subqueryTable));
             }
         }
     }

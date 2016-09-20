@@ -24,7 +24,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             {
                 Expression = new ColumnReferenceExpression
                 {
-                    Name = table.GetSingleColumnName("Ссылка"),
+                    Name = table.GetIdColumnName(),
                     Table = (TableDeclarationClause) selectClause.Source
                 }
             });
