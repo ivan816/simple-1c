@@ -76,6 +76,11 @@ namespace Simple1C.Impl.Sql.Translation
         public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
             Visit(subqueryTable.Query);
+            if (string.IsNullOrWhiteSpace(subqueryTable.Alias))
+            {
+                var message = string.Format("Subquery must have an alias but did not: [{0}]", subqueryTable);
+                throw new InvalidOperationException(message);
+            }
             builder.AppendFormat(" as {0}", subqueryTable.Alias);
             return subqueryTable;
         }

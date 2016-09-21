@@ -54,11 +54,15 @@ namespace Simple1C.Impl.Sql.Translation
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private readonly List<ISqlElement> areas;
-        private readonly IMappingSource mappingSource;
+        private readonly QueryEntityRegistry queryEntityRegistry;
+        private readonly QueryEntityAccessor queryEntityAccessor;
+        private readonly NameGenerator nameGenerator;
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
-            this.mappingSource = mappingSource;
+            queryEntityRegistry = new QueryEntityRegistry(mappingSource);
+            queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
+            nameGenerator = new NameGenerator();
             if (areas.Length > 0)
                 this.areas = areas.Select(x => new LiteralExpression {Value = x})
                     .Cast<ISqlElement>()
@@ -74,35 +78,35 @@ namespace Simple1C.Impl.Sql.Translation
             source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             var queryParser = new QueryParser();
             var selectClause = queryParser.Parse(source);
-            var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
-            RewriteSqlQuery(selectClause, queryEntityAccessor, queryEntityRegistry);
+
+            RewriteSqlQuery(selectClause);
             return SqlFormatter.Format(selectClause);
         }
 
-        private void RewriteSqlQuery(SqlQuery selectClause, QueryEntityAccessor queryEntityAccessor, QueryEntityRegistry queryEntityRegistry)
+        private void RewriteSqlQuery(SqlQuery sqlQuery)
         {
-            TableDeclarationVisitor.Visit(selectClause, clause =>
+            TableDeclarationVisitor.Visit(sqlQuery, clause =>
             {
                 queryEntityRegistry.RegisterTable(clause);
                 return clause;
             });
-            SubqueryVisitor.Visit(selectClause, clause =>
+            SubqueryVisitor.Visit(sqlQuery, clause =>
             {
                 queryEntityRegistry.RegisterSubquery(clause);
                 return clause;
             });
 
-            new AddAreaToJoinConditionVisitor().Visit(selectClause);
+            new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
 
-            new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
+            new ColumnReferenceRewriter(queryEntityAccessor).Visit(sqlQuery);
 
-            var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry, queryEntityAccessor, areas);
-            TableDeclarationVisitor.Visit(selectClause, tableDeclarationRewriter.Rewrite);
+            var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
+                queryEntityAccessor, nameGenerator, areas);
+            tableDeclarationRewriter.RewriteTables(sqlQuery);
 
-            new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(selectClause);
+            new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(sqlQuery);
 
-            new QueryFunctionRewriter().Visit(selectClause);
+            new QueryFunctionRewriter().Visit(sqlQuery);
         }
 
         private static string FormatDateTime(DateTime dateTime)

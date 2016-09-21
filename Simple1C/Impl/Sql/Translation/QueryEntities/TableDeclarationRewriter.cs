@@ -1,26 +1,52 @@
 using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Impl.Sql.Translation.Visitors;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
-    internal class TableDeclarationRewriter
+    internal class TableDeclarationRewriter : SqlVisitor
     {
+        private readonly NameGenerator nameGenerator;
         private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly List<ISqlElement> areas;
         private const byte configurationItemReferenceType = 8;
 
+        private readonly Dictionary<IColumnSource, IColumnSource> rewrittenTables
+            = new Dictionary<IColumnSource, IColumnSource>();
+
         public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
             QueryEntityAccessor queryEntityAccessor,
-            List<ISqlElement> areas)
+            NameGenerator nameGenerator, List<ISqlElement> areas)
         {
             this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityAccessor = queryEntityAccessor;
             this.areas = areas;
+            this.nameGenerator = nameGenerator;
         }
 
-        public ISqlElement Rewrite(TableDeclarationClause declaration)
+        public void RewriteTables(ISqlElement element)
+        {
+            Visit(element);
+            new ColumnReferenceVisitor(column =>
+            {
+                IColumnSource generatedTable;
+                if (rewrittenTables.TryGetValue(column.Table, out generatedTable))
+                    column.Table = generatedTable;
+                return column;
+            }).Visit(element);
+        }
+
+        public override ISqlElement VisitTableDeclaration(TableDeclarationClause original)
+        {
+            var rewritten = RewriteTableIfNeeded(original);
+            if (rewritten != original)
+                rewrittenTables.Add(original, rewritten);
+            return rewritten;
+        }
+
+        private IColumnSource RewriteTableIfNeeded(TableDeclarationClause declaration)
         {
             var queryRoot = queryEntityRegistry.Get(declaration);
             var subqueryRequired = queryRoot.subqueryRequired || areas != null;
@@ -49,7 +75,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             AddColumns(queryRoot, selectClause);
             return new SubqueryTable
             {
-                Alias = declaration.GetRefName(),
+                Alias = declaration.Alias ?? nameGenerator.GenerateSubqueryName(),
                 Query = new SubqueryClause
                 {
                     Query = new SqlQuery
@@ -264,6 +290,21 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         {
             HasReferences,
             HasNoReferences
+        }
+
+        private class ColumnReferenceVisitor : SqlVisitor
+        {
+            private readonly Func<ColumnReferenceExpression, ColumnReferenceExpression> visitor;
+
+            public ColumnReferenceVisitor(Func<ColumnReferenceExpression, ColumnReferenceExpression> visitor)
+            {
+                this.visitor = visitor;
+            }
+
+            public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
+            {
+                return visitor((ColumnReferenceExpression) base.VisitColumnReference(expression));
+            }
         }
     }
 }
