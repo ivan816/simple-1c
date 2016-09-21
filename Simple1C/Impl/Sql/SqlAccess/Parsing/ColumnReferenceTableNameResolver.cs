@@ -79,10 +79,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             var items = name.Split('.');
             var possiblyAlias = items[0];
-            foreach (var tablesByName in Enumerable.Reverse(contexts))
+            foreach (var context in Enumerable.Reverse(contexts))
             {
                 IColumnSource table;
-                if (tablesByName.TablesByName.TryGetValue(possiblyAlias, out table))
+                if (context.TablesByName.TryGetValue(possiblyAlias, out table))
                 {
                     return new ResolvedColumn
                     {
@@ -91,12 +91,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     };
                 }
             }
-            var context = contexts.LastOrDefault();
-            if (context != null)
+            var currentContext = contexts.LastOrDefault();
+            if (currentContext != null)
                 return new ResolvedColumn
                 {
                     LocalName = name,
-                    Table = context.LastDeclaration
+                    Table = currentContext.LastDeclaration
                 };
             throw new InvalidOperationException(string.Format("Could not resolve column named {0}", name));
         }

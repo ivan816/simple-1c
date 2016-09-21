@@ -2,7 +2,7 @@
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class AddAreaToJoinConditionVisitor : SingleQuerySqlVisitorBase
+    internal class AddAreaToJoinConditionVisitor : SqlVisitor
     {
         private TableDeclarationClause mainTable;
 

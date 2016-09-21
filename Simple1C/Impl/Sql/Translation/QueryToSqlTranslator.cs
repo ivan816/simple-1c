@@ -74,77 +74,40 @@ namespace Simple1C.Impl.Sql.Translation
             source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
             var queryParser = new QueryParser();
             var selectClause = queryParser.Parse(source);
-            var translationVisitor = new TranslationVisitor(mappingSource, areas);
-            translationVisitor.Visit(selectClause);
+            var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
+            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
+            RewriteSqlQuery(selectClause, queryEntityAccessor, queryEntityRegistry);
             return SqlFormatter.Format(selectClause);
+        }
+
+        private void RewriteSqlQuery(SqlQuery selectClause, QueryEntityAccessor queryEntityAccessor, QueryEntityRegistry queryEntityRegistry)
+        {
+            TableDeclarationVisitor.Visit(selectClause, clause =>
+            {
+                queryEntityRegistry.RegisterTable(clause);
+                return clause;
+            });
+            SubqueryVisitor.Visit(selectClause, clause =>
+            {
+                queryEntityRegistry.RegisterSubquery(clause);
+                return clause;
+            });
+
+            new AddAreaToJoinConditionVisitor().Visit(selectClause);
+
+            new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
+
+            var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry, queryEntityAccessor, areas);
+            TableDeclarationVisitor.Visit(selectClause, tableDeclarationRewriter.Rewrite);
+
+            new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(selectClause);
+
+            new QueryFunctionRewriter().Visit(selectClause);
         }
 
         private static string FormatDateTime(DateTime dateTime)
         {
             return string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime);
-        }
-
-        private class TranslationVisitor : SqlVisitor
-        {
-            private readonly List<ISqlElement> areas;
-            private readonly QueryEntityAccessor queryEntityAccessor;
-            private readonly QueryEntityRegistry queryEntityRegistry;
-
-            public TranslationVisitor(IMappingSource mappingSource, List<ISqlElement> areas)
-            {
-                this.areas = areas;
-                queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-                queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
-            }
-
-            public override SqlQuery VisitSqlQuery(SqlQuery selectClause)
-            {
-                TableDeclarationVisitor.Visit(selectClause, clause =>
-                {
-                    queryEntityRegistry.RegisterTable(clause);
-                    return clause;
-                });
-                SubqueryVisitor.Visit(selectClause, clause =>
-                {
-                    queryEntityRegistry.RegisterSubquery(clause);
-                    return clause;
-                });
-
-                var result = base.VisitSqlQuery(selectClause);
-               
-                new AddAreaToJoinConditionVisitor().Visit(selectClause);
-
-                new ColumnReferenceRewriter(queryEntityAccessor).Visit(selectClause);
-
-                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry, queryEntityAccessor, areas);
-                TableDeclarationVisitor.Visit(selectClause, tableDeclarationRewriter.Rewrite);
-
-                new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(selectClause);
-
-                new QueryFunctionRewriter().Visit(selectClause);
-
-                return result;
-            }
-        }
-
-        private class SubqueryVisitor : SqlVisitor
-        {
-            private readonly Func<SubqueryTable, SubqueryTable> visit;
-
-            public static void Visit(ISqlElement element, Func<SubqueryTable, SubqueryTable> visit)
-            {
-                new SubqueryVisitor(visit).Visit(element);
-            }
-
-            private SubqueryVisitor(Func<SubqueryTable, SubqueryTable> visit)
-            {
-                this.visit = visit;
-            }
-
-            public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
-            {
-                return visit(base.VisitSubqueryTable(subqueryTable));
-            }
         }
     }
 }

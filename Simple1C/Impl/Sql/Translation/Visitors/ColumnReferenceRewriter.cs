@@ -4,7 +4,7 @@ using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class ColumnReferenceRewriter : SingleQuerySqlVisitorBase
+    internal class ColumnReferenceRewriter : SqlVisitor
     {
         private readonly QueryEntityAccessor queryEntityAccessor;
         private bool isPresentation;

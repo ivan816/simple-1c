@@ -48,7 +48,7 @@ from t1";
         [Test]
         public void SimpleWithAreas()
         {
-            const string sourceSql = @"select contractors.ИНН as CounterpartyInn
+            const string sourceSql = @"select ИНН as CounterpartyInn
     from Справочник.Контрагенты as contractors";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
@@ -940,14 +940,16 @@ order by number_count desc";
         }
 
         [Test]
-        public void SelectFromSubquery()
+        public void SelectFromSubqueryWithAreas()
         {
             const string source = "select ИНН, Наименование_Alias from " +
-                                  "(select ИНН, Наименование as Наименование_Alias from Справочник.Контрагенты) t";
+                                  "(select ИНН, Наименование as Наименование_Alias " +
+                                  "from Справочник.Контрагенты) t";
 
             const string mappings = @"Справочник.Контрагенты contractors0 Main
     ИНН Single inn
-    Наименование Single name";
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData";
 
             const string expected =
                @"select
@@ -956,8 +958,12 @@ order by number_count desc";
 from (select
     inn,
     name as Наименование_Alias
-from contractors0) as t";
-            CheckTranslate(mappings, source, expected);
+from (select
+    __nested_table0.inn,
+    __nested_table0.name
+from contractors0 as __nested_table0
+where __nested_table0.mainData in (10,20,30)) as Справочник.Контрагенты) as t";
+            CheckTranslate(mappings, source, expected, 10, 20, 30);
         }
 
         [Test]
@@ -1044,12 +1050,12 @@ from (select
     __nested_table1.name as __nested_field0,
     __nested_table2.name as __nested_field1
 from documents1 as __nested_table0
-left join contracts3 as __nested_table1 on __nested_table1.mainData = __nested_table0.mainData and __nested_table1.id = __nested_table0.contractId
-left join contractors2 as __nested_table2 on __nested_table2.mainData = __nested_table0.mainData and __nested_table2.id = __nested_table0.contractorId) as cOuter
-where cOuter.__nested_field1 in (select
+left join contractors2 as __nested_table1 on __nested_table1.mainData = __nested_table0.mainData and __nested_table1.id = __nested_table0.contractorId
+left join contracts3 as __nested_table2 on __nested_table2.mainData = __nested_table0.mainData and __nested_table2.id = __nested_table0.contractId) as cOuter
+where cOuter.__nested_field0 in (select
     cInner.name
 from contractors2 as cInner
-where cOuter.__nested_field0 like cInner.name)";
+where cOuter.__nested_field1 like cInner.name)";
             CheckTranslate(mappings, source, expected);
         }
 
@@ -1057,27 +1063,89 @@ where cOuter.__nested_field0 like cInner.name)";
         public void JoinOnSubquery()
         {
             const string source = @"
-select contracts.Наименование, contractor.Наименование from (select Наименование, Ссылка from Справочник.Контрагенты) contractor
-left join Справочник.ДоговорыКонтрагентов contracts
-on contracts.Владелец = contractor.Ссылка ";
+select 
+    contracts.Наименование, 
+    contractor.Наименование 
+from (select 
+        Наименование, 
+        Ссылка 
+    from Справочник.Контрагенты as contractors) contractor
+left join Справочник.ДоговорыКонтрагентов contracts on contracts.Владелец = contractor.Ссылка ";
 
             const string mappings = @"Справочник.ДоговорыКонтрагентов contracts1 Main
     Ссылка Single id
     Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData
     Владелец Single contractorId Справочник.Контрагенты
 Справочник.Контрагенты contractors2 Main
     Ссылка Single id
-    Наименование Single name";
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData";
 
             const string expected = @"select
     contracts.name,
     contractor.name
 from (select
-    name,
-    id
-from contractors2) as contractor
-left join contracts1 as contracts on contracts.contractorId = contractor.id";
-            CheckTranslate(mappings, source, expected);
+    contractors.name,
+    contractors.id
+from (select
+    __nested_table0.name,
+    __nested_table0.id,
+    __nested_table0.mainData
+from contractors2 as __nested_table0
+where __nested_table0.mainData in (10,200)) as contractors) as contractor
+left join (select
+    __nested_table1.name,
+    __nested_table1.mainData,
+    __nested_table1.contractorId
+from contracts1 as __nested_table1
+where __nested_table1.mainData in (10,200)) as contracts on contractors.mainData = contracts.mainData and contracts.contractorId = contractor.id";
+            CheckTranslate(mappings, source, expected, 10, 200);
+        }
+
+        [Test]
+        public void JoinInsideSubquery()
+        {
+            const string source = @"
+select 
+    subquery.contractName, 
+    subquery.inn
+from (select 
+        contracts.Наименование as contractName,
+        contractors.ИНН as inn
+    from Справочник.Контрагенты contractors
+    left join Справочник.ДоговорыКонтрагентов contracts on contracts.Владелец = contractors.Ссылка) subquery ";
+
+            const string mappings = @"Справочник.ДоговорыКонтрагентов contracts1 Main
+    Ссылка Single id
+    Наименование Single name
+    ОбластьДанныхОсновныеДанные Single mainData
+    Владелец Single contractorId Справочник.Контрагенты
+Справочник.Контрагенты contractors2 Main
+    Ссылка Single id
+    Наименование Single name
+    ИНН Single name
+    ОбластьДанныхОсновныеДанные Single mainData";
+
+            const string expected = @"select
+    subquery.contractName,
+    subquery.inn
+from (select
+    contracts.name as contractName,
+    contractors.name as inn
+from (select
+    __nested_table0.name,
+    __nested_table0.mainData,
+    __nested_table0.id
+from contractors2 as __nested_table0
+where __nested_table0.mainData in (10,200)) as contractors
+left join (select
+    __nested_table1.name,
+    __nested_table1.mainData,
+    __nested_table1.contractorId
+from contracts1 as __nested_table1
+where __nested_table1.mainData in (10,200)) as contracts on contractors.mainData = contracts.mainData and contracts.contractorId = contractors.id) as subquery";
+            CheckTranslate(mappings, source, expected, 10, 200);
         }
 
         private void CheckTranslate(string mappings, string sql, string expected, params int[] areas)
