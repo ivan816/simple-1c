@@ -36,5 +36,11 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             mainTable = clause;
             return clause;
         }
+
+        public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
+        {
+            mainTable = null;
+            return subqueryTable;
+        }
     }
 }

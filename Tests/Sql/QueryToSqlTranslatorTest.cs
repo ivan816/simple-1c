@@ -1101,12 +1101,12 @@ from (select
     from Справочник.Контрагенты as contractors) contractor
 left join Справочник.ДоговорыКонтрагентов contracts on contracts.Владелец = contractor.Ссылка ";
 
-            const string mappings = @"Справочник.ДоговорыКонтрагентов contracts1 Main
+            const string mappings = @"Справочник.ДоговорыКонтрагентов contractsTable1 Main
     Ссылка Single id
     Наименование Single name
     ОбластьДанныхОсновныеДанные Single mainData
     Владелец Single contractorId Справочник.Контрагенты
-Справочник.Контрагенты contractors2 Main
+Справочник.Контрагенты contractorsTable2 Main
     Ссылка Single id
     Наименование Single name
     ОбластьДанныхОсновныеДанные Single mainData";
@@ -1119,16 +1119,14 @@ from (select
     contractors.id
 from (select
     __nested_table0.name,
-    __nested_table0.id,
-    __nested_table0.mainData
-from contractors2 as __nested_table0
+    __nested_table0.id
+from contractorsTable2 as __nested_table0
 where __nested_table0.mainData in (10,200)) as contractors) as contractor
 left join (select
     __nested_table1.name,
-    __nested_table1.mainData,
     __nested_table1.contractorId
-from contracts1 as __nested_table1
-where __nested_table1.mainData in (10,200)) as contracts on contractors.mainData = contracts.mainData and contracts.contractorId = contractor.id";
+from contractsTable1 as __nested_table1
+where __nested_table1.mainData in (10,200)) as contracts on contracts.contractorId = contractor.id";
             CheckTranslate(mappings, source, expected, 10, 200);
         }
 
@@ -1164,30 +1162,28 @@ from (select
     contractors.name as inn
 from (select
     __nested_table0.name,
-    __nested_table0.mainData,
     __nested_table0.id
 from contractors2 as __nested_table0
 where __nested_table0.mainData in (10,200)) as contractors
 left join (select
     __nested_table1.name,
-    __nested_table1.mainData,
     __nested_table1.contractorId
 from contracts1 as __nested_table1
-where __nested_table1.mainData in (10,200)) as contracts on contractors.mainData = contracts.mainData and contracts.contractorId = contractors.id) as subquery";
+where __nested_table1.mainData in (10,200)) as contracts on contracts.contractorId = contractors.id) as subquery";
             CheckTranslate(mappings, source, expected, 10, 200);
         }
 
         private void CheckTranslate(string mappings, string sql, string expected, params int[] areas)
         {
-            var inmemoryMappingStore = Parse(SpacesToTabs(mappings));
+            var inmemoryMappingStore = Parse(SpacesToTabs(mappings).Trim());
             var sqlTranslator = new QueryToSqlTranslator(inmemoryMappingStore, areas)
             {
                 CurrentDate = currentDate
             };
             var translated = sqlTranslator.Translate(sql);
-            var translatedLines = SpacesToTabs(translated)
+            var translatedLines = SpacesToTabs(translated.Trim())
                 .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-            var expectedLines = SpacesToTabs(expected)
+            var expectedLines = SpacesToTabs(expected.Trim())
                 .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
             
             Console.WriteLine("Input:\r\n{0}\r\n", sql);
