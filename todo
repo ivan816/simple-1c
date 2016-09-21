@@ -22,8 +22,6 @@ todo sql
 
 	CASE
 
-	NOT без скобочек
-
 	substring -> substring(cast()). проверить что работает в postgres. 1с юзает дурацкий custom char mvarchar.
 
 	поддержать НачалоПериода -> date_trunc = отбрось все что меньше

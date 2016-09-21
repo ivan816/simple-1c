@@ -42,6 +42,7 @@ namespace Simple1C.Impl.Sql.Translation
                 {"внешнее", "outer"},
                 {"внутреннее", "outer"},
                 {"естьnull", "isnull"},
+                {"есть", "is"},
                 {"количество", "count"},
                 {"сумма", "sum"},
                 {"минимум", "min"},
