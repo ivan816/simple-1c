@@ -275,16 +275,27 @@ where contracts.c1 >= cast('2010-07-10' as date)";
         [Test]
         public void CanUseRussianSyntax()
         {
-            const string sourceSql = @"выбрать contractors.ИНН как CounterpartyInn
+            const string sourceSql = @"выбрать contractors.ИНН, КОЛИЧЕСТВО(contracts.Владелец) как ContractCount
     из Справочник.Контрагенты как contractors
-    ГДЕ contractors.наименование =""test-name"" и contractors.ИНН <> ""test-inn""";
-            const string mappings = @"Справочник.Контрагенты t1 Main
-    ИНН Single c1
-    Наименование Single c2";
+    полное соединение Справочник.ДоговорыКонтрагентов contracts
+        по contracts.Владелец = contractors.Ссылка
+    ГДЕ contractors.наименование <> ""test-name"" и contractors.ИНН <> ""test-inn""
+    сгруппировать по contractors.Ссылка";
+            const string mappings = @"Справочник.Контрагенты contractors0 Main
+    Ссылка Single id
+    ОбластьДанныхОсновныеДанные Single area
+    ИНН Single inn
+    Наименование Single name
+Справочник.ДоговорыКонтрагентов contracts1 Main
+    ОбластьДанныхОсновныеДанные Single area
+    Владелец Single owner Справочник.Контрагенты";
             const string expectedResult = @"select
-    contractors.c1 as CounterpartyInn
-from t1 as contractors
-where contractors.c2 = 'test-name' and contractors.c1 <> 'test-inn'";
+    contractors.inn,
+    count(contracts.owner) as ContractCount
+from contractors0 as contractors
+full outer join contracts1 as contracts on contractors.area = contracts.area and contracts.owner = contractors.id
+where contractors.name <> 'test-name' and contractors.inn <> 'test-inn'
+group by contractors.id";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
         

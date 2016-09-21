@@ -232,7 +232,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                             .ToList()
                     });
             groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), expression);
-            groupClauseOpt.Rule = Empty | "GROUP" + ToTerm("BY") + groupColumnList;
+            var by = NonTerminal("by", ToTerm("BY") | "По", TermFlags.NoAstNode);
+            groupClauseOpt.Rule = Empty | "GROUP" + by + groupColumnList;
             return groupClauseOpt;
         }
 
@@ -243,10 +244,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var joinItemList = NonTerminal("joinItemList", null);
             var outerJoinKind = NonTerminal("outerJoinKind", null, TermFlags.IsTransient);
             var outerKeywordOpt = NonTerminal("outerKeywordOpt", null, TermFlags.NoAstNode | TermFlags.IsPunctuation);
-
+            var on = NonTerminal("on", ToTerm("ON") | "По", TermFlags.NoAstNode);
             outerKeywordOpt.Rule = "OUTER" | Empty;
             outerJoinKind.Rule = ToTerm("FULL") | "LEFT" | "RIGHT" ;
-            joinItem.Rule = joinKindOpt + "JOIN" + columnSource + "ON" + joinCondition;
+            joinItem.Rule = joinKindOpt + "JOIN" + columnSource + on + joinCondition;
 
             joinKindOpt.Rule = Empty | "INNER" | (outerJoinKind + outerKeywordOpt);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
