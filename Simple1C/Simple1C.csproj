@@ -163,6 +163,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteralExpression.cs" />
+    <Compile Include="Impl\Sql\SchemaMapping\PropertyNames.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\SubqueryVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ColumnReferenceRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\AddAreaToJoinConditionVisitor.cs" />

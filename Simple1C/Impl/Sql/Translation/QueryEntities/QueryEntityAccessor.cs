@@ -74,7 +74,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
             if (propertyMapping.SingleLayout != null)
             {
-                if (name.EqualsIgnoringCase("Ссылка"))
+                if (name.EqualsIgnoringCase(PropertyNames.Id))
                 {
                     if (queryEntity.mapping.Type == TableType.TableSection)
                     {

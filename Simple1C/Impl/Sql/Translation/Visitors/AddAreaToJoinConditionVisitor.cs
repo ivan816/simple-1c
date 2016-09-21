@@ -1,4 +1,6 @@
-﻿using Simple1C.Impl.Sql.SqlAccess.Syntax;
+﻿using Simple1C.Impl.Sql.SchemaMapping;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
@@ -17,12 +19,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 {
                     Left = new ColumnReferenceExpression
                     {
-                        Name = "ОбластьДанныхОсновныеДанные",
+                        Name = PropertyNames.Area,
                         Table = mainTable
                     },
                     Right = new ColumnReferenceExpression
                     {
-                        Name = "ОбластьДанныхОсновныеДанные",
+                        Name = PropertyNames.Area,
                         Table = clause.Source
                     }
                 },
