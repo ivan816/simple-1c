@@ -167,5 +167,11 @@ namespace Simple1C.Impl.Sql.Translation
             Visit(subqueryTable.Query);
             return subqueryTable;
         }
+
+        public virtual ISqlElement VisitUnary(UnaryExpression unaryExpression)
+        {
+            Visit(unaryExpression.Argument);
+            return unaryExpression;
+        }
     }
 }

@@ -134,6 +134,8 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\IColumnSource.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ListExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryTable.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryOperator.cs" />
     <Compile Include="Impl\Sql\Translation\SqlFormatter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionExpression.cs" />

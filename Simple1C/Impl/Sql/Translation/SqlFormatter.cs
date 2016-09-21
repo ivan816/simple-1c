@@ -147,6 +147,13 @@ namespace Simple1C.Impl.Sql.Translation
             return expression;
         }
 
+        public override ISqlElement VisitUnary(UnaryExpression unaryExpression)
+        {
+            builder.AppendFormat(" {0} ", GetOperatorText(unaryExpression.Operator));
+            Visit(unaryExpression.Argument);
+            return unaryExpression;
+        }
+
         public override ISqlElement VisitBinary(BinaryExpression expression)
         {
             Visit(expression.Left);
@@ -295,6 +302,18 @@ namespace Simple1C.Impl.Sql.Translation
                     throw new ArgumentOutOfRangeException("op", op, null);
             }
         }
+
+        private static string GetOperatorText(UnaryOperator op)
+        {
+            switch (op)
+            {
+                case UnaryOperator.Not:
+                    return "not";
+                default:
+                    throw new InvalidOperationException("Unexpected operator type " + op);
+            }
+        }
+
 
         private static string FormatValueAsString(object value)
         {

@@ -34,7 +34,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var expression = Expression(identifier, root);
 
             var asOpt = NonTerminal("asOpt", Empty | "AS");
-            var aliasOpt = NonTerminal("aliasOpt", null);
+            var alias = NonTerminal("alias", null, TermFlags.IsTransient);
+            var aliasOpt = NonTerminal("aliasOpt", null, TermFlags.IsTransient);
 
             var columnItem = NonTerminal("columnItem", null, ToSelectFieldExpression);
 
@@ -71,11 +72,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             distinctOpt.Rule = Empty | "distinct";
 
             columnSource.Rule = tableDeclaration | subqueryTable;
-            aliasOpt.Rule = Empty | asOpt + identifier;
+            alias.Rule = asOpt + identifier;
+            aliasOpt.Rule = Empty | alias;
             columnItem.Rule = expression + aliasOpt;
             tableDeclaration.Rule = identifier + aliasOpt;
             columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
-            subqueryTable.Rule = ToTerm("(") + root + ")" + aliasOpt;
+            subqueryTable.Rule = ToTerm("(") + root + ")" + alias;
             whereClauseOpt.Rule = Empty | ("WHERE" + expression);
             unionStmtOpt.Rule = Empty | ("UNION" + NonTerminal("unionAllModifier", Empty | "ALL"));
             unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
@@ -84,6 +86,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             RegisterOperators(10, "*", "/", "%");
             RegisterOperators(9, "+", "-");
             RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "LIKE", "IN");
+            RegisterOperators(6, "NOT");
             RegisterOperators(5, "AND");
             RegisterOperators(4, "OR");
             MarkPunctuation(",", "(", ")");
@@ -94,11 +97,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static SelectFieldExpression ToSelectFieldExpression(ParseTreeNode n)
         {
-            var aliasNodes = n.ChildNodes[1].ChildNodes;
             return new SelectFieldExpression
             {
                 Expression = (ISqlElement) n.ChildNodes[0].AstNode,
-                Alias = aliasNodes.Count > 0 ? ((Identifier) aliasNodes[0].AstNode).Value : null
+                Alias = n.ChildNodes.Count > 1 ? ((Identifier) n.ChildNodes[1].AstNode).Value : null
             };
         }
 
@@ -107,7 +109,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return new TableDeclarationClause
             {
                 Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
-                Alias = n.ChildNodes[1].Elements().OfType<Identifier>().Select(x => x.Value).SingleOrDefault()
+                Alias = n.ChildNodes.Count > 1 ? ((Identifier)n.ChildNodes[1].AstNode).Value : null
             };
         }
 
@@ -170,11 +172,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
-            var expression = NonTerminal("joinCondition", null, TermFlags.IsTransient);
+            var expression = NonTerminal("expression", null, TermFlags.IsTransient);
 
             var unExpr = NonTerminal("unExpr", null, ToUnaryExpression);
             var subquery = NonTerminal("parSelectStatement", null, ToSubquery);
-            var unOp = NonTerminal("unOp", null);
+            var unOp = NonTerminal("unOp", null, ToUnaryOperator);
+            unOp.SetFlag(TermFlags.InheritPrecedence);
             var functionArgs = NonTerminal("funArgs", null, TermFlags.IsTransient);
             var parExpr = NonTerminal("parExpr", null, TermFlags.IsTransient);
             var parExprList = NonTerminal("parExprList", null, TermFlags.IsTransient);
@@ -186,13 +189,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                         | aggregate | queryFunctionExpr
                         | parExpr | subquery;
             subquery.Rule = "(" + selectStatement + ")";
-            unExpr.Rule = unOp + term;
             unOp.Rule = "NOT";
+            unExpr.Rule = unOp + expression;
             binOp.Rule = ToTerm("+") | "-" | "*" | "/" |
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
                          | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
-            expression.Rule = term | binExpr | inExpr | isNullExpression;
+            expression.Rule = term | unExpr | binExpr | inExpr| isNullExpression;
 
             functionArgs.Rule = parExprList | subquery;
 
@@ -467,8 +470,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static SqlBinaryOperator ToBinaryOperator(ParseTreeNode node)
         {
-            var operatorText1 = node.FindTokenAndGetText();
-            switch (operatorText1.ToLower())
+            var operatorText = node.FindTokenAndGetText().ToLower();
+            switch (operatorText)
             {
                 case "and":
                     return SqlBinaryOperator.And;
@@ -500,8 +503,18 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 case "%":
                     return SqlBinaryOperator.Remainder;
                 default:
-                    const string messageFormat1 = "unexpected operator [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat1, operatorText1));
+                    throw new InvalidOperationException(string.Format("unexpected binary operator [{0}]", operatorText));
+            }
+        }
+
+        private static UnaryOperator ToUnaryOperator(ParseTreeNode node)
+        {
+            var text = node.FindTokenAndGetText().ToLower();
+            switch (text)
+            {
+                case "not":
+                    return UnaryOperator.Not;
+                default:throw new InvalidOperationException(string.Format("unexpected unary operator [{0}]", text));
             }
         }
 
@@ -528,7 +541,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static object ToUnaryExpression(ParseTreeNode node)
         {
-            return null;
+            return new UnaryExpression
+            {
+                Operator = (UnaryOperator) node.ChildNodes[0].AstNode,
+                Argument = (ISqlElement) node.ChildNodes[1].AstNode
+            };
         }
 
         private static NonTerminal NonTerminal(string name, BnfExpression rule, TermFlags flags = TermFlags.None)

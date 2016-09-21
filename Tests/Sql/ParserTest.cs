@@ -245,6 +245,19 @@ order by a1");
         }
 
         [Test]
+        public void UnaryNotOperator()
+        {
+            var andQuery = ParseSelect("select * from testTable where not b > 0 and c > 0");
+            var eqUery = ParseSelect("select * from testTable where not b > 0 = c > 0");
+            var whereCondition = andQuery.WhereExpression as BinaryExpression;
+            Assert.NotNull(whereCondition);
+            var unaryExpression = whereCondition.Left as UnaryExpression;
+            Assert.NotNull(unaryExpression);
+            Assert.That(unaryExpression.Operator, Is.EqualTo(UnaryOperator.Not));
+            Assert.That(eqUery.WhereExpression, Is.TypeOf<UnaryExpression>());
+        }
+
+        [Test]
         public void InOperator()
         {
             var selectClause = ParseSelect("select a,b from testTable where c in (10, 20, 30)");
@@ -493,6 +506,12 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             var left = whereExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
             Assert.That(left.Table, Is.EqualTo(subqueryTable));
+        }
+
+        [Test]
+        public void SubqueryWithoutAlias_ThrowsException()
+        {
+            Assert.Throws<InvalidOperationException>(() => ParseSelect("select * from (select * from Contractors)"));
         }
 
         [Test]
