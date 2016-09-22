@@ -131,6 +131,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryParser.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregationFunction.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CastExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\DatePart.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\IColumnSource.cs" />

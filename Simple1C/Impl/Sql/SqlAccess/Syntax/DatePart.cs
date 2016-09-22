@@ -8,7 +8,6 @@
         Week,
         Day,
         Hour,
-        Minute,
-        Second
+        Minute
     }
 }

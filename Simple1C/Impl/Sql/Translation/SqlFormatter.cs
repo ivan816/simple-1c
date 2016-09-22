@@ -34,7 +34,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override AggregateFunctionExpression VisitAggregateFunction(AggregateFunctionExpression expression)
         {
-            builder.Append(expression.Function.ToLower());
+            builder.Append(expression.Function.ToString().ToLower());
             builder.Append("(");
             if (expression.IsSelectAll)
                 builder.Append("*");

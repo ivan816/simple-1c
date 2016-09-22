@@ -156,7 +156,7 @@ namespace Simple1C.Tests.Sql
             Assert.That(left, Is.TypeOf<AggregateFunctionExpression>());
             Assert.That(((BinaryExpression)havingClause).Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
 
-            Assert.That(((AggregateFunctionExpression)left).Function, Is.EqualTo("Count").IgnoreCase);
+            Assert.That(((AggregateFunctionExpression)left).Function, Is.EqualTo(AggregationFunction.Count));
             Assert.That(((AggregateFunctionExpression)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
 
             var right = ((BinaryExpression)havingClause).Right;
@@ -432,10 +432,10 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             var columnA = selectClause.Fields[0].Expression as AggregateFunctionExpression;
             var columnB = selectClause.Fields[1].Expression as AggregateFunctionExpression;
             Assert.NotNull(columnA);
-            Assert.That(columnA.Function, Is.EqualTo("Count").IgnoreCase);
+            Assert.That(columnA.Function, Is.EqualTo(AggregationFunction.Count));
             Assert.That(columnA.IsSelectAll, Is.True);
             Assert.NotNull(columnB);
-            Assert.That(columnB.Function, Is.EqualTo("Sum").IgnoreCase);
+            Assert.That(columnB.Function, Is.EqualTo(AggregationFunction.Sum));
             Assert.That(columnA.IsSelectAll, Is.True);
         }
 
@@ -445,7 +445,7 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             var selectClause = ParseSelect("select sum(PaymentSum*2) from Payments");
             var aggregateArg = selectClause.Fields[0].Expression as AggregateFunctionExpression;
             Assert.NotNull(aggregateArg);
-            Assert.That(aggregateArg.Function, Is.EqualTo("Sum").IgnoreCase);
+            Assert.That(aggregateArg.Function, Is.EqualTo(AggregationFunction.Sum));
             var binary = aggregateArg.Argument as BinaryExpression;
             Assert.NotNull(binary);
             var left = binary.Left as ColumnReferenceExpression;
