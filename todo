@@ -21,11 +21,6 @@ todo sql
 		copypaste иван советует
 
 	CASE
-
-	substring -> substring(cast()). проверить что работает в postgres. 1с юзает дурацкий custom char mvarchar.
-
-	поддержать НачалоПериода -> date_trunc = отбрось все что меньше
-
 	В order by алиасы резолвить из первого из Union-ов
 
 	?order by по колонке с енумом -> нужен join

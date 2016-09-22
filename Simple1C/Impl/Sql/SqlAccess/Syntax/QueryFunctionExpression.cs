@@ -21,8 +21,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override string ToString()
         {
-            return string.Format("{0}. {1}({2})", typeof (QueryFunctionExpression).Name, Function,
-                Arguments.JoinStrings(","));
+            return string.Format("{0}. {1}({2})", typeof (QueryFunctionExpression).Name, Function, Arguments.JoinStrings(","));
         }
     }
 }

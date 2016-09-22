@@ -9,6 +9,7 @@
         SqlDatePart,
         SqlDateTrunc,
         SqlNot,
-        IsNull
+        IsNull,
+        Substring
     }
 }

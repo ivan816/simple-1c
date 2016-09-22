@@ -242,6 +242,30 @@ from t1 as contracts";
         }
 
         [Test]
+        public void PatchSubstringFunction()
+        {
+            const string sourceSql = @"select substring(КПП, 2, 5) from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты contractors1 Main
+    КПП Single kpp";
+            const string expectedResult = @"select
+    substring(cast(kpp as varchar),2,5)
+from contractors1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
+        public void PatchBeginOfPeriodFunction()
+        {
+            const string sourceSql = @"select НачалоПериода(Дата, Месяц) from Документ.ПоступлениеНаРасчетныйСчет";
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
+    Дата Single date";
+            const string expectedResult = @"select
+    date_trunc('Month',date)
+from documents1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void PatchIsNullFunction()
         {
             const string sourceSql = @"select ISNULL(КПП,""Нет КПП"") as kpp
@@ -391,7 +415,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
     Наименование Single c3";
             
             var exception = Assert.Throws<InvalidOperationException>(() => 
-                CheckTranslate(mappings, sourceSql, null));
+                CheckTranslate(mappings, sourceSql, ""));
             Assert.That(exception.Message, Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
         }
 

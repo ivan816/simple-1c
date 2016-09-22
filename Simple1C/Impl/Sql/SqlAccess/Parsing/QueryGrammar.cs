@@ -132,6 +132,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private NonTerminal Expression(NonTerminal identifier, NonTerminal selectStatement)
         {
+            var datePartLiteral = NonTerminal("datePartLiteral", null, ToDatePart);
             var stringLiteral = new StringLiteral("string",
                 "\"",
                 StringOptions.AllowsAllEscapes | StringOptions.AllowsDoubledQuote,
@@ -145,7 +146,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 });
 
             var boolLiteral = NonTerminal("boolLiteral",
-                ToTerm("true") | ToTerm("false"),
+                ToTerm("true") | "false",
                 node => new LiteralExpression
                 {
                     Value = node.FindTokenAndGetText() == "true"
@@ -181,6 +182,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var functionArgs = NonTerminal("funArgs", null, TermFlags.IsTransient);
             var parExpr = NonTerminal("parExpr", null, TermFlags.IsTransient);
             var parExprList = NonTerminal("parExprList", null, TermFlags.IsTransient);
+
+            var dateTruncExpression = NonTerminal("dateTruncExpression", null, ToDateTruncExpression);
             //rules
             exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
             parExprList.Rule = "(" + exprList + ")";
@@ -195,16 +198,19 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
                          | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
-            expression.Rule = term | unExpr | binExpr | inExpr| isNullExpression;
+            expression.Rule = term | unExpr | binExpr | inExpr | isNullExpression | dateTruncExpression;
 
             functionArgs.Rule = parExprList | subquery;
 
-            queryFunctionExpr.Rule = identifier + functionArgs;
+            queryFunctionExpr.Rule = (identifier + functionArgs);
             
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
             aggregateArg.Rule = ToTerm("(")+ "*" + ")" | functionArgs;
             aggregate.Rule = aggregateFunctionName + aggregateArg;
             inExpr.Rule = columnRef + ToTerm("in") + functionArgs;
+
+            datePartLiteral.Rule = ToTerm("year") | "month" | "week" | "day" | "hour" | "minute" | "second";
+            dateTruncExpression.Rule = "beginOfPeriod" + ToTerm("(") + expression + "," + datePartLiteral + ")";
 
             isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
             isNullExpression.Rule = term + isNull;
@@ -269,6 +275,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 {
                     Elements = sourceNode.Elements().Cast<ISqlElement>().ToList()
                 }
+            };
+        }
+
+        private static QueryFunctionExpression ToDateTruncExpression(ParseTreeNode node)
+        {
+            return new QueryFunctionExpression
+            {
+                Function = KnownQueryFunction.SqlDateTrunc,
+                Arguments = node.Elements().OfType<ISqlElement>().ToList()
             };
         }
 
@@ -534,6 +549,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     return KnownQueryFunction.SqlNot;
                 case "isnull":
                     return KnownQueryFunction.IsNull;
+                case "substring":
+                    return KnownQueryFunction.Substring;
+                case "beginofperiod":
+                    return KnownQueryFunction.SqlDateTrunc;
                 default:
                     throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
@@ -546,6 +565,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Operator = (UnaryOperator) node.ChildNodes[0].AstNode,
                 Argument = (ISqlElement) node.ChildNodes[1].AstNode
             };
+        }
+
+        private static LiteralExpression ToDatePart(ParseTreeNode node)
+        {
+            DatePart datePart;
+            if (Enum.TryParse(node.FindTokenAndGetText(), true, out datePart))
+                return new LiteralExpression {Value = datePart, SqlType = SqlType.DatePart};
+            throw new InvalidOperationException("Unexpected date part literal "+ node);
         }
 
         private static NonTerminal NonTerminal(string name, BnfExpression rule, TermFlags flags = TermFlags.None)

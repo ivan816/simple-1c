@@ -235,9 +235,10 @@ namespace Simple1C.Impl.Sql.Translation
                     return "date_trunc";
                 case KnownQueryFunction.SqlNot:
                     return "not";
+                case KnownQueryFunction.Substring:
+                    return "substring";
                 default:
-                    const string messageFormat = "unexpected function [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, name));
+                    throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
         }
 
@@ -255,6 +256,14 @@ namespace Simple1C.Impl.Sql.Translation
                 builder.Append("not ");
             builder.Append("null");
             return expression;
+        }
+
+        public override ISqlElement VisitCast(CastExpression castExpression)
+        {
+            builder.Append("cast(");
+            Visit(castExpression.Expression);
+            builder.AppendFormat(" as {0})", castExpression.Type);
+            return castExpression;
         }
 
         private static void NotSupported(ISqlElement element, params object[] args)
@@ -344,6 +353,8 @@ namespace Simple1C.Impl.Sql.Translation
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
                     throw new InvalidOperationException(string.Format(messageFormat, value,
                         value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    case SqlType.DatePart:
+                    return value.ToString();
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));

@@ -85,7 +85,7 @@ namespace Simple1C.Impl.Sql.Translation
         public virtual CaseExpression VisitCase(CaseExpression expression)
         {
             if (expression.DefaultValue != null)
-                expression.DefaultValue = (LiteralExpression) Visit(expression.DefaultValue);
+                expression.DefaultValue = Visit(expression.DefaultValue);
             return expression;
         }
 
@@ -102,7 +102,7 @@ namespace Simple1C.Impl.Sql.Translation
         public virtual ISqlElement VisitIn(InExpression expression)
         {
             expression.Column = (ColumnReferenceExpression) Visit(expression.Column);
-            Visit(expression.Source);
+            expression.Source = Visit(expression.Source);
             return expression;
         }
 
@@ -133,7 +133,7 @@ namespace Simple1C.Impl.Sql.Translation
         public virtual AggregateFunctionExpression VisitAggregateFunction(AggregateFunctionExpression expression)
         {
             if (expression.Argument != null)
-                Visit(expression.Argument);
+                expression.Argument = Visit(expression.Argument);
             return expression;
         }
 
@@ -164,14 +164,20 @@ namespace Simple1C.Impl.Sql.Translation
 
         public virtual SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
-            Visit(subqueryTable.Query);
+            subqueryTable.Query = (SubqueryClause) Visit(subqueryTable.Query);
             return subqueryTable;
         }
 
         public virtual ISqlElement VisitUnary(UnaryExpression unaryExpression)
         {
-            Visit(unaryExpression.Argument);
+            unaryExpression.Argument = Visit(unaryExpression.Argument);
             return unaryExpression;
+        }
+
+        public virtual ISqlElement VisitCast(CastExpression castExpression)
+        {
+            castExpression.Expression = Visit(castExpression.Expression);
+            return castExpression;
         }
     }
 }

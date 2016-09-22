@@ -13,47 +13,6 @@ namespace Simple1C.Impl.Sql.Translation
 {
     internal class QueryToSqlTranslator
     {
-        private static readonly Regex nowMacroRegex = new Regex(@"&Now",
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
-        private static readonly Dictionary<string, string> keywordsMap =
-            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
-            {
-                {"выбрать", "select"},
-                {"представление", "presentation"},
-                {"как", "as"},
-                {"из", "from"},
-                {"где", "where"},
-                {"и", "and"},
-                {"или", "or"},
-                {"в", "in"},
-                {"датавремя", "datetime"},
-                {"год", "year"},
-                {"квартал", "quarter"},
-                {"значение", "value"},
-                {"ложь", "false"},
-                {"истина", "true"},
-                {"упорядочить", "order"},
-                {"сгруппировать", "group"},
-                {"соединение", "join"},
-                {"полное", "full"},
-                {"левое", "left"},
-                {"правое", "right"},
-                {"внешнее", "outer"},
-                {"внутреннее", "outer"},
-                {"естьnull", "isnull"},
-                {"есть", "is"},
-                {"количество", "count"},
-                {"сумма", "sum"},
-                {"минимум", "min"},
-                {"максимум", "max"},
-                {"среднее", "avg"},
-            };
-
-        private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
-            keywordsMap.Keys.JoinStrings("|")),
-            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
         private readonly List<ISqlElement> areas;
         private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityAccessor queryEntityAccessor;
@@ -114,5 +73,54 @@ namespace Simple1C.Impl.Sql.Translation
         {
             return string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime);
         }
+
+        private static readonly Regex nowMacroRegex = new Regex(@"&Now",
+         RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+        private static readonly Dictionary<string, string> keywordsMap =
+            new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                {"выбрать", "select"},
+                {"представление", "presentation"},
+                {"как", "as"},
+                {"из", "from"},
+                {"где", "where"},
+                {"и", "and"},
+                {"или", "or"},
+                {"в", "in"},
+                {"датавремя", "datetime"},
+                {"значение", "value"},
+                {"ложь", "false"},
+                {"истина", "true"},
+                {"упорядочить", "order"},
+                {"сгруппировать", "group"},
+                {"соединение", "join"},
+                {"полное", "full"},
+                {"левое", "left"},
+                {"правое", "right"},
+                {"внешнее", "outer"},
+                {"внутреннее", "outer"},
+                {"естьnull", "isnull"},
+                {"есть", "is"},
+                {"количество", "count"},
+                {"сумма", "sum"},
+                {"минимум", "min"},
+                {"максимум", "max"},
+                {"среднее", "avg"},
+                {"подстрока", "substring"},
+                {"началоПериода", "beginOfPeriod"},
+                {"минута", "minute"},
+                {"час", "hour"},
+                {"день", "day"},
+                {"неделя", "week"},
+                {"месяц", "month"},
+                {"квартал", "quarter"},
+                {"год", "year"}
+            };
+
+        private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
+            keywordsMap.Keys.JoinStrings("|")),
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
     }
 }

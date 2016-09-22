@@ -75,6 +75,33 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     DefaultValue = expression.Arguments[0]
                 };
             }
+            if (expression.Function == KnownQueryFunction.Substring)
+            {
+                ExpectArgumentCount(expression, 3);
+                return new QueryFunctionExpression
+                {
+                    Function = KnownQueryFunction.Substring,
+                    Arguments =
+                    {
+                        new CastExpression
+                        {
+                            Type = "varchar",
+                            Expression = expression.Arguments[0]
+                        },
+                        expression.Arguments[1],
+                        expression.Arguments[2]
+                    }
+                };
+            }
+            if (expression.Function == KnownQueryFunction.SqlDateTrunc)
+            {
+                ExpectArgumentCount(expression, 2);
+                return new QueryFunctionExpression
+                {
+                    Function = KnownQueryFunction.SqlDateTrunc,
+                    Arguments = {expression.Arguments[1], expression.Arguments[0]}
+                };
+            }
             return base.VisitQueryFunction(expression);
         }
 
@@ -82,8 +109,8 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             if (expression.Arguments.Count != expectedCount)
             {
-                var message = string.Format("IsNull function expected exactly {0} arguments but was {1}",
-                    expectedCount, expression.Arguments.Count);
+                var message = string.Format("{0} function expected exactly {1} arguments but was {2}",
+                    expression.Function, expectedCount, expression.Arguments.Count);
                 throw new InvalidOperationException(message);
             }
         }
