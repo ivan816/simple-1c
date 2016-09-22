@@ -186,6 +186,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var parExprList = NonTerminal("parExprList", null, TermFlags.IsTransient);
 
             var dateTruncExpression = NonTerminal("dateTruncExpression", null, ToDateTruncExpression);
+
+            var caseElement = NonTerminal("caseElement", null, ToCaseElement);
+            var caseElementList = NonTerminal("caseElementList", null);
+            var caseExpression = NonTerminal("caseExpression", null, ToCaseExpression);
+            var defaultCaseOpt = NonTerminal("defaultCaseOpt", null,
+                c => c.ChildNodes.Count > 1 ? c.ChildNodes[1].AstNode : null);
+
             //rules
             exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
             parExprList.Rule = "(" + exprList + ")";
@@ -200,7 +207,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
                          | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
-            expression.Rule = term | unExpr | binExpr | inExpr | isNullExpression | dateTruncExpression;
+            expression.Rule = term | unExpr | binExpr 
+                    | inExpr | isNullExpression 
+                    | dateTruncExpression | caseExpression;
 
             functionArgs.Rule = parExprList | subquery;
 
@@ -213,6 +222,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             datePartLiteral.Rule = ToTerm("year") | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second";
             dateTruncExpression.Rule = "beginOfPeriod" + ToTerm("(") + expression + "," + datePartLiteral + ")";
+
+            caseElement.Rule = "when" + expression + "then" + expression;
+            caseElementList.Rule = MakeListRule(caseElementList, Empty, caseElement);
+            caseExpression.Rule = "case" + caseElementList + defaultCaseOpt + "end";
+            defaultCaseOpt.Rule = Empty | ("else" + expression);
 
             isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
             isNullExpression.Rule = term + isNull;
@@ -264,6 +278,24 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
 
             return joinItemList;
+        }
+
+        private static CaseExpression ToCaseExpression(ParseTreeNode node)
+        {
+            return new CaseExpression
+            {
+                Elements = node.ChildNodes[1].Elements().Cast<CaseElement>().ToList(),
+                DefaultValue = (ISqlElement) node.ChildNodes[2].AstNode
+            };
+        }
+
+        private static CaseElement ToCaseElement(ParseTreeNode node)
+        {
+            return new CaseElement
+            {
+                Condition = (ISqlElement) node.ChildNodes[1].AstNode,
+                Value = (ISqlElement) node.ChildNodes[3].AstNode
+            };
         }
 
         private static InExpression ToInExpression(ParseTreeNode node)

@@ -315,6 +315,30 @@ where contracts.c1 >= cast('2010-07-10' as date)";
         }
 
         [Test]
+        public void CaseStatement()
+        {
+            const string sourceSql = @"
+select СуммаДокумента,
+	case when СуммаДокумента > 1000 then 3
+	when СуммаДокумента > 300 then 2
+	else 0
+	end
+ from Документ.ПоступлениеНаРасчетныйСчет";
+            const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет t1 Main
+    СуммаДокумента Single sum";
+            const string expected = @"
+select
+    sum,
+    case
+    when sum > 1000 then 3
+    when sum > 300 then 2
+    else 0
+end
+from t1";
+            CheckTranslate(mappings, sourceSql, expected);
+        }
+
+        [Test]
         public void CanUseRussianSyntax()
         {
             const string sourceSql = @"выбрать contractors.ИНН, КОЛИЧЕСТВО(contracts.Владелец) как ContractCount

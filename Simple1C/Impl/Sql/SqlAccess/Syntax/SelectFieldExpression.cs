@@ -11,5 +11,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         {
             return visitor.VisitSelectField(this);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0}. {1} as {2}", typeof(SelectFieldExpression).Name, Expression, Alias);
+        }
     }
 }

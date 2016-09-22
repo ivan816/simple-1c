@@ -20,7 +20,6 @@ todo sql
 	TableDeclarationExtractor.VisitJoin ??
 		copypaste иван советует
 
-	CASE
 	В order by алиасы резолвить из первого из Union-ов
 
 	?order by по колонке с енумом -> нужен join

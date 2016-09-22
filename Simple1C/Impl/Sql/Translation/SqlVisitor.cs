@@ -84,6 +84,11 @@ namespace Simple1C.Impl.Sql.Translation
 
         public virtual CaseExpression VisitCase(CaseExpression expression)
         {
+            foreach (var element in expression.Elements)
+            {
+                element.Condition = Visit(element.Condition);
+                element.Value = Visit(element.Value);
+            }
             if (expression.DefaultValue != null)
                 expression.DefaultValue = Visit(expression.DefaultValue);
             return expression;
