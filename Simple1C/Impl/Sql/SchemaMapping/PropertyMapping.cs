@@ -47,27 +47,34 @@ namespace Simple1C.Impl.Sql.SchemaMapping
 
         public static PropertyMapping Parse(string s)
         {
-            var columnDesc = s.Split(new[] {" "}, StringSplitOptions.None);
-            if (columnDesc.Length < 2)
-                throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
-            var queryName = columnDesc[0];
-            PropertyLauout propertyLauout;
-            if (!Enum.TryParse(columnDesc[1], out propertyLauout))
+            try
             {
-                const string messageFormat = "can't parse [{0}] from [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    typeof(PropertyLauout).FormatName(), s));
+                var columnDesc = s.Split(new[] { " " }, StringSplitOptions.None);
+                if (columnDesc.Length < 2)
+                    throw new InvalidOperationException(string.Format("can't parse line [{0}]", s));
+                var queryName = columnDesc[0];
+                PropertyLauout propertyLauout;
+                if (!Enum.TryParse(columnDesc[1], out propertyLauout))
+                {
+                    const string messageFormat = "can't parse [{0}] from [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        typeof(PropertyLauout).FormatName(), s));
+                }
+                if (propertyLauout == PropertyLauout.Single)
+                {
+                    var nestedTableName = columnDesc.Length >= 4 ? columnDesc[3] : null;
+                    var singleInfo = new SingleLayout(columnDesc[2], nestedTableName);
+                    return new PropertyMapping(queryName, singleInfo, null);
+                }
+                var unionInfo = new UnionLayout(columnDesc[2],
+                    columnDesc[3], columnDesc[4],
+                    columnDesc.Skip(5).ToArray());
+                return new PropertyMapping(queryName, null, unionInfo);
             }
-            if (propertyLauout == PropertyLauout.Single)
+            catch (Exception e)
             {
-                var nestedTableName = columnDesc.Length >= 4 ? columnDesc[3] : null;
-                var singleInfo = new SingleLayout(columnDesc[2], nestedTableName);
-                return new PropertyMapping(queryName, singleInfo, null);
+                throw new Exception(string.Format("Could not parse property mapping from [{0}]", s), e);
             }
-            var unionInfo = new UnionLayout(columnDesc[2],
-                columnDesc[3], columnDesc[4],
-                columnDesc.Skip(5).ToArray());
-            return new PropertyMapping(queryName, null, unionInfo);
         }
 
         public string PropertyName { get; private set; }

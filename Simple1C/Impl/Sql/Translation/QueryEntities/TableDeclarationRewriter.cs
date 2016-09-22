@@ -5,16 +5,13 @@ using Simple1C.Impl.Sql.Translation.Visitors;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
-    internal class TableDeclarationRewriter : SqlVisitor
+    internal class TableDeclarationRewriter
     {
         private readonly NameGenerator nameGenerator;
         private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly List<ISqlElement> areas;
         private const byte configurationItemReferenceType = 8;
-
-        private readonly Dictionary<IColumnSource, IColumnSource> rewrittenTables
-            = new Dictionary<IColumnSource, IColumnSource>();
 
         public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
             QueryEntityAccessor queryEntityAccessor,
@@ -28,7 +25,14 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public void RewriteTables(ISqlElement element)
         {
-            Visit(element);
+            var rewrittenTables = new Dictionary<IColumnSource, IColumnSource>();
+            TableDeclarationVisitor.Visit(element, original =>
+            {
+                var rewritten = RewriteTableIfNeeded(original);
+                if (rewritten != original)
+                    rewrittenTables.Add(original, rewritten);
+                return rewritten;
+            });
             new ColumnReferenceVisitor(column =>
             {
                 IColumnSource generatedTable;
@@ -36,14 +40,6 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     column.Table = generatedTable;
                 return column;
             }).Visit(element);
-        }
-
-        public override ISqlElement VisitTableDeclaration(TableDeclarationClause original)
-        {
-            var rewritten = RewriteTableIfNeeded(original);
-            if (rewritten != original)
-                rewrittenTables.Add(original, rewritten);
-            return rewritten;
         }
 
         private IColumnSource RewriteTableIfNeeded(TableDeclarationClause declaration)

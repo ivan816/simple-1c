@@ -13,16 +13,14 @@ namespace Simple1C.Impl.Sql.Translation
 {
     internal class QueryToSqlTranslator
     {
+        private readonly QueryParser queryParser;
+        private readonly IMappingSource mappingSource;
         private readonly List<ISqlElement> areas;
-        private readonly QueryEntityRegistry queryEntityRegistry;
-        private readonly QueryEntityAccessor queryEntityAccessor;
-        private readonly NameGenerator nameGenerator;
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
-            queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-            queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
-            nameGenerator = new NameGenerator();
+            queryParser = new QueryParser();
+            this.mappingSource = mappingSource;
             if (areas.Length > 0)
                 this.areas = areas.Select(x => new LiteralExpression {Value = x})
                     .Cast<ISqlElement>()
@@ -33,17 +31,19 @@ namespace Simple1C.Impl.Sql.Translation
 
         public string Translate(string source)
         {
+            var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
+            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
+            var nameGenerator = new NameGenerator();
             var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
             source = nowMacroRegex.Replace(source, currentDateString);
             source = keywordsRegex.Replace(source, m => keywordsMap[m.Groups[1].Value]);
-            var queryParser = new QueryParser();
             var selectClause = queryParser.Parse(source);
 
-            RewriteSqlQuery(selectClause);
+            RewriteSqlQuery(selectClause, queryEntityRegistry, queryEntityAccessor, nameGenerator);
             return SqlFormatter.Format(selectClause);
         }
 
-        private void RewriteSqlQuery(SqlQuery sqlQuery)
+        private void RewriteSqlQuery(SqlQuery sqlQuery, QueryEntityRegistry queryEntityRegistry, QueryEntityAccessor queryEntityAccessor, NameGenerator nameGenerator)
         {
             TableDeclarationVisitor.Visit(sqlQuery, clause =>
             {
@@ -121,6 +121,5 @@ namespace Simple1C.Impl.Sql.Translation
         private static readonly Regex keywordsRegex = new Regex(string.Format(@"\b({0})\b",
             keywordsMap.Keys.JoinStrings("|")),
             RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
-
     }
 }

@@ -1,17 +1,18 @@
-﻿using Simple1C.Impl.Sql.SchemaMapping;
+﻿using System.Collections.Generic;
+using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
-using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
     internal class AddAreaToJoinConditionVisitor : SqlVisitor
     {
-        private TableDeclarationClause mainTable;
+        private readonly Stack<Context> contexts = new Stack<Context>();
 
         public override JoinClause VisitJoin(JoinClause clause)
         {
-            if (mainTable == null || !(clause.Source is TableDeclarationClause))
-                return clause;
+            var currentContext = contexts.Peek();
+            if (currentContext == null || currentContext.MainTable == null || !(clause.Source is TableDeclarationClause))
+                return base.VisitJoin(clause);
 
             clause.Condition = new AndExpression
             {
@@ -20,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Left = new ColumnReferenceExpression
                     {
                         Name = PropertyNames.Area,
-                        Table = mainTable
+                        Table = currentContext.MainTable
                     },
                     Right = new ColumnReferenceExpression
                     {
@@ -30,19 +31,32 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 },
                 Right = clause.Condition
             };
-            return clause;
+            return base.VisitJoin(clause);
         }
 
         public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
-            mainTable = clause;
-            return clause;
+            contexts.Peek().MainTable = clause;
+            return base.VisitTableDeclaration(clause);
         }
 
         public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
-            mainTable = null;
-            return subqueryTable;
+            contexts.Peek().MainTable = null;
+            return base.VisitSubqueryTable(subqueryTable);
+        }
+
+        public override SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
+        {
+            contexts.Push(new Context());
+            var result = base.VisitSqlQuery(sqlQuery);
+            contexts.Pop();
+            return result;
+        }
+
+        private class Context
+        {
+            public TableDeclarationClause MainTable { get; set; }
         }
     }
 }

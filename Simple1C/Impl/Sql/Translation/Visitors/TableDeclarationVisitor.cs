@@ -7,10 +7,10 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     {
         private readonly Func<TableDeclarationClause, ISqlElement> visit;
 
-        public static void Visit(ISqlElement selectClause, Func<TableDeclarationClause, ISqlElement> visit)
+        public static void Visit(ISqlElement element, Func<TableDeclarationClause, ISqlElement> visit)
         {
             var visitor = new TableDeclarationVisitor(visit);
-            visitor.Visit(selectClause);
+            visitor.Visit(element);
         }
 
         private TableDeclarationVisitor(Func<TableDeclarationClause, ISqlElement> visit)

@@ -9,6 +9,8 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     {
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
+            expression = (QueryFunctionExpression) base.VisitQueryFunction(expression);
+
             if (expression.Function == KnownQueryFunction.DateTime)
             {
                 ExpectArgumentCount(expression, 3);
@@ -43,7 +45,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "year"},
-                        Visit(expression.Arguments[0])
+                        expression.Arguments[0]
                     }
                 };
             }
@@ -56,14 +58,14 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "quarter"},
-                        Visit(expression.Arguments[0])
+                        expression.Arguments[0]
                     }
                 };
             }
             if (expression.Function == KnownQueryFunction.Presentation)
             {
                 ExpectArgumentCount(expression, 1);
-                return Visit(expression.Arguments[0]);
+                return expression.Arguments[0];
             }
             if (expression.Function == KnownQueryFunction.IsNull)
             {
@@ -74,11 +76,11 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     {
                         new CaseElement
                         {
-                            Condition = new IsNullExpression {Argument = Visit(expression.Arguments[0])},
-                            Value = Visit(expression.Arguments[1])
+                            Condition = new IsNullExpression {Argument = expression.Arguments[0]},
+                            Value = expression.Arguments[1]
                         }
                     },
-                    DefaultValue = Visit(expression.Arguments[0])
+                    DefaultValue = expression.Arguments[0]
                 };
             }
             if (expression.Function == KnownQueryFunction.Substring)
@@ -92,10 +94,10 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                         new CastExpression
                         {
                             Type = "varchar",
-                            Expression = Visit(expression.Arguments[0])
+                            Expression = expression.Arguments[0]
                         },
-                        Visit(expression.Arguments[1]),
-                        Visit(expression.Arguments[2])
+                        expression.Arguments[1],
+                        expression.Arguments[2]
                     }
                 };
             }
@@ -105,10 +107,10 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 return new QueryFunctionExpression
                 {
                     Function = KnownQueryFunction.SqlDateTrunc,
-                    Arguments = {Visit(expression.Arguments[1]), Visit(expression.Arguments[0])}
+                    Arguments = {expression.Arguments[1], expression.Arguments[0]}
                 };
             }
-            return base.VisitQueryFunction(expression);
+            return expression;
         }
 
         private static void ExpectArgumentCount(QueryFunctionExpression expression, int expectedCount)

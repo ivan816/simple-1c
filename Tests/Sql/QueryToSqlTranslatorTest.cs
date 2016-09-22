@@ -1182,15 +1182,18 @@ where __nested_table1.mainData in (10, 200)) as contracts on contracts.contracto
         [Test]
         public void JoinInsideSubquery()
         {
-            const string source = @"
-select 
+            const string source = @"select 
     subquery.contractName, 
-    subquery.inn
-from (select 
+    subquery.inn,
+    docs.Номер
+    from Справочник.Контрагенты contractorsOuter
+    left join (select 
         contracts.Наименование as contractName,
-        contractors.ИНН as inn
-    from Справочник.Контрагенты contractors
-    left join Справочник.ДоговорыКонтрагентов contracts on contracts.Владелец = contractors.Ссылка) subquery ";
+        contractorsInner.ИНН as inn,
+        contractorsInner.Ссылка as contractorId
+    from Справочник.Контрагенты contractorsInner
+    left join Справочник.ДоговорыКонтрагентов contracts on contractorsInner.Ссылка = contracts.Владелец) as subquery on subquery.contractorId = contractorsOuter.Ссылка
+    left join Документ.ПоступлениеНаРасчетныйСчет docs on docs.Контрагент = subquery.contractorId";
 
             const string mappings = @"Справочник.ДоговорыКонтрагентов contracts1 Main
     Ссылка Single id
@@ -1200,26 +1203,26 @@ from (select
 Справочник.Контрагенты contractors2 Main
     Ссылка Single id
     Наименование Single name
-    ИНН Single name
+    ИНН Single inn
+    ОбластьДанныхОсновныеДанные Single mainData
+Документ.ПоступлениеНаРасчетныйСчет docs3 Main
+    Контрагент Single contractorId Справочник.Контрагенты
+    Номер Single number
     ОбластьДанныхОсновныеДанные Single mainData";
 
             const string expected = @"select
     subquery.contractName,
-    subquery.inn
-from (select
-    contracts.name as contractName,
-    contractors.name as inn
-from (select
-    __nested_table0.name,
-    __nested_table0.id
-from contractors2 as __nested_table0
-where __nested_table0.mainData in (10, 200)) as contractors
+    subquery.inn,
+    docs.number
+from contractors2 as contractorsOuter
 left join (select
-    __nested_table1.name,
-    __nested_table1.contractorId
-from contracts1 as __nested_table1
-where __nested_table1.mainData in (10, 200)) as contracts on contracts.contractorId = contractors.id) as subquery";
-            CheckTranslate(mappings, source, expected, 10, 200);
+    contracts.name as contractName,
+    contractorsInner.inn as inn,
+    contractorsInner.id as contractorId
+from contractors2 as contractorsInner
+left join contracts1 as contracts on contractorsInner.mainData = contracts.mainData and contractorsInner.id = contracts.contractorId) as subquery on subquery.contractorId = contractorsOuter.id
+left join docs3 as docs on docs.contractorId = subquery.contractorId";
+            CheckTranslate(mappings, source, expected);
         }
 
         private void CheckTranslate(string mappings, string sql, string expected, params int[] areas)
