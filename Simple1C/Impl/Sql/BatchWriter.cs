@@ -116,9 +116,13 @@ namespace Simple1C.Impl.Sql
 
         private static object ConvertType(object source, DataColumn column)
         {
-            if (source is string && column.DataType == typeof(decimal))
-                return Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal));
-            if (source is string && column.DataType == typeof(DateTime))
+            if (!(source is string))
+                return source;
+            if (column.DataType == typeof (decimal))
+                return Convert.ChangeType(((string) source).Replace('.', ','), typeof (decimal));
+            if (column.DataType == typeof (bool))
+                return ((string) source).EqualsIgnoringCase("t");
+            if (column.DataType == typeof (DateTime))
             {
                 DateTime dateTime;
                 if (!TryParseDate((string) source, out dateTime))
