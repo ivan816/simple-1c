@@ -65,8 +65,14 @@
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
     <Compile Include="Integration\CharacteristicsTest.cs" />
+    <Compile Include="Sql\EnumsTest.cs" />
+    <Compile Include="Sql\FunctionReplacementTest.cs" />
+    <Compile Include="Sql\LiteralsTest.cs" />
+    <Compile Include="Sql\NestedPropertiesTest.cs" />
     <Compile Include="Sql\ParserTest.cs" />
-    <Compile Include="Sql\QueryToSqlTranslatorTest.cs" />
+    <Compile Include="Sql\BasicTest.cs" />
+    <Compile Include="Sql\SubqueryTest.cs" />
+    <Compile Include="Sql\TranslationTestBase.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />
