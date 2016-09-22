@@ -21,11 +21,17 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                                                 "but was [{0}]", expression.Arguments.JoinStrings(","));
                     throw new InvalidOperationException(message);
                 }
-                return new LiteralExpression
+                return new CastExpression
                 {
-                    Value = new DateTime((int) yearLiteral.Value,
-                        (int) monthLiteral.Value,
-                        (int) dayLiteral.Value)
+                    Type = "date",
+                    Expression = new LiteralExpression
+                    {
+                        Value =
+                            new DateTime((int) yearLiteral.Value,
+                                (int) monthLiteral.Value,
+                                (int) dayLiteral.Value)
+                                .ToString("yyyy-MM-dd")
+                    }
                 };
             }
             if (expression.Function == KnownQueryFunction.Year)
@@ -37,7 +43,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "year"},
-                        expression.Arguments[0]
+                        Visit(expression.Arguments[0])
                     }
                 };
             }
@@ -50,14 +56,14 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "quarter"},
-                        expression.Arguments[0]
+                        Visit(expression.Arguments[0])
                     }
                 };
             }
             if (expression.Function == KnownQueryFunction.Presentation)
             {
                 ExpectArgumentCount(expression, 1);
-                return expression.Arguments[0];
+                return Visit(expression.Arguments[0]);
             }
             if (expression.Function == KnownQueryFunction.IsNull)
             {
@@ -68,11 +74,11 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     {
                         new CaseElement
                         {
-                            Condition = new IsNullExpression {Argument = expression.Arguments[0]},
-                            Value = expression.Arguments[1]
+                            Condition = new IsNullExpression {Argument = Visit(expression.Arguments[0])},
+                            Value = Visit(expression.Arguments[1])
                         }
                     },
-                    DefaultValue = expression.Arguments[0]
+                    DefaultValue = Visit(expression.Arguments[0])
                 };
             }
             if (expression.Function == KnownQueryFunction.Substring)
@@ -86,10 +92,10 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                         new CastExpression
                         {
                             Type = "varchar",
-                            Expression = expression.Arguments[0]
+                            Expression = Visit(expression.Arguments[0])
                         },
-                        expression.Arguments[1],
-                        expression.Arguments[2]
+                        Visit(expression.Arguments[1]),
+                        Visit(expression.Arguments[2])
                     }
                 };
             }
@@ -99,7 +105,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 return new QueryFunctionExpression
                 {
                     Function = KnownQueryFunction.SqlDateTrunc,
-                    Arguments = {expression.Arguments[1], expression.Arguments[0]}
+                    Arguments = {Visit(expression.Arguments[1]), Visit(expression.Arguments[0])}
                 };
             }
             return base.VisitQueryFunction(expression);

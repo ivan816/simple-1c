@@ -212,7 +212,7 @@ namespace Simple1C.Impl.Sql.Translation
         {
             builder.Append(FormatQueryFunctionName(expression.Function));
             builder.Append('(');
-            VisitEnumerable(expression.Arguments, ",");
+            VisitEnumerable(expression.Arguments, ", ");
             builder.Append(')');
             return expression;
         }
@@ -220,7 +220,7 @@ namespace Simple1C.Impl.Sql.Translation
         public override ISqlElement VisitList(ListExpression listExpression)
         {
             builder.Append('(');
-            VisitEnumerable(listExpression.Elements, ",");
+            VisitEnumerable(listExpression.Elements, ", ");
             builder.Append(')');
             return listExpression;
         }
@@ -237,6 +237,8 @@ namespace Simple1C.Impl.Sql.Translation
                     return "not";
                 case KnownQueryFunction.Substring:
                     return "substring";
+                case KnownQueryFunction.StringLength:
+                    return "length";
                 default:
                     throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
@@ -323,7 +325,6 @@ namespace Simple1C.Impl.Sql.Translation
             }
         }
 
-
         private static string FormatValueAsString(object value)
         {
             var str = value as string;
@@ -332,8 +333,7 @@ namespace Simple1C.Impl.Sql.Translation
             var bytes = value as byte[];
             if (bytes != null)
                 return "E'\\\\x" + bytes.ToHex() + "'";
-            if (value is DateTime)
-                return "cast('" + ((DateTime) value).ToString("yyyy-MM-dd") + "' as date)";
+          
             if (value is bool)
                 return ((bool?) value).Value ? "true" : "false";
             return value.ToString();

@@ -91,6 +91,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             RegisterOperators(4, "OR");
             MarkPunctuation(",", "(", ")");
             MarkPunctuation(asOpt);
+            AddOperatorReportGroup("operator");
+            AddToNoReportGroup("as");
            
             Root = root;
         }
@@ -194,7 +196,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             subquery.Rule = "(" + selectStatement + ")";
             unOp.Rule = "NOT";
             unExpr.Rule = unOp + expression;
-            binOp.Rule = ToTerm("+") | "-" | "*" | "/" |
+            binOp.Rule = ToTerm("+") | "-" | "*" | "/" | "%"|
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
                          | "AND" | "OR" | "LIKE";
             binExpr.Rule = expression + binOp + expression;
@@ -202,14 +204,14 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             functionArgs.Rule = parExprList | subquery;
 
-            queryFunctionExpr.Rule = (identifier + functionArgs);
+            queryFunctionExpr.Rule = identifier + functionArgs;
             
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg";
             aggregateArg.Rule = ToTerm("(")+ "*" + ")" | functionArgs;
             aggregate.Rule = aggregateFunctionName + aggregateArg;
             inExpr.Rule = columnRef + ToTerm("in") + functionArgs;
 
-            datePartLiteral.Rule = ToTerm("year") | "month" | "week" | "day" | "hour" | "minute" | "second";
+            datePartLiteral.Rule = ToTerm("year") | "quarter" | "month" | "week" | "day" | "hour" | "minute" | "second";
             dateTruncExpression.Rule = "beginOfPeriod" + ToTerm("(") + expression + "," + datePartLiteral + ")";
 
             isNull.Rule = ToTerm("IS") + (Empty | "NOT") + "NULL";
@@ -553,6 +555,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     return KnownQueryFunction.Substring;
                 case "beginofperiod":
                     return KnownQueryFunction.SqlDateTrunc;
+                case "stringlength":
+                    return KnownQueryFunction.StringLength;
                 default:
                     throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }

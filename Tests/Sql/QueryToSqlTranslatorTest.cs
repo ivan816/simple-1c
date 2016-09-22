@@ -58,7 +58,7 @@ from t1";
 from (select
     __nested_table0.c1
 from t1 as __nested_table0
-where __nested_table0.c2 in (10,200)) as contractors";
+where __nested_table0.c2 in (10, 200)) as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult, 10, 200);
         }
 
@@ -75,7 +75,7 @@ where __nested_table0.c2 in (10,200)) as contractors";
 from (select
     __nested_table0.c1
 from t1 as __nested_table0
-where __nested_table0.c2 in (10,200)) as __subquery0";
+where __nested_table0.c2 in (10, 200)) as __subquery0";
             CheckTranslate(mappings, sourceSql, expectedResult, 10, 200);
         }
 
@@ -223,7 +223,7 @@ where contractors.c1 = 'test-inn3'";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата Single c1";
             const string expectedResult = @"select
-    date_part('year',contracts.c1) as ContractDate
+    date_part('year', contracts.c1) as ContractDate
 from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -236,7 +236,7 @@ from t1 as contracts";
             const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
     Дата Single c1";
             const string expectedResult = @"select
-    date_part('quarter',contracts.c1) as ContractDate
+    date_part('quarter', contracts.c1) as ContractDate
 from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -248,7 +248,7 @@ from t1 as contracts";
             const string mappings = @"Справочник.Контрагенты contractors1 Main
     КПП Single kpp";
             const string expectedResult = @"select
-    substring(cast(kpp as varchar),2,5)
+    substring(cast(kpp as varchar), 2, 5)
 from contractors1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -256,11 +256,12 @@ from contractors1";
         [Test]
         public void PatchBeginOfPeriodFunction()
         {
-            const string sourceSql = @"select НачалоПериода(Дата, Месяц) from Документ.ПоступлениеНаРасчетныйСчет";
+            const string sourceSql = @"select НачалоПериода(Дата, Месяц), НачалоПериода(ДАТАВРЕМЯ(2016,1,1), Квартал) from Документ.ПоступлениеНаРасчетныйСчет";
             const string mappings = @"Документ.ПоступлениеНаРасчетныйСчет documents1 Main
     Дата Single date";
             const string expectedResult = @"select
-    date_trunc('Month',date)
+    date_trunc('Month', date),
+    date_trunc('Quarter', cast('2016-01-01' as date))
 from documents1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -1015,7 +1016,7 @@ from (select
     __nested_table0.inn,
     __nested_table0.name
 from contractors0 as __nested_table0
-where __nested_table0.mainData in (10,20,30)) as __subquery0) as t";
+where __nested_table0.mainData in (10, 20, 30)) as __subquery0) as t";
             CheckTranslate(mappings, source, expected, 10, 20, 30);
         }
 
@@ -1145,12 +1146,12 @@ from (select
     __nested_table0.name,
     __nested_table0.id
 from contractorsTable2 as __nested_table0
-where __nested_table0.mainData in (10,200)) as contractors) as contractor
+where __nested_table0.mainData in (10, 200)) as contractors) as contractor
 left join (select
     __nested_table1.name,
     __nested_table1.contractorId
 from contractsTable1 as __nested_table1
-where __nested_table1.mainData in (10,200)) as contracts on contracts.contractorId = contractor.id";
+where __nested_table1.mainData in (10, 200)) as contracts on contracts.contractorId = contractor.id";
             CheckTranslate(mappings, source, expected, 10, 200);
         }
 
@@ -1188,12 +1189,12 @@ from (select
     __nested_table0.name,
     __nested_table0.id
 from contractors2 as __nested_table0
-where __nested_table0.mainData in (10,200)) as contractors
+where __nested_table0.mainData in (10, 200)) as contractors
 left join (select
     __nested_table1.name,
     __nested_table1.contractorId
 from contracts1 as __nested_table1
-where __nested_table1.mainData in (10,200)) as contracts on contracts.contractorId = contractors.id) as subquery";
+where __nested_table1.mainData in (10, 200)) as contracts on contracts.contractorId = contractors.id) as subquery";
             CheckTranslate(mappings, source, expected, 10, 200);
         }
 
