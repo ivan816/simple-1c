@@ -230,9 +230,9 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            var functionName = expression.Function.HasValue
-                ? FormatQueryFunctionName(expression.Function.Value)
-                : expression.FunctionName;
+            var functionName = expression.KnownFunction.HasValue
+                ? FormatQueryFunctionName(expression.KnownFunction.Value)
+                : expression.CustomFunction;
             builder.Append(functionName);
             builder.Append('(');
             VisitEnumerable(expression.Arguments, ", ");

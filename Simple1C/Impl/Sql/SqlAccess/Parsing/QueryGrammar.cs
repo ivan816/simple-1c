@@ -330,7 +330,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             return new QueryFunctionExpression
             {
-                Function = KnownQueryFunction.SqlDateTrunc,
+                KnownFunction = KnownQueryFunction.SqlDateTrunc,
                 Arguments = node.Elements().OfType<ISqlElement>().ToList()
             };
         }
@@ -341,8 +341,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var queryFunction = ToQueryFunctionName(functionName);
             return new QueryFunctionExpression
             {
-                Function = queryFunction,
-                FunctionName = queryFunction == null ? functionName : null,
+                KnownFunction = queryFunction,
+                CustomFunction = queryFunction == null ? functionName : null,
                 Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
             };
         }

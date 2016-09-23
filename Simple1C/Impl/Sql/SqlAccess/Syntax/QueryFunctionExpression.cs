@@ -11,8 +11,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             Arguments = new List<ISqlElement>();
         }
 
-        public string FunctionName { get; set; }
-        public KnownQueryFunction? Function { get; set; }
+        public string CustomFunction { get; set; }
+        public KnownQueryFunction? KnownFunction { get; set; }
         public List<ISqlElement> Arguments { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
@@ -22,7 +22,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 
         public override string ToString()
         {
-            return string.Format("{0}. {1}({2})", typeof (QueryFunctionExpression).Name, Function, Arguments.JoinStrings(","));
+            return string.Format("{0}. {1}({2})", typeof (QueryFunctionExpression).Name, KnownFunction, Arguments.JoinStrings(","));
         }
     }
 }

@@ -11,7 +11,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             expression = (QueryFunctionExpression) base.VisitQueryFunction(expression);
 
-            if (expression.Function == KnownQueryFunction.DateTime)
+            if (expression.KnownFunction == KnownQueryFunction.DateTime)
             {
                 ExpectArgumentCount(expression, 3);
                 var yearLiteral = expression.Arguments[0] as LiteralExpression;
@@ -36,12 +36,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.Function == KnownQueryFunction.Year)
+            if (expression.KnownFunction == KnownQueryFunction.Year)
             {
                 ExpectArgumentCount(expression, 1);
                 return new QueryFunctionExpression
                 {
-                    Function = KnownQueryFunction.SqlDatePart,
+                    KnownFunction = KnownQueryFunction.SqlDatePart,
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "year"},
@@ -49,12 +49,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.Function == KnownQueryFunction.Quarter)
+            if (expression.KnownFunction == KnownQueryFunction.Quarter)
             {
                 ExpectArgumentCount(expression, 1);
                 return new QueryFunctionExpression
                 {
-                    Function = KnownQueryFunction.SqlDatePart,
+                    KnownFunction = KnownQueryFunction.SqlDatePart,
                     Arguments = new List<ISqlElement>
                     {
                         new LiteralExpression {Value = "quarter"},
@@ -62,12 +62,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.Function == KnownQueryFunction.Presentation)
+            if (expression.KnownFunction == KnownQueryFunction.Presentation)
             {
                 ExpectArgumentCount(expression, 1);
                 return expression.Arguments[0];
             }
-            if (expression.Function == KnownQueryFunction.IsNull)
+            if (expression.KnownFunction == KnownQueryFunction.IsNull)
             {
                 ExpectArgumentCount(expression, 2);
                 return new CaseExpression
@@ -83,12 +83,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     DefaultValue = expression.Arguments[0]
                 };
             }
-            if (expression.Function == KnownQueryFunction.Substring)
+            if (expression.KnownFunction == KnownQueryFunction.Substring)
             {
                 ExpectArgumentCount(expression, 3);
                 return new QueryFunctionExpression
                 {
-                    Function = KnownQueryFunction.Substring,
+                    KnownFunction = KnownQueryFunction.Substring,
                     Arguments =
                     {
                         new CastExpression
@@ -101,12 +101,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     }
                 };
             }
-            if (expression.Function == KnownQueryFunction.SqlDateTrunc)
+            if (expression.KnownFunction == KnownQueryFunction.SqlDateTrunc)
             {
                 ExpectArgumentCount(expression, 2);
                 return new QueryFunctionExpression
                 {
-                    Function = KnownQueryFunction.SqlDateTrunc,
+                    KnownFunction = KnownQueryFunction.SqlDateTrunc,
                     Arguments = {expression.Arguments[1], expression.Arguments[0]}
                 };
             }
@@ -118,7 +118,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             if (expression.Arguments.Count != expectedCount)
             {
                 var message = string.Format("{0} function expected exactly {1} arguments but was {2}",
-                    expression.Function, expectedCount, expression.Arguments.Count);
+                    expression.KnownFunction, expectedCount, expression.Arguments.Count);
                 throw new InvalidOperationException(message);
             }
         }

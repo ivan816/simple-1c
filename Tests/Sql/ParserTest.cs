@@ -59,7 +59,7 @@ namespace Simple1C.Tests.Sql
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("x"));
             var function = (QueryFunctionExpression) selectClause.Fields[0].Expression;
-            Assert.That(function.Function, Is.EqualTo(KnownQueryFunction.Presentation));
+            Assert.That(function.KnownFunction, Is.EqualTo(KnownQueryFunction.Presentation));
 
             var columnReference = (ColumnReferenceExpression)function.Arguments[0];
             Assert.That(columnReference.Name, Is.EqualTo("a"));
@@ -72,7 +72,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < DateTime(2010, 11, 12)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.DateTime));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.DateTime));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(3));
             Assert.That(((LiteralExpression)queryFunction.Arguments[0]).Value, Is.EqualTo(2010));
             Assert.That(((LiteralExpression)queryFunction.Arguments[1]).Value, Is.EqualTo(11));
@@ -85,7 +85,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < year(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.Year));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.Year));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
@@ -96,7 +96,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b < quArter(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.Function, Is.EqualTo(KnownQueryFunction.Quarter));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.Quarter));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
