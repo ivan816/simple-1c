@@ -9,7 +9,7 @@ namespace Simple1C.Impl.Sql.Translation
 {
     internal class SqlFormatter : SqlVisitor
     {
-        private ISqlElement parent;
+        private ISqlElement parentOperatorExpression;
         private readonly StringBuilder builder = new StringBuilder();
 
         public static string Format(ISqlElement element)
@@ -17,15 +17,6 @@ namespace Simple1C.Impl.Sql.Translation
             var formatter = new SqlFormatter();
             formatter.Visit(element);
             return formatter.builder.ToString();
-        }
-
-        public override ISqlElement Visit(ISqlElement element)
-        {
-            var previous = parent;
-            parent = element;
-            var result = base.Visit(element);
-            parent = previous;
-            return result;
         }
 
         public override UnionClause VisitUnion(UnionClause clause)
@@ -77,9 +68,12 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override SubqueryClause VisitSubquery(SubqueryClause clause)
         {
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = null;
             builder.Append("(");
             Visit(clause.Query);
             builder.Append(")");
+            parentOperatorExpression = previous;
             return clause;
         }
 
@@ -160,18 +154,23 @@ namespace Simple1C.Impl.Sql.Translation
         public override ISqlElement VisitUnary(UnaryExpression unaryExpression)
         {
             var needParens = NeedParens(unaryExpression);
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = unaryExpression;
             if (needParens)
                 builder.Append("(");
             builder.AppendFormat(" {0} ", GetOperatorText(unaryExpression.Operator));
             Visit(unaryExpression.Argument);
             if (needParens)
                 builder.Append(")");
+            parentOperatorExpression = previous;
             return unaryExpression;
         }
 
         public override ISqlElement VisitBinary(BinaryExpression expression)
         {
             var needParens = NeedParens(expression);
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = expression;
             if (needParens)
                 builder.Append("(");
             Visit(expression.Left);
@@ -179,6 +178,7 @@ namespace Simple1C.Impl.Sql.Translation
             Visit(expression.Right);
             if (needParens)
                 builder.Append(")");
+            parentOperatorExpression = previous;
             return expression;
         }
 
@@ -422,7 +422,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         private bool NeedParens(ISqlElement current)
         {
-            return GetOperatorPrecedence(current) > GetOperatorPrecedence(parent);
+            return GetOperatorPrecedence(parentOperatorExpression) > GetOperatorPrecedence(current);
         }
 
         private static int? GetOperatorPrecedence(ISqlElement element)

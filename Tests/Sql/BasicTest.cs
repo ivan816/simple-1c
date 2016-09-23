@@ -249,6 +249,19 @@ where contractors.c1 = 'test-inn'";
         }
 
         [Test]
+        public void RestoreParenthesesFromOriginalExpression()
+        {
+            const string sourceSql = @"select Наименование from Справочник.Контрагенты where (true or false) and false";
+            const string mappings = @"Справочник.Контрагенты contractors1 Main
+    Наименование Single name";
+            const string expectedResult = @"select
+    name
+from contractors1
+where (true or false) and false";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void MapPresentationToDescriptionForReferences()
         {
             const string sourceSql = @"select ПРЕДСТАВЛЕНИЕ(contracts.ВалютаВзаиморасчетов) as Currency
@@ -355,7 +368,6 @@ order by count(numberColumn) desc";
         }
 
         [Test]
-        [Ignore("TODO")]
         public void OrderBy_Alias()
         {
             var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
@@ -375,5 +387,7 @@ group by accountingCodeColumn
 order by number_count desc";
             CheckTranslate(mappings, source, expected);
         }
+
+       
     }
 }
