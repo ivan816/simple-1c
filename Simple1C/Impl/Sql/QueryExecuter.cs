@@ -76,7 +76,7 @@ namespace Simple1C.Impl.Sql
             }
             s.Stop();
             Console.Out.WriteLine("\r\ndone, [{0}] millis", s.ElapsedMilliseconds);
-            return errorOccured;
+            return !errorOccured;
         }
     }
 }
