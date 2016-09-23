@@ -11,9 +11,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             return Generate("__nested_table");
         }
 
-        public void Reset()
+        public string GenerateSubqueryName()
         {
-            lastUsed.Clear();
+            return Generate("__subquery");
         }
 
         public string GenerateColumnName()

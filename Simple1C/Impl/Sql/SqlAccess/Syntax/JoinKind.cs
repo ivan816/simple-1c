@@ -5,6 +5,6 @@
         Left,
         Right,
         Inner,
-        Outer
+        Full
     }
 }

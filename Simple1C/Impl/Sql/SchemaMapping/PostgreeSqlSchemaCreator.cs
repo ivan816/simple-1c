@@ -6,6 +6,7 @@ using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
+using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
 {
@@ -140,14 +141,14 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     TableMapping mainTableMapping;
                     if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
                         continue;
-                    if(!mainTableMapping.HasProperty("ОбластьДанныхОсновныеДанные"))
+                    if(!mainTableMapping.HasProperty(PropertyNames.Area))
                         continue;
                     var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
-                    additionalProperties.Add(new PropertyMapping("Ссылка", refLayout, null));
+                    additionalProperties.Add(new PropertyMapping(PropertyNames.Id, refLayout, null));
                     var areaLayout = new SingleLayout(
-                        mainTableMapping.GetByPropertyName("ОбластьДанныхОсновныеДанные").SingleLayout.ColumnName,
+                        mainTableMapping.GetByPropertyName(PropertyNames.Area).SingleLayout.DbColumnName,
                         null);
-                    var areaMapping = new PropertyMapping("ОбластьДанныхОсновныеДанные", areaLayout, null);
+                    var areaMapping = new PropertyMapping(PropertyNames.Area, areaLayout, null);
                     additionalProperties.Add(areaMapping);
                     tableType = TableType.TableSection;
                 }

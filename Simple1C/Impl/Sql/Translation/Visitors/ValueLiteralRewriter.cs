@@ -1,10 +1,9 @@
-using Simple1C.Impl.Sql.SqlAccess;
-using Simple1C.Impl.Sql.SqlAccess.Syntax;
+﻿using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
 {
-    internal class ValueLiteralRewriter : SingleSelectSqlVisitorBase
+    internal class ValueLiteralRewriter : SqlVisitor
     {
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly QueryEntityRegistry queryEntityRegistry;
@@ -21,12 +20,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             var enumValueItems = expression.ObjectName.Split('.');
             var table = queryEntityRegistry.CreateQueryEntity(null, enumValueItems[0] + "." + enumValueItems[1]);
             var selectClause = new SelectClause {Source = queryEntityAccessor.GetTableDeclaration(table)};
-            selectClause.Fields.Add(new SelectFieldElement
+            selectClause.Fields.Add(new SelectFieldExpression
             {
                 Expression = new ColumnReferenceExpression
                 {
-                    Name = table.GetSingleColumnName("Ссылка"),
-                    Declaration = (TableDeclarationClause) selectClause.Source
+                    Name = table.GetIdColumnName(),
+                    Table = (TableDeclarationClause) selectClause.Source
                 }
             });
             var enumMappingsJoinClause = queryEntityAccessor.CreateEnumMappingsJoinClause(table);
@@ -36,14 +35,20 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 Left = new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    Declaration = (TableDeclarationClause) enumMappingsJoinClause.Source
+                    Table = (TableDeclarationClause) enumMappingsJoinClause.Source
                 },
                 Right = new LiteralExpression
                 {
                     Value = enumValueItems[2]
                 }
             };
-            return new SubqueryClause {SelectClause = selectClause};
+            return new SubqueryClause
+            {
+                Query = new SqlQuery
+                {
+                    Unions = {new UnionClause {SelectClause = selectClause}}
+                }
+            };
         }
     }
 }

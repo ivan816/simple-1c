@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
@@ -24,9 +25,10 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             Iterate(0, queryRoot.entity);
             if (properties.Count == 0)
             {
-                const string messageFormat = "no properties found for [{0}.{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    queryRoot.tableDeclaration.GetRefName(), propertyNames.JoinStrings(".")));
+                var tableDeclaration = queryRoot.tableDeclaration as TableDeclarationClause;
+                var tableDescription = tableDeclaration != null ? tableDeclaration.GetRefName() : "(subquery)";
+                var message = string.Format("no properties found for [{0}.{1}]", tableDescription, propertyNames.JoinStrings("."));
+                throw new InvalidOperationException(message);
             }
             return properties;
         }
@@ -45,12 +47,14 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Iterate(index + 1, p);
                 if (properties.Count == count)
                 {
-                    const string messageFormat = "property [{0}] in [{1}.{2}] has multiple types [{3}] " +
-                                                 "and none of them has property [{4}]";
-                    throw new InvalidOperationException(string.Format(messageFormat,
-                        propertyNames[index], queryRoot.tableDeclaration.Alias, propertyNames.JoinStrings("."),
+                    var tableDeclaration = queryRoot.tableDeclaration as TableDeclarationClause;
+                    var tableDescription = tableDeclaration != null ? tableDeclaration.Alias : "(subqyery)";
+                    var message = string.Format("property [{0}] in [{1}.{2}] has multiple types [{3}] " +
+                                                "and none of them has property [{4}]",
+                        propertyNames[index], tableDescription, propertyNames.JoinStrings("."),
                         property.nestedEntities.Select(x => x.mapping.QueryTableName).JoinStrings(","),
-                        propertyNames[index + 1]));
+                        propertyNames[index + 1]);
+                    throw new InvalidOperationException(message);
                 }
             }
             else if (property.nestedEntities.Count == 1)

@@ -3,7 +3,7 @@ using Simple1C.Interface.ObjectModel;
 
 namespace Simple1C.Impl
 {
-    internal class EntityHelpers
+    internal static class EntityHelpers
     {
         public const string idPropertyName = "УникальныйИдентификатор";
 

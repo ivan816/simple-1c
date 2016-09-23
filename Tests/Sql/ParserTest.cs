@@ -1,4 +1,6 @@
-﻿using NUnit.Framework;
+﻿using System;
+using System.Linq;
+using NUnit.Framework;
 using Simple1C.Impl.Sql.SqlAccess.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Tests.Helpers;
@@ -10,28 +12,30 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Simple()
         {
-            var selectClause = Parse("select a,b from testTable");
+            var selectClause = ParseSelect("select a,b from testTable");
+            Assert.That(selectClause.IsDistinct, Is.False);
+            Assert.That(selectClause.Top, Is.Null);
             Assert.That(selectClause.Fields.Count, Is.EqualTo(2));
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
             Assert.That(aReference.Name, Is.EqualTo("a"));
-            Assert.That(aReference.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)aReference.Table).Name, Is.EqualTo("testTable"));
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
-            Assert.That(bReference.Declaration, Is.SameAs(aReference.Declaration));
+            Assert.That(bReference.Table, Is.SameAs(aReference.Table));
             Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
         
         [Test]
         public void Bool()
         {
-            var selectClause = Parse("select a,b from testTable where c = false");
+            var selectClause = ParseSelect("select a,b from testTable where c = false");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             Assert.NotNull(binaryExpression);
             var colReference = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(colReference);
             Assert.That(colReference.Name, Is.EqualTo("c"));
-            Assert.That(colReference.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)colReference.Table).Name, Is.EqualTo("testTable"));
 
             var literalExpression = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(literalExpression);
@@ -41,7 +45,7 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void Parenthesis()
         {
-            var selectClause = Parse("select (a.b) from testTable");
+            var selectClause = ParseSelect("select (a.b) from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.Null);
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
@@ -51,24 +55,24 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void PresentationQueryFunction()
         {
-            var selectClause = Parse("select Presentation(a) x from testTable");
+            var selectClause = ParseSelect("select Presentation(a) x from testTable");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("x"));
             var function = (QueryFunctionExpression) selectClause.Fields[0].Expression;
-            Assert.That(function.FunctionName, Is.EqualTo(QueryFunctionName.Presentation));
+            Assert.That(function.KnownFunction, Is.EqualTo(KnownQueryFunction.Presentation));
 
             var columnReference = (ColumnReferenceExpression)function.Arguments[0];
             Assert.That(columnReference.Name, Is.EqualTo("a"));
-            Assert.That(columnReference.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)columnReference.Table).Name, Is.EqualTo("testTable"));
         }
         
         [Test]
         public void DateTimeQueryFunction()
         {
-            var selectClause = Parse("select a from testTable where b < DateTime(2010, 11, 12)");
+            var selectClause = ParseSelect("select a from testTable where b < DateTime(2010, 11, 12)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.DateTime));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.DateTime));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(3));
             Assert.That(((LiteralExpression)queryFunction.Arguments[0]).Value, Is.EqualTo(2010));
             Assert.That(((LiteralExpression)queryFunction.Arguments[1]).Value, Is.EqualTo(11));
@@ -78,10 +82,10 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void YearFunction()
         {
-            var selectClause = Parse("select a from testTable where b < year(c)");
+            var selectClause = ParseSelect("select a from testTable where b < year(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Year));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.Year));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
@@ -89,10 +93,10 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void QuarterFunction()
         {
-            var selectClause = Parse("select a from testTable where b < quArter(c)");
+            var selectClause = ParseSelect("select a from testTable where b < quArter(c)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (QueryFunctionExpression) binaryExpression.Right;
-            Assert.That(queryFunction.FunctionName, Is.EqualTo(QueryFunctionName.Quarter));
+            Assert.That(queryFunction.KnownFunction, Is.EqualTo(KnownQueryFunction.Quarter));
             Assert.That(queryFunction.Arguments.Count, Is.EqualTo(1));
             Assert.That(((ColumnReferenceExpression)queryFunction.Arguments[0]).Name, Is.EqualTo("c"));
         }
@@ -100,39 +104,101 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void ValueFunction()
         {
-            var selectClause = Parse("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
+            var selectClause = ParseSelect("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (ValueLiteralExpression) binaryExpression.Right;
             Assert.That(queryFunction.ObjectName, Is.EqualTo("Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо"));
         }
         
         [Test]
-        public void GroupBy()
+        public void GroupByColumn()
         {
-            var selectClause = Parse("select count(*) from testTable group by c");
+            var selectClause = ParseSelect("select count(*) from testTable group by c");
             Assert.NotNull(selectClause.GroupBy);
-            Assert.That(selectClause.GroupBy.Columns[0].Name, Is.EqualTo("c"));
-            Assert.That(selectClause.GroupBy.Columns[0].Declaration.Name, Is.EqualTo("testTable"));
+            var columnReference = (ColumnReferenceExpression) selectClause.GroupBy.Expressions[0];
+            Assert.NotNull(columnReference);
+            Assert.That(columnReference.Name, Is.EqualTo("c"));
+            Assert.That(((TableDeclarationClause)columnReference.Table).Name, Is.EqualTo("testTable"));
+        }
+        
+        [Test]
+        public void CanGroupByExpression()
+        {
+            var selectClause = ParseSelect("select count(*) from testTable group by (c+1), presentation(d)");
+            Assert.NotNull(selectClause.GroupBy);
+            Assert.That(selectClause.GroupBy.Expressions[0], Is.TypeOf<BinaryExpression>());
+            Assert.That(selectClause.GroupBy.Expressions[1], Is.TypeOf<QueryFunctionExpression>());
+        }
+
+        [Test]
+        public void OrderBy()
+        {
+            var selectClause = Parse("select * from testTable order by FirstName, LastName asc, Patronymic desc");
+            Assert.NotNull(selectClause.OrderBy);
+            var orderings = selectClause.OrderBy.Expressions;
+            Assert.That(((ColumnReferenceExpression)orderings[0].Expression).Name, Is.EqualTo("FirstName"));
+            Assert.That(orderings[1].IsAsc, Is.True);
+            Assert.That(((ColumnReferenceExpression)orderings[1].Expression).Name, Is.EqualTo("LastName"));
+            Assert.That(orderings[1].IsAsc, Is.True);
+            Assert.That(((ColumnReferenceExpression)orderings[2].Expression).Name, Is.EqualTo("Patronymic"));
+            Assert.That(orderings[2].IsAsc, Is.False);
+        }
+
+        [Test]
+        public void Having()
+        {
+            var selectClause = ParseSelect("select * from testTable group by FirstName having count(Id) > 1");
+
+            var havingClause = selectClause.Having;
+            Assert.That(havingClause, Is.TypeOf<BinaryExpression>());
+
+            var left = ((BinaryExpression)havingClause).Left;
+            Assert.That(left, Is.TypeOf<AggregateFunctionExpression>());
+            Assert.That(((BinaryExpression)havingClause).Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
+
+            Assert.That(((AggregateFunctionExpression)left).Function, Is.EqualTo(AggregationFunction.Count));
+            Assert.That(((AggregateFunctionExpression)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
+
+            var right = ((BinaryExpression)havingClause).Right;
+            Assert.That(right, Is.TypeOf<LiteralExpression>());
+            Assert.That(((LiteralExpression)right).Value, Is.EqualTo(1));
         }
 
         [Test]
         public void Union()
         {
-            var selectClause = Parse(@"select a1,b1 from t1
+            var rootClause = Parse(@"select a1 from t1
 union
-select a2,b2 from t2
+select a1 from t2
 union all
-select a3,b3 from t3");
-            Assert.That(((ColumnReferenceExpression) selectClause.Fields[0].Expression).Name, Is.EqualTo("a1"));
-            Assert.That(selectClause.Union.Type, Is.EqualTo(UnionType.Distinct));
-            Assert.That(selectClause.Union.SelectClause.Union.Type, Is.EqualTo(UnionType.All));
-            Assert.That(selectClause.Union.SelectClause.Union.SelectClause.Union, Is.Null);
+select a1 from t3
+order by a1");
+            Assert.That(rootClause, Is.Not.Null);
+	        Assert.That(rootClause.Unions.Count, Is.EqualTo(3));
+            var union = rootClause.Unions[0];
+            Assert.That(union.Type, Is.EqualTo(UnionType.Distinct));
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause) union.SelectClause.Source).Name, Is.EqualTo("t1"));
+
+            union = rootClause.Unions[1];
+            Assert.That(union.Type, Is.EqualTo(UnionType.All));
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)union.SelectClause.Source).Name, Is.EqualTo("t2"));
+
+            union = rootClause.Unions[2];
+            Assert.That(union.Type, Is.Null);
+            Assert.That(union.SelectClause.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)union.SelectClause.Source).Name, Is.EqualTo("t3"));
+
+            Assert.That(rootClause.OrderBy, Is.Not.Null);
+            Assert.That(((ColumnReferenceExpression) rootClause.OrderBy.Expressions[0].Expression).Name,
+                Is.EqualTo("a1"));
         }
 
         [Test]
         public void WhereCondition()
         {
-            var selectClause = Parse("select a,b from testTable where c > 12");
+            var selectClause = ParseSelect("select a,b from testTable where c > 12");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -141,7 +207,7 @@ select a3,b3 from t3");
             var left = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
             Assert.That(left.Name, Is.EqualTo("c"));
-            Assert.That(left.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)left.Table).Name, Is.EqualTo("testTable"));
             
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
@@ -151,7 +217,7 @@ select a3,b3 from t3");
         [Test]
         public void AndOperator()
         {
-            var selectClause = Parse("select * from testTable where c > 12 aNd c<25");
+            var selectClause = ParseSelect("select * from testTable where c > 12 aNd c<25");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -162,7 +228,7 @@ select a3,b3 from t3");
             var col1Reference = leftAnd.Left as ColumnReferenceExpression;
             Assert.NotNull(col1Reference);
             Assert.That(col1Reference.Name, Is.EqualTo("c"));
-            Assert.That(col1Reference.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)col1Reference.Table).Name, Is.EqualTo("testTable"));
             var const1Reference = leftAnd.Right as LiteralExpression;
             Assert.NotNull(const1Reference);
             Assert.That(const1Reference.Value, Is.EqualTo(12));
@@ -172,32 +238,68 @@ select a3,b3 from t3");
             var col2Reference = rightAnd.Left as ColumnReferenceExpression;
             Assert.NotNull(col2Reference);
             Assert.That(col2Reference.Name, Is.EqualTo("c"));
-            Assert.That(col2Reference.Declaration, Is.SameAs(col1Reference.Declaration));
+            Assert.That(col2Reference.Table, Is.SameAs(col1Reference.Table));
             var const2Reference = rightAnd.Right as LiteralExpression;
             Assert.NotNull(const2Reference);
             Assert.That(const2Reference.Value, Is.EqualTo(25));
         }
-        
+
+        [Test]
+        public void UnaryNotOperator()
+        {
+            var andQuery = ParseSelect("select * from testTable where not b > 0 and c > 0");
+            var eqUery = ParseSelect("select * from testTable where not b > 0 = c > 0");
+            var whereCondition = andQuery.WhereExpression as BinaryExpression;
+            Assert.NotNull(whereCondition);
+            var unaryExpression = whereCondition.Left as UnaryExpression;
+            Assert.NotNull(unaryExpression);
+            Assert.That(unaryExpression.Operator, Is.EqualTo(UnaryOperator.Not));
+            Assert.That(eqUery.WhereExpression, Is.TypeOf<UnaryExpression>());
+        }
+
         [Test]
         public void InOperator()
         {
-            var selectClause = Parse("select a,b from testTable where c in (10,20,30)");
+            var selectClause = ParseSelect("select a,b from testTable where c in (10, 20, 30)");
             var inExpression = selectClause.WhereExpression as InExpression;
-            
+
             Assert.NotNull(inExpression);
             Assert.That(inExpression.Column.Name, Is.EqualTo("c"));
-            Assert.That(inExpression.Column.Declaration.Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause) inExpression.Column.Table).Name, Is.EqualTo("testTable"));
 
-            Assert.That(inExpression.Values.Count, Is.EqualTo(3));
-            Assert.That(((LiteralExpression) inExpression.Values[0]).Value, Is.EqualTo(10));
-            Assert.That(((LiteralExpression) inExpression.Values[1]).Value, Is.EqualTo(20));
-            Assert.That(((LiteralExpression) inExpression.Values[2]).Value, Is.EqualTo(30));
+            var list = inExpression.Source as ListExpression;
+            Assert.NotNull(list);
+            var elements = list.Elements
+                .OfType<LiteralExpression>()
+                .Select(c => c.Value)
+                .ToArray();
+            Assert.That(elements, Is.EqualTo(new[] {10, 20, 30}));
+        }
+
+        [Test]
+        public void AllowExtraneousBracesInExpressions()
+        {
+            var selectClause = ParseSelect("select (a) from testTable where ((a > 10) and (a > 11))");
+
+            var binaryExperssion = selectClause.WhereExpression as BinaryExpression;
+            Assert.NotNull(binaryExperssion);
+            var left = binaryExperssion.Left as BinaryExpression;
+            var right = binaryExperssion.Right as BinaryExpression;
+            Assert.That(binaryExperssion.Op, Is.EqualTo(SqlBinaryOperator.And));
+            Assert.NotNull(left);
+            Assert.NotNull(right);
+        }
+
+        [Test]
+        public void ExtraneousBracesAroundTableName_ThrowException()
+        {
+            Assert.Throws<InvalidOperationException>(() => ParseSelect("select (a) from (testTable)"));
         }
         
         [Test]
         public void LikeOperator()
         {
-            var selectClause = Parse("select a,b from testTable where c like \"%test%\"");
+            var selectClause = ParseSelect("select a,b from testTable where c like \"%test%\"");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -209,9 +311,9 @@ select a3,b3 from t3");
         }
         
         [Test]
-        public void StringLiteral()
+        public void StringLiteralWithEscapedQuote()
         {
-            var selectClause = Parse("select a,b from testTable where c != \"1\\\"2\\\"\"");
+            var selectClause = ParseSelect("select a,b from testTable where c != \"ООО \"\"Название в кавычках\"\"\"");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
@@ -219,13 +321,13 @@ select a3,b3 from t3");
 
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
-            Assert.That(right.Value, Is.EqualTo("1\"2\""));
+            Assert.That(right.Value, Is.EqualTo("ООО \"Название в кавычках\""));
         }
 
         [Test]
         public void Join()
         {
-            var selectClause = Parse(@"select t1.a as nested1, t2.b as nested2
+            var selectClause = ParseSelect(@"select t1.a as nested1, t2.b as nested2
 from testTable1 as t1
 left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.That(selectClause.Fields.Count, Is.EqualTo(2));
@@ -234,15 +336,15 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             Assert.That(col0.Alias, Is.EqualTo("nested1"));
             var col0Reference = (ColumnReferenceExpression)col0.Expression;
             Assert.That(col0Reference.Name, Is.EqualTo("a"));
-            Assert.That(col0Reference.Declaration.Name, Is.EqualTo("testTable1"));
-            Assert.That(col0Reference.Declaration.Alias, Is.EqualTo("t1"));
+            Assert.That(((TableDeclarationClause)col0Reference.Table).Name, Is.EqualTo("testTable1"));
+            Assert.That(((TableDeclarationClause)col0Reference.Table).Alias, Is.EqualTo("t1"));
 
             var col1 = selectClause.Fields[1];
             Assert.That(col1.Alias, Is.EqualTo("nested2"));
             var col1Reference = (ColumnReferenceExpression)col1.Expression;
             Assert.That(col1Reference.Name, Is.EqualTo("b"));
-            Assert.That(col1Reference.Declaration.Name, Is.EqualTo("testTable2"));
-            Assert.That(col1Reference.Declaration.Alias, Is.EqualTo("t2"));
+            Assert.That(((TableDeclarationClause)col1Reference.Table).Name, Is.EqualTo("testTable2"));
+            Assert.That(((TableDeclarationClause)col1Reference.Table).Alias, Is.EqualTo("t2"));
 
             var mainTable = (TableDeclarationClause) selectClause.Source;
             Assert.That(mainTable.Name, Is.EqualTo("testTable1"));
@@ -259,22 +361,22 @@ left join testTable2 as t2 on t1.id1 = t2.id2");
             var left = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
             Assert.That(left.Name, Is.EqualTo("id1"));
-            Assert.That(left.Declaration, Is.SameAs(col0Reference.Declaration));
+            Assert.That(left.Table, Is.SameAs(col0Reference.Table));
 
             var right = binaryExpression.Right as ColumnReferenceExpression;
             Assert.NotNull(right);
             Assert.That(right.Name, Is.EqualTo("id2"));
-            Assert.That(right.Declaration, Is.SameAs(col1Reference.Declaration));
+            Assert.That(right.Table, Is.SameAs(col1Reference.Table));
         }
 
         [Test]
         public void ManyJoinClauses()
         {
-            var selectClause = Parse(@"select *
+            var selectClause = ParseSelect(@"select *
 from testTable1 as t1
 left join testTable2 as t2 on t1.id1 = t2.id2
 join testTable3 on t3.id3 = t1.id1
-outer join testTable4 as t4 on t4.id4 = t1.id1");
+full outer join testTable4 as t4 on t4.id4 = t1.id1");
 
             Assert.That(selectClause.JoinClauses.Count, Is.EqualTo(3));
             var joinTable0 = (TableDeclarationClause)selectClause.JoinClauses[0].Source;
@@ -288,7 +390,7 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
             Assert.That(joinTable1.Alias, Is.Null);
 
             var joinTable2 = (TableDeclarationClause)selectClause.JoinClauses[2].Source;
-            Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Outer));
+            Assert.That(selectClause.JoinClauses[2].JoinKind, Is.EqualTo(JoinKind.Full));
             Assert.That(joinTable2.Name, Is.EqualTo("testTable4"));
             Assert.That(joinTable2.Alias, Is.EqualTo("t4"));
         }
@@ -296,21 +398,21 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void FromAlias()
         {
-            var selectClause = Parse("select a,b from testTable as tt");
+            var selectClause = ParseSelect("select a,b from testTable as tt");
             var aReference = (ColumnReferenceExpression) selectClause.Fields[0].Expression;
             Assert.That(aReference.Name, Is.EqualTo("a"));
-            Assert.That(aReference.Declaration.Name, Is.EqualTo("testTable"));
-            Assert.That(aReference.Declaration.Alias, Is.EqualTo("tt"));
+            Assert.That(((TableDeclarationClause)aReference.Table).Name, Is.EqualTo("testTable"));
+            Assert.That(((TableDeclarationClause)aReference.Table).Alias, Is.EqualTo("tt"));
             var bReference = (ColumnReferenceExpression) selectClause.Fields[1].Expression;
             Assert.That(bReference.Name, Is.EqualTo("b"));
-            Assert.That(bReference.Declaration, Is.SameAs(aReference.Declaration));
+            Assert.That(bReference.Table, Is.SameAs(aReference.Table));
             Assert.That(((TableDeclarationClause)selectClause.Source).Name, Is.EqualTo("testTable"));
         }
 
         [Test]
         public void ColumnAliases()
         {
-            var selectClause = Parse("select a as a_alias,b b_alias from testTable");
+            var selectClause = ParseSelect("select a as a_alias,b b_alias from testTable");
             Assert.That(selectClause.Fields[0].Alias, Is.EqualTo("a_alias"));
             Assert.That(selectClause.Fields[1].Alias, Is.EqualTo("b_alias"));
         }
@@ -318,27 +420,180 @@ outer join testTable4 as t4 on t4.id4 = t1.id1");
         [Test]
         public void SelectAll()
         {
-            var selectClause = Parse("select * from testTable");
+            var selectClause = ParseSelect("select * from testTable");
             Assert.That(selectClause.IsSelectAll, Is.True);
             Assert.That(selectClause.Fields, Is.Null);
         }
 
         [Test]
-        public void SelectAggregate()
+        public void AggregateWithWildcard()
         {
-            var selectClause = Parse("select count(*) as a, Sum(*) AS b from testTable");
-            var columnA = selectClause.Fields[0].Expression as AggregateFunction;
-            var columnB = selectClause.Fields[1].Expression as AggregateFunction;
+            var selectClause = ParseSelect("select count(*) as a, Sum(*) AS b from testTable");
+            var columnA = selectClause.Fields[0].Expression as AggregateFunctionExpression;
+            var columnB = selectClause.Fields[1].Expression as AggregateFunctionExpression;
             Assert.NotNull(columnA);
-            Assert.That(columnA.Type, Is.EqualTo(AggregateFunctionType.Count));
+            Assert.That(columnA.Function, Is.EqualTo(AggregationFunction.Count));
+            Assert.That(columnA.IsSelectAll, Is.True);
             Assert.NotNull(columnB);
-            Assert.That(columnB.Type, Is.EqualTo(AggregateFunctionType.Sum));
+            Assert.That(columnB.Function, Is.EqualTo(AggregationFunction.Sum));
+            Assert.That(columnA.IsSelectAll, Is.True);
         }
 
-        private static SelectClause Parse(string source)
+        [Test]
+        public void AggregateWithColumnExpression()
         {
-            var parser = new QueryParser();
-            return parser.Parse(source);
+            var selectClause = ParseSelect("select sum(PaymentSum*2) from Payments");
+            var aggregateArg = selectClause.Fields[0].Expression as AggregateFunctionExpression;
+            Assert.NotNull(aggregateArg);
+            Assert.That(aggregateArg.Function, Is.EqualTo(AggregationFunction.Sum));
+            var binary = aggregateArg.Argument as BinaryExpression;
+            Assert.NotNull(binary);
+            var left = binary.Left as ColumnReferenceExpression;
+            var right = binary.Right as LiteralExpression;
+            Assert.NotNull(left);
+            Assert.NotNull(right);
+            Assert.That(binary.Op, Is.EqualTo(SqlBinaryOperator.Mult));
+        }
+
+        [Test]
+        public void Top()
+        {
+            Assert.That(ParseSelect("select top 1 * from Payments").Top, Is.EqualTo(1));
+            Assert.That(ParseSelect("select * from Payments").Top, Is.Null);
+        }
+
+        [Test]
+        public void SelectDistinct()
+        {
+            var selectClause = ParseSelect("select distinct * from Payments");
+            Assert.That(selectClause.IsDistinct, Is.True);
+        }
+
+        [Test]
+        public void FilterByNullCondition()
+        {
+            var selectWhereNull = ParseSelect("select * from Payments where Contractor is null");
+            var selectNotNull = ParseSelect("select * from Payments where Contractor is not null");
+            
+            var isNullExpression = selectWhereNull.WhereExpression as IsNullExpression;
+            Assert.NotNull(isNullExpression);
+            Assert.That(isNullExpression.Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(isNullExpression.IsNotNull, Is.False);
+
+            var notNullExpression = selectNotNull.WhereExpression as IsNullExpression;
+            Assert.NotNull(notNullExpression);
+            Assert.That(notNullExpression.Argument, Is.TypeOf<ColumnReferenceExpression>());
+            Assert.That(notNullExpression.IsNotNull, Is.True);
+        }
+
+        [Test]
+        public void SelectFromSubquery()
+        {
+            var selectStatement = ParseSelect("select DocumentSum from (select DocumentSum from Payments) t " +
+                                           "where t.DocumentSum > 0");
+
+            var subqueryTable = selectStatement.Source as SubqueryTable;
+            Assert.NotNull(subqueryTable);
+            
+            var selectedField = selectStatement.Fields[0].Expression as ColumnReferenceExpression;
+            Assert.NotNull(selectedField);
+            Assert.That(subqueryTable.Alias, Is.EqualTo("t"));
+            Assert.That(selectedField.Name, Is.EqualTo("DocumentSum"));
+            Assert.That(selectedField.Table, Is.EqualTo(subqueryTable));
+
+            var whereExpression = selectStatement.WhereExpression as BinaryExpression;
+            Assert.NotNull(whereExpression);
+            var left = whereExpression.Left as ColumnReferenceExpression;
+            Assert.NotNull(left);
+            Assert.That(left.Table, Is.EqualTo(subqueryTable));
+        }
+
+        [Test]
+        public void SubqueryWithoutAlias_ThrowsException()
+        {
+            Assert.Throws<InvalidOperationException>(() => ParseSelect("select * from (select * from Contractors)"));
+        }
+
+        [Test]
+        public void EmbeddedQueryInFilterExpression()
+        {
+            var query = ParseSelect("select number from documents where counterparty in " +
+                                           "(select id from counterparty where inn is not null)");
+
+            var inExpression = query.WhereExpression as InExpression;
+            Assert.NotNull(inExpression);
+            Assert.That(inExpression.Column.Name, Is.EqualTo("counterparty"));
+            Assert.That(inExpression.Column.Table, Is.EqualTo(query.Source));
+
+            var innerQuery = ((SubqueryClause) inExpression.Source).Query.GetSingleSelect();
+            Assert.That(innerQuery.Source, Is.TypeOf<TableDeclarationClause>());
+            Assert.That(((TableDeclarationClause)innerQuery.Source).Name, Is.EqualTo("counterparty"));
+            var subqueryColumn = innerQuery.Fields.First().Expression as ColumnReferenceExpression;
+            Assert.NotNull(subqueryColumn);
+            Assert.That(((TableDeclarationClause)subqueryColumn.Table).Name, Is.EqualTo("counterparty"));
+        }
+
+        [Test]
+        public void EmbeddedQueryCanReferToOuterTables()
+        {
+            var query = ParseSelect(@"
+SELECT *
+FROM table1 t1
+WHERE table2Key =
+      (SELECT id
+       FROM table2 t2
+       WHERE id = t1.table2Key
+             AND table3Key =
+                 (SELECT id
+                  FROM table3 t3
+                  WHERE id = t2.table3Key AND table1Key = t1.table3Key
+                 ))");
+
+            var table1 = query.Source;
+            var table1Filter = (BinaryExpression) query.WhereExpression;
+            AssertIsColumnReference(table1Filter.Left, "table2Key", table1);
+            Assert.That(table1Filter.Right, Is.TypeOf<SubqueryClause>());
+
+            var table2Query = ((SubqueryClause)table1Filter.Right).Query.GetSingleSelect();
+            var table2 = (TableDeclarationClause) table2Query.Source;
+            Assert.That(table2.Name, Is.EqualTo("table2"));
+
+            var table2Filter1 = (BinaryExpression)((BinaryExpression) table2Query.WhereExpression).Left;
+            AssertIsColumnReference(table2Filter1.Left, "id", table2);
+            AssertIsColumnReference(table2Filter1.Right, "table2Key", table1);
+
+            var table2Filter2 = (BinaryExpression)((BinaryExpression)table2Query.WhereExpression).Right;
+            AssertIsColumnReference(table2Filter2.Left, "table3Key", table2);
+            Assert.That(table2Filter2.Right, Is.TypeOf<SubqueryClause>());
+
+            var table3Query = ((SubqueryClause)table2Filter2.Right).Query.GetSingleSelect();
+            var table3 = (TableDeclarationClause) table3Query.Source;
+            Assert.That(table3.Name, Is.EqualTo("table3"));
+            var table3Filter1 = (BinaryExpression)((BinaryExpression)table3Query.WhereExpression).Left;
+            AssertIsColumnReference(table3Filter1.Left, "id", table3);
+            AssertIsColumnReference(table3Filter1.Right, "table3Key", table2);
+
+            var table3Filter2 = (BinaryExpression)((BinaryExpression)table3Query.WhereExpression).Right;
+            AssertIsColumnReference(table3Filter2.Left, "table1Key", table3);
+            AssertIsColumnReference(table3Filter2.Right, "table3Key", table1);
+        }
+
+        private static SelectClause ParseSelect(string source)
+        {
+            return Parse(source).GetSingleSelect();
+        }
+
+        private static SqlQuery Parse(string source)
+        {
+            return new QueryParser().Parse(source);
+        }
+
+        private static void AssertIsColumnReference(ISqlElement element, string name, ISqlElement source)
+        {
+            Assert.That(element, Is.TypeOf<ColumnReferenceExpression>());
+            var columnReference = (ColumnReferenceExpression) element;
+            Assert.That(columnReference.Table, Is.EqualTo(source));
+            Assert.That(columnReference.Name, Is.EqualTo(name));
         }
     }
 }

@@ -2,13 +2,13 @@ namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class SingleLayout
     {
-        public SingleLayout(string columnName, string nestedTableName)
+        public SingleLayout(string dbColumnName, string nestedTableName)
         {
-            ColumnName = columnName;
+            DbColumnName = dbColumnName;
             NestedTableName = nestedTableName;
         }
 
-        public string ColumnName { get; private set; }
+        public string DbColumnName { get; private set; }
         public string NestedTableName { get; private set; }
     }
 }

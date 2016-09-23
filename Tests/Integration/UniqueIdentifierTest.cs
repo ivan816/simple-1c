@@ -2,7 +2,7 @@ using System;
 using System.Linq;
 using NUnit.Framework;
 using Simple1C.Interface;
-using Simple1C.Tests.Metadata1C.Справочники;
+using Simple1C.Tests.Metadata1C.РЎРїСЂР°РІРѕС‡РЅРёРєРё;
 
 namespace Simple1C.Tests.Integration
 {
@@ -11,87 +11,87 @@ namespace Simple1C.Tests.Integration
         [Test]
         public void CanSearchByRef()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            dataContext.Save(контрагент);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
 
-            var контрагент2 = dataContext.Select<Контрагенты>().Single(x => x == контрагент);
-            Assert.That(контрагент2.Наименование, Is.EqualTo("test contractor name"));
-            Assert.That(контрагент2.ИНН, Is.EqualTo("test-inn"));
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>().Single(x => x == РєРѕРЅС‚СЂР°РіРµРЅС‚);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contractor name"));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РРќРќ, Is.EqualTo("test-inn"));
         }
 
         [Test]
         public void CanSaveUniqueIdentifier()
         {
-            var контрагент = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚ = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name",
-                ИНН = "test-inn"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name",
+                РРќРќ = "test-inn"
             };
-            Assert.That(контрагент.УникальныйИдентификатор, Is.Null);
-            dataContext.Save(контрагент);
-            Assert.That(контрагент.УникальныйИдентификатор, Is.Not.Null);
-            Assert.That(контрагент.УникальныйИдентификатор, Is.Not.EqualTo(Guid.Empty));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.Null);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.Not.Null);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.Not.EqualTo(Guid.Empty));
 
-            var контрагент2 = dataContext.Single<Контрагенты>(x => x.ИНН == контрагент.ИНН);
-            Assert.That(контрагент2.УникальныйИдентификатор, Is.EqualTo(контрагент.УникальныйИдентификатор));
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = dataContext.Single<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РРќРќ == РєРѕРЅС‚СЂР°РіРµРЅС‚.РРќРќ);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.EqualTo(РєРѕРЅС‚СЂР°РіРµРЅС‚.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ));
         }
 
         [Test]
         public void CanSelectUniqueIdentifier()
         {
-            var контрагент1 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚1 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name1",
-                ИНН = "test-inn1"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name1",
+                РРќРќ = "test-inn1"
             };
-            dataContext.Save(контрагент1);
-            var контрагент2 = new Контрагенты
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚1);
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name2",
-                ИНН = "test-inn2"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name2",
+                РРќРќ = "test-inn2"
             };
-            dataContext.Save(контрагент2);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚2);
 
-            var контрагенты = dataContext.Select<Контрагенты>()
-                .Where(x => x.ИНН == контрагент1.ИНН || x.ИНН == контрагент2.ИНН)
-                .OrderByDescending(x => x.Наименование)
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚С‹ = dataContext.Select<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>()
+                .Where(x => x.РРќРќ == РєРѕРЅС‚СЂР°РіРµРЅС‚1.РРќРќ || x.РРќРќ == РєРѕРЅС‚СЂР°РіРµРЅС‚2.РРќРќ)
+                .OrderByDescending(x => x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ)
                 .Select(x => new
                 {
-                    x.УникальныйИдентификатор,
-                    x.Наименование
+                    x.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ,
+                    x.РќР°РёРјРµРЅРѕРІР°РЅРёРµ
                 })
                 .ToArray();
-            Assert.That(контрагенты.Length, Is.EqualTo(2));
-            Assert.That(контрагенты[0].УникальныйИдентификатор, Is.EqualTo(контрагент2.УникальныйИдентификатор));
-            Assert.That(контрагенты[0].Наименование, Is.EqualTo(контрагент2.Наименование));
-            Assert.That(контрагенты[1].УникальныйИдентификатор, Is.EqualTo(контрагент1.УникальныйИдентификатор));
-            Assert.That(контрагенты[1].Наименование, Is.EqualTo(контрагент1.Наименование));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚С‹.Length, Is.EqualTo(2));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚С‹[0].РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.EqualTo(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚С‹[0].РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo(РєРѕРЅС‚СЂР°РіРµРЅС‚2.РќР°РёРјРµРЅРѕРІР°РЅРёРµ));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚С‹[1].РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ, Is.EqualTo(РєРѕРЅС‚СЂР°РіРµРЅС‚1.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ));
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚С‹[1].РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo(РєРѕРЅС‚СЂР°РіРµРЅС‚1.РќР°РёРјРµРЅРѕРІР°РЅРёРµ));
         }
 
         [Test]
         public void CanQueryByUniqueIdentifier()
         {
-            var контрагент1 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚1 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name1",
-                ИНН = "test-inn1"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name1",
+                РРќРќ = "test-inn1"
             };
-            dataContext.Save(контрагент1);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚1);
 
-            var контрагент2 = new Контрагенты
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚2 = new РљРѕРЅС‚СЂР°РіРµРЅС‚С‹
             {
-                Наименование = "test contractor name2",
-                ИНН = "test-inn2"
+                РќР°РёРјРµРЅРѕРІР°РЅРёРµ = "test contractor name2",
+                РРќРќ = "test-inn2"
             };
-            dataContext.Save(контрагент2);
+            dataContext.Save(РєРѕРЅС‚СЂР°РіРµРЅС‚2);
 
-            var контрагент3 =
-                dataContext.Single<Контрагенты>(x => x.УникальныйИдентификатор == контрагент2.УникальныйИдентификатор);
-            Assert.That(контрагент3.Наименование, Is.EqualTo("test contractor name2"));
+            var РєРѕРЅС‚СЂР°РіРµРЅС‚3 =
+                dataContext.Single<РљРѕРЅС‚СЂР°РіРµРЅС‚С‹>(x => x.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ == РєРѕРЅС‚СЂР°РіРµРЅС‚2.РЈРЅРёРєР°Р»СЊРЅС‹Р№РРґРµРЅС‚РёС„РёРєР°С‚РѕСЂ);
+            Assert.That(РєРѕРЅС‚СЂР°РіРµРЅС‚3.РќР°РёРјРµРЅРѕРІР°РЅРёРµ, Is.EqualTo("test contractor name2"));
         }
     }
 }

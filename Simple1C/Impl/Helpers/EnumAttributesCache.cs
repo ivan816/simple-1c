@@ -6,7 +6,7 @@ using System.Reflection;
 
 namespace Simple1C.Impl.Helpers
 {
-    internal class EnumAttributesCache<TAttribute>
+    internal static class EnumAttributesCache<TAttribute>
         where TAttribute : Attribute
     {
         private static readonly ConcurrentDictionary<Type, IDictionary<string, TAttribute>> enumToItems =

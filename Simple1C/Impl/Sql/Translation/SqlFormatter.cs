@@ -5,10 +5,11 @@ using System.Text;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
-namespace Simple1C.Impl.Sql.SqlAccess
+namespace Simple1C.Impl.Sql.Translation
 {
     internal class SqlFormatter : SqlVisitor
     {
+        private ISqlElement parentOperatorExpression;
         private readonly StringBuilder builder = new StringBuilder();
 
         public static string Format(ISqlElement element)
@@ -20,55 +21,80 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override UnionClause VisitUnion(UnionClause clause)
         {
-            builder.Append("\r\n\r\nunion");
-            if (clause.Type == UnionType.All)
-                builder.Append(" all");
-            builder.Append("\r\n\r\n");
-            return base.VisitUnion(clause);
+            var result = base.VisitUnion(clause);
+
+            if (clause.Type.HasValue)
+            {
+                builder.Append("\r\n\r\nunion");
+                if (clause.Type == UnionType.All)
+                    builder.Append(" all");
+                builder.Append("\r\n\r\n");
+            }
+            return result;
         }
 
-        public override AggregateFunction VisitAggregateFunction(AggregateFunction expression)
+        public override AggregateFunctionExpression VisitAggregateFunction(AggregateFunctionExpression expression)
         {
-            builder.Append(FormatAggregateFunction(expression.Type));
+            builder.Append(expression.Function.ToString().ToLower());
+            builder.Append("(");
+            if (expression.IsSelectAll)
+                builder.Append("*");
+            else
+                Visit(expression.Argument);
+            builder.Append(")");
             return expression;
         }
 
         public override GroupByClause VisitGroupBy(GroupByClause clause)
         {
             builder.Append("\r\ngroup by ");
-            VisitEnumerable(clause.Columns, ",");
+            VisitEnumerable(clause.Expressions, ",");
             return clause;
         }
 
-        private static string FormatAggregateFunction(AggregateFunctionType f)
+        public override OrderByClause VisitOrderBy(OrderByClause element)
         {
-            switch (f)
-            {
-                case AggregateFunctionType.Count:
-                    return "count(*)";
-                case AggregateFunctionType.Sum:
-                    return "sum(*)";
-                case AggregateFunctionType.Max:
-                    return "max(*)";
-                case AggregateFunctionType.Min:
-                    return "min(*)";
-                default:
-                    throw new ArgumentOutOfRangeException("f", f, null);
-            }
+            builder.Append("\r\norder by ");
+            VisitEnumerable(element.Expressions, ",");
+            return element;
         }
 
-        public override ISqlElement VisitSubquery(SubqueryClause clause)
+        public override ISqlElement VisitOrderingElement(OrderByClause.OrderingElement orderingElement)
         {
+            Visit(orderingElement.Expression);
+            builder.AppendFormat(" {0}", orderingElement.IsAsc ? "asc" : "desc");
+            return orderingElement;
+        }
+
+        public override SubqueryClause VisitSubquery(SubqueryClause clause)
+        {
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = null;
             builder.Append("(");
-            Visit(clause.SelectClause);
+            Visit(clause.Query);
             builder.Append(")");
-            WriteAlias(clause.Alias);
+            parentOperatorExpression = previous;
             return clause;
+        }
+
+        public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
+        {
+            Visit(subqueryTable.Query);
+            if (string.IsNullOrWhiteSpace(subqueryTable.Alias))
+            {
+                var message = string.Format("Subquery must have an alias but did not: [{0}]", subqueryTable);
+                throw new InvalidOperationException(message);
+            }
+            builder.AppendFormat(" as {0}", subqueryTable.Alias);
+            return subqueryTable;
         }
 
         public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
+            
+            if (clause.IsDistinct)
+                builder.AppendFormat(" distinct ");
             if (clause.IsSelectAll)
                 builder.Append("*");
             else
@@ -87,12 +113,17 @@ namespace Simple1C.Impl.Sql.SqlAccess
             }
             if (clause.GroupBy != null)
                 Visit(clause.GroupBy);
-            if (clause.Union != null)
-                Visit(clause.Union);
+            if (clause.Having != null)
+            {
+                builder.Append("\r\nhaving ");
+                Visit(clause.Having);
+            }
+            if (clause.Top.HasValue)
+                builder.AppendFormat("\r\nlimit {0}", clause.Top.Value);
             return clause;
         }
 
-        public override SelectFieldElement VisitSelectField(SelectFieldElement clause)
+        public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
         {
             Visit(clause.Expression);
             WriteAlias(clause.Alias);
@@ -120,19 +151,43 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return expression;
         }
 
+        public override ISqlElement VisitUnary(UnaryExpression unaryExpression)
+        {
+            var needParens = NeedParens(unaryExpression);
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = unaryExpression;
+            if (needParens)
+                builder.Append("(");
+            builder.AppendFormat(" {0} ", GetOperatorText(unaryExpression.Operator));
+            Visit(unaryExpression.Argument);
+            if (needParens)
+                builder.Append(")");
+            parentOperatorExpression = previous;
+            return unaryExpression;
+        }
+
         public override ISqlElement VisitBinary(BinaryExpression expression)
         {
+            var needParens = NeedParens(expression);
+            var previous = parentOperatorExpression;
+            parentOperatorExpression = expression;
+            if (needParens)
+                builder.Append("(");
             Visit(expression.Left);
-            builder.Append(GetOperatorText(expression.Op));
+            builder.AppendFormat(" {0} ", GetOperatorText(expression.Op));
             Visit(expression.Right);
+            if (needParens)
+                builder.Append(")");
+            parentOperatorExpression = previous;
             return expression;
         }
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
-            if (!string.IsNullOrEmpty(expression.Declaration.Alias))
+            var alias = expression.Table.Alias;
+            if (!string.IsNullOrEmpty(alias))
             {
-                builder.Append(expression.Declaration.Alias);
+                builder.Append(alias);
                 builder.Append(".");
             }
             builder.Append(expression.Name);
@@ -150,9 +205,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             Visit(expression.Column);
             builder.Append(" in ");
-            builder.Append('(');
-            VisitEnumerable(expression.Values, ",");
-            builder.Append(')');
+            Visit(expression.Source);
             return expression;
         }
 
@@ -177,26 +230,38 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            builder.Append(FormatQueryFunctionName(expression.FunctionName));
+            var functionName = expression.KnownFunction.HasValue
+                ? FormatQueryFunctionName(expression.KnownFunction.Value)
+                : expression.CustomFunction;
+            builder.Append(functionName);
             builder.Append('(');
-            VisitEnumerable(expression.Arguments, ",");
+            VisitEnumerable(expression.Arguments, ", ");
             builder.Append(')');
             return expression;
         }
 
-        private static string FormatQueryFunctionName(QueryFunctionName name)
+        public override ISqlElement VisitList(ListExpression listExpression)
+        {
+            builder.Append('(');
+            VisitEnumerable(listExpression.Elements, ", ");
+            builder.Append(')');
+            return listExpression;
+        }
+
+        private static string FormatQueryFunctionName(KnownQueryFunction name)
         {
             switch (name)
             {
-                case QueryFunctionName.SqlDatePart:
+                case KnownQueryFunction.SqlDatePart:
                     return "date_part";
-                case QueryFunctionName.SqlDateTrunc:
+                case KnownQueryFunction.SqlDateTrunc:
                     return "date_trunc";
-                case QueryFunctionName.SqlNot:
+                case KnownQueryFunction.SqlNot:
                     return "not";
+                case KnownQueryFunction.Substring:
+                    return "substring";
                 default:
-                    const string messageFormat = "unexpected function [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, name));
+                    throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
         }
 
@@ -204,6 +269,24 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
             NotSupported(expression, expression.ObjectName);
             return expression;
+        }
+
+        public override ISqlElement VisitIsNullExpression(IsNullExpression expression)
+        {
+            Visit(expression.Argument);
+            builder.Append(" is ");
+            if (expression.IsNotNull)
+                builder.Append("not ");
+            builder.Append("null");
+            return expression;
+        }
+
+        public override ISqlElement VisitCast(CastExpression castExpression)
+        {
+            builder.Append("cast(");
+            Visit(castExpression.Expression);
+            builder.AppendFormat(" as {0})", castExpression.Type);
+            return castExpression;
         }
 
         private static void NotSupported(ISqlElement element, params object[] args)
@@ -220,40 +303,58 @@ namespace Simple1C.Impl.Sql.SqlAccess
             switch (op)
             {
                 case SqlBinaryOperator.Eq:
-                    return " = ";
+                    return "=";
                 case SqlBinaryOperator.Neq:
-                    return " <> ";
+                    return "<>";
                 case SqlBinaryOperator.And:
-                    return " and ";
+                    return "and";
                 case SqlBinaryOperator.Or:
-                    return " or ";
+                    return "or";
                 case SqlBinaryOperator.LessThan:
-                    return " < ";
+                    return "<";
                 case SqlBinaryOperator.LessThanOrEqual:
-                    return " <= ";
+                    return "<=";
                 case SqlBinaryOperator.GreaterThan:
-                    return " > ";
+                    return ">";
                 case SqlBinaryOperator.GreaterThanOrEqual:
-                    return " >= ";
+                    return ">=";
                 case SqlBinaryOperator.Plus:
-                    return " + ";
+                    return "+";
                 case SqlBinaryOperator.Minus:
-                    return " - ";
+                    return "-";
+                case SqlBinaryOperator.Mult:
+                    return "*";
+                case SqlBinaryOperator.Div:
+                    return "/";
+                case SqlBinaryOperator.Remainder:
+                    return "%";
                 case SqlBinaryOperator.Like:
-                    return " like ";
+                    return "like";
                 default:
                     throw new ArgumentOutOfRangeException("op", op, null);
             }
         }
 
+        private static string GetOperatorText(UnaryOperator op)
+        {
+            switch (op)
+            {
+                case UnaryOperator.Not:
+                    return "not";
+                default:
+                    throw new InvalidOperationException("Unexpected operator type " + op);
+            }
+        }
+
         private static string FormatValueAsString(object value)
         {
-            if (value is string)
-                return "'" + value + "'";
-            if (value is byte[])
-                return "E'\\\\x" + ((byte[]) value).ToHex() + "'";
-            if (value is DateTime)
-                return "cast('" + ((DateTime) value).ToString("yyyy-MM-dd") + "' as date)";
+            var str = value as string;
+            if (str != null)
+                return "'" + str.Replace("\'", "\'\'") + "'";
+            var bytes = value as byte[];
+            if (bytes != null)
+                return "E'\\\\x" + bytes.ToHex() + "'";
+          
             if (value is bool)
                 return ((bool?) value).Value ? "true" : "false";
             return value.ToString();
@@ -273,6 +374,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
                     throw new InvalidOperationException(string.Format(messageFormat, value,
                         value == null ? "<null>" : value.GetType().FormatName(), sqlType));
+                    case SqlType.DatePart:
+                    return value.ToString();
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
                     throw new InvalidOperationException(string.Format(message, sqlType));
@@ -289,11 +392,10 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     return "right";
                 case JoinKind.Inner:
                     return "inner";
-                case JoinKind.Outer:
-                    return "outer";
+                case JoinKind.Full:
+                    return "full outer";
                 default:
-                    const string messageFormat = "unexpected join kind [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, joinClause.JoinKind));
+                    throw new InvalidOperationException(string.Format("unexpected join kind [{0}]", joinClause.JoinKind));
             }
         }
 
@@ -317,6 +419,22 @@ namespace Simple1C.Impl.Sql.SqlAccess
                     builder.Append(delimiter);
                 Visit(e);
             }
+        }
+
+        private bool NeedParens(ISqlElement current)
+        {
+            return GetOperatorPrecedence(parentOperatorExpression) > GetOperatorPrecedence(current);
+        }
+
+        private static int? GetOperatorPrecedence(ISqlElement element)
+        {
+            var binaryExpression = element as BinaryExpression;
+            var unaryExpression = element as UnaryExpression;
+            if (binaryExpression != null)
+                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(binaryExpression.Op).Precedence;
+            if (unaryExpression!=null)
+                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(unaryExpression.Operator).Precedence;
+            return null;
         }
     }
 }

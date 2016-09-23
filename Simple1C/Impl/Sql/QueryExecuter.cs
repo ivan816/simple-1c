@@ -17,13 +17,13 @@ namespace Simple1C.Impl.Sql
         private readonly string queryText;
         private readonly string targetTableName;
 
-        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryFileName, bool dumpSql)
+        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryText, string targetTableName, bool dumpSql)
         {
             this.sources = sources;
             this.target = target;
             this.dumpSql = dumpSql;
-            queryText = File.ReadAllText(queryFileName);
-            targetTableName = Path.GetFileNameWithoutExtension(queryFileName);
+            this.queryText = queryText;
+            this.targetTableName = targetTableName;
         }
 
         public bool Execute()
@@ -76,7 +76,7 @@ namespace Simple1C.Impl.Sql
             }
             s.Stop();
             Console.Out.WriteLine("\r\ndone, [{0}] millis", s.ElapsedMilliseconds);
-            return errorOccured;
+            return !errorOccured;
         }
     }
 }

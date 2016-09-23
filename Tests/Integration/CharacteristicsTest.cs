@@ -5,7 +5,7 @@ using Simple1C.Tests.Metadata1C.Справочники;
 
 namespace Simple1C.Tests.Integration
 {
-    internal class СharacteristicsTest : COMDataContextTestBase
+    internal class CharacteristicsTest : COMDataContextTestBase
     {
         [Test]
         public void Test()

@@ -140,7 +140,10 @@ namespace Simple1C.Impl.Queriables
                 if (value is Guid && xMember != null && xMember.Member.Name == EntityHelpers.idPropertyName)
                     value = new ConvertUniqueIdentifierCmd
                     {
-                        entityType = xMember.Member.DeclaringType,
+                        entityType =
+                            xMember.Member.DeclaringType == queryBuilder.QueryType
+                                ? queryBuilder.SourceType
+                                : xMember.Member.DeclaringType,
                         id = (Guid) value
                     };
                 else if (type.IsEnum)

@@ -1,12 +1,13 @@
 using System;
 using System.Collections.Generic;
-using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
+using Simple1C.Impl.Sql.Translation.Visitors;
 
 namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class TableDeclarationRewriter
     {
+        private readonly NameGenerator nameGenerator;
         private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly List<ISqlElement> areas;
@@ -14,14 +15,34 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
             QueryEntityAccessor queryEntityAccessor,
-            List<ISqlElement> areas)
+            NameGenerator nameGenerator, List<ISqlElement> areas)
         {
             this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityAccessor = queryEntityAccessor;
             this.areas = areas;
+            this.nameGenerator = nameGenerator;
         }
 
-        public ISqlElement Rewrite(TableDeclarationClause declaration)
+        public void RewriteTables(ISqlElement element)
+        {
+            var rewrittenTables = new Dictionary<IColumnSource, IColumnSource>();
+            TableDeclarationVisitor.Visit(element, original =>
+            {
+                var rewritten = RewriteTableIfNeeded(original);
+                if (rewritten != original)
+                    rewrittenTables.Add(original, rewritten);
+                return rewritten;
+            });
+            new ColumnReferenceVisitor(column =>
+            {
+                IColumnSource generatedTable;
+                if (rewrittenTables.TryGetValue(column.Table, out generatedTable))
+                    column.Table = generatedTable;
+                return column;
+            }).Visit(element);
+        }
+
+        private IColumnSource RewriteTableIfNeeded(TableDeclarationClause declaration)
         {
             var queryRoot = queryEntityRegistry.Get(declaration);
             var subqueryRequired = queryRoot.subqueryRequired || areas != null;
@@ -42,16 +63,22 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Column = new ColumnReferenceExpression
                     {
                         Name = queryRoot.entity.GetAreaColumnName(),
-                        Declaration = (TableDeclarationClause)selectClause.Source
+                        Table = (TableDeclarationClause)selectClause.Source
                     },
-                    Values = areas
+                    Source = new ListExpression {Elements = areas}
                 };
             AddJoinClauses(queryRoot.entity, selectClause);
             AddColumns(queryRoot, selectClause);
-            return new SubqueryClause
+            return new SubqueryTable
             {
-                SelectClause = selectClause,
-                Alias = declaration.GetRefName()
+                Alias = declaration.Alias ?? nameGenerator.GenerateSubqueryName(),
+                Query = new SubqueryClause
+                {
+                    Query = new SqlQuery
+                    {
+                        Unions = {new UnionClause {SelectClause = selectClause}}
+                    }
+                }
             };
         }
 
@@ -69,19 +96,19 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                             Left = new ColumnReferenceExpression
                             {
                                 Name = nestedEntity.GetAreaColumnName(),
-                                Declaration = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                                Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
                             },
                             Right = new ColumnReferenceExpression
                             {
                                 Name = p.referer.GetAreaColumnName(),
-                                Declaration = queryEntityAccessor.GetTableDeclaration(p.referer)
+                                Table = queryEntityAccessor.GetTableDeclaration(p.referer)
                             }
                         });
                     if (p.mapping.UnionLayout != null)
                         eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
                     var referenceColumnName = p.mapping.SingleLayout == null
                         ? p.mapping.UnionLayout.ReferenceColumnName
-                        : p.mapping.SingleLayout.ColumnName;
+                        : p.mapping.SingleLayout.DbColumnName;
                     if (string.IsNullOrEmpty(referenceColumnName))
                     {
                         const string messageFormat = "ref column is not defined for [{0}.{1}]";
@@ -93,12 +120,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         Left = new ColumnReferenceExpression
                         {
                             Name = nestedEntity.GetIdColumnName(),
-                            Declaration = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                            Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = referenceColumnName,
-                            Declaration = queryEntityAccessor.GetTableDeclaration(p.referer)
+                            Table = queryEntityAccessor.GetTableDeclaration(p.referer)
                         }
                     });
                     var joinClause = new JoinClause
@@ -120,10 +147,10 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 if (f.invert)
                     expression = new QueryFunctionExpression
                     {
-                        FunctionName = QueryFunctionName.SqlNot,
+                        KnownFunction = KnownQueryFunction.SqlNot,
                         Arguments = new List<ISqlElement> { expression }
                     };
-                target.Fields.Add(new SelectFieldElement
+                target.Fields.Add(new SelectFieldExpression
                 {
                     Expression = expression,
                     Alias = f.alias
@@ -167,13 +194,13 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    Declaration = (TableDeclarationClause)enumMappingsJoinClause.Source
+                    Table = (TableDeclarationClause)enumMappingsJoinClause.Source
                 };
             }
             return new ColumnReferenceExpression
             {
                 Name = property.GetDbColumnName(),
-                Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                Table = queryEntityAccessor.GetTableDeclaration(property.referer)
             };
         }
 
@@ -211,6 +238,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 throw new InvalidOperationException(string.Format(messageFormat,
                     property.referer.mapping.QueryTableName, property.mapping.PropertyName));
             }
+            if (!nestedEntity.mapping.Index.HasValue)
+            {
+                var message = string.Format("Invalid table name {0}. Table name must contain index.",
+                    nestedEntity.mapping.DbTableName);
+                throw new InvalidOperationException(message);
+            }
             var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
             if (string.IsNullOrEmpty(tableIndexColumnName))
             {
@@ -225,7 +258,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Left = new ColumnReferenceExpression
                     {
                         Name = typeColumnName,
-                        Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {
@@ -238,7 +271,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Left = new ColumnReferenceExpression
                     {
                         Name = tableIndexColumnName,
-                        Declaration = queryEntityAccessor.GetTableDeclaration(property.referer)
+                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
                     },
                     Right = new LiteralExpression
                     {
@@ -253,6 +286,21 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         {
             HasReferences,
             HasNoReferences
+        }
+
+        private class ColumnReferenceVisitor : SqlVisitor
+        {
+            private readonly Func<ColumnReferenceExpression, ColumnReferenceExpression> visitor;
+
+            public ColumnReferenceVisitor(Func<ColumnReferenceExpression, ColumnReferenceExpression> visitor)
+            {
+                this.visitor = visitor;
+            }
+
+            public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
+            {
+                return visitor((ColumnReferenceExpression) base.VisitColumnReference(expression));
+            }
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Simple1C.Impl.Helpers;
@@ -10,8 +10,8 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class QueryEntityAccessor
     {
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly NameGenerator nameGenerator = new NameGenerator();
+        private readonly QueryEntityRegistry queryEntityRegistry;
 
         public QueryEntityAccessor(QueryEntityRegistry queryEntityRegistry)
         {
@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
             bool isRepresentation, SelectPart selectPart)
         {
-            var queryRoot = queryEntityRegistry.Get(columnReference.Declaration);
+            var queryRoot = queryEntityRegistry.Get(columnReference.Table);
             if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;
@@ -74,7 +74,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
             if (propertyMapping.SingleLayout != null)
             {
-                if (name.EqualsIgnoringCase("Ссылка"))
+                if (name.EqualsIgnoringCase(PropertyNames.Id))
                 {
                     if (queryEntity.mapping.Type == TableType.TableSection)
                     {
@@ -129,7 +129,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         Left = new ColumnReferenceExpression
                         {
                             Name = "enumName",
-                            Declaration = declaration
+                            Table = declaration
                         },
                         Right = new LiteralExpression
                         {
@@ -141,12 +141,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         Left = new ColumnReferenceExpression
                         {
                             Name = "orderIndex",
-                            Declaration = declaration
+                            Table = declaration
                         },
                         Right = new ColumnReferenceExpression
                         {
                             Name = enumEntity.GetSingleColumnName("Порядок"),
-                            Declaration = GetTableDeclaration(enumEntity)
+                            Table = GetTableDeclaration(enumEntity)
                         }
                     }
                 }

@@ -31,6 +31,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="Remotion.Linq">
+      <HintPath>..\packages\Remotion.Linq.2.0.2\lib\net45\Remotion.Linq.dll</HintPath>
+    </Reference>
     <Reference Include="Irony">
       <HintPath>..\packages\Irony.0.9.1\lib\net40\Irony.dll</HintPath>
     </Reference>
@@ -49,6 +52,7 @@
     <Reference Include="System.Xml.Linq" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Class1.cs" />
     <Compile Include="CsProjectFileUpdaterTest.cs" />
     <Compile Include="Integration\COMDataContextTestBase.cs" />
     <Compile Include="InMemoryDataContextTest.cs" />
@@ -60,9 +64,15 @@
     <Compile Include="Integration\SaveValidationsIntegrationTest.cs" />
     <Compile Include="Integration\TableSectionsTest.cs" />
     <Compile Include="Integration\UniqueIdentifierTest.cs" />
-    <Compile Include="Integration\СharacteristicsTest.cs" />
+    <Compile Include="Integration\CharacteristicsTest.cs" />
+    <Compile Include="Sql\EnumsTest.cs" />
+    <Compile Include="Sql\FunctionReplacementTest.cs" />
+    <Compile Include="Sql\LiteralsTest.cs" />
+    <Compile Include="Sql\NestedPropertiesTest.cs" />
     <Compile Include="Sql\ParserTest.cs" />
-    <Compile Include="Sql\QueryToSqlTranslatorTest.cs" />
+    <Compile Include="Sql\BasicTest.cs" />
+    <Compile Include="Sql\SubqueryTest.cs" />
+    <Compile Include="Sql\TranslationTestBase.cs" />
     <Compile Include="SynonymTest.cs" />
     <Compile Include="ФункцииTest.cs" />
     <Compile Include="TestEntities\AccountingDocument.cs" />
@@ -99,6 +109,8 @@
       <Project>{bb1a4406-ad17-4089-9d6b-33d4452fde4c}</Project>
       <Name>Simple1C</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

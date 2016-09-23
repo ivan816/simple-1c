@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using Irony.Parsing;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
@@ -7,7 +8,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     internal class QueryParser
     {
-        public SelectClause Parse(string source)
+        private readonly Parser parser;
+
+        public QueryParser()
         {
             var queryGrammar = new QueryGrammar();
             var languageData = new LanguageData(queryGrammar);
@@ -18,20 +21,39 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     b.Append(error);
                 throw new InvalidOperationException(string.Format("invalid grammar\r\n{0}", b));
             }
-            var parser = new Parser(languageData);
+            parser = new Parser(languageData);
+        }
+
+        public SqlQuery Parse(string source)
+        {
             var parseTree = parser.Parse(source);
             if (parseTree.Status != ParseTreeStatus.Parsed)
-            {
-                var b = new StringBuilder();
-                foreach (var message in parseTree.ParserMessages)
-                    b.AppendFormat("{0}\t{1} {2} {3}", message.Message, message.Location,
-                        message.Level, message.ParserState);
-                throw new InvalidOperationException(string.Format("parse error\r\n{0}", b));
-            }
-            var result = (SelectClause) parseTree.Root.AstNode;
-            var columnReferencePatcher = new ColumnReferenceTableNameRewriter();
-            columnReferencePatcher.Visit(result);
+                throw new InvalidOperationException(FormatErrors(parseTree, parser.Context.TabWidth));
+            var result = (SqlQuery) parseTree.Root.AstNode;
+            new ColumnReferenceTableNameResolver().Visit(result);
             return result;
+        }
+
+        private static string FormatErrors(ParseTree parseTree, int tabWidth)
+        {
+            var b = new StringBuilder();
+            foreach (var message in parseTree.ParserMessages)
+            {
+                b.AppendLine(string.Format("{0}: {1} at {2} in state {3}", message.Level, message.Message,
+                    message.Location, message.ParserState));
+
+                var theMessage = message;
+                var lines = parseTree.SourceText.Replace("\t", new string(' ', tabWidth))
+                    .Split(new[] {"\r\n"}, StringSplitOptions.None)
+                    .Select((sourceLine, index) =>
+                        index == theMessage.Location.Line
+                            ? string.Format("{0}\r\n{1}|<-Here", sourceLine,
+                                new string('_', theMessage.Location.Column))
+                            : sourceLine);
+                foreach (var line in lines)
+                    b.AppendLine(line);
+            }
+            return string.Format("parse errors\r\n:{0}", b);
         }
     }
 }

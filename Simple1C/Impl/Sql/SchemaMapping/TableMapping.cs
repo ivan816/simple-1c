@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
@@ -9,7 +10,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
     {
         public string QueryTableName { get; private set; }
         public string DbTableName { get; private set; }
-        public int Index { get; private set; }
+        public int? Index { get; private set; }
         public TableType Type { get; private set; }
         public PropertyMapping[] Properties { get; private set; }
         private ConfigurationName? objectName;
@@ -39,12 +40,8 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             Type = type;
             Properties = properties;
             var indexMatch = tableIndexRegex.Match(dbName);
-            if (!indexMatch.Success)
-            {
-                const string messageFormat = "can't extract table index, queryTableName [{0}], dbName [{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat, queryTableName, dbName));
-            }
-            Index = int.Parse(indexMatch.Groups[1].Value);
+            if (indexMatch.Success)
+                Index = int.Parse(indexMatch.Groups[1].Value);
             foreach (var p in Properties)
                 if (!byPropertyName.ContainsKey(p.PropertyName))
                 {
@@ -68,13 +65,11 @@ namespace Simple1C.Impl.Sql.SchemaMapping
 
         public PropertyMapping GetByPropertyName(string queryName)
         {
-            PropertyMapping result;
-            if (!byPropertyName.TryGetValue(queryName, out result))
-            {
-                const string messagFormat = "can't find field [{0}] for table [{1}]";
-                throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
-            }
-            return result;
+            var result = byPropertyName.GetOrDefault(queryName);
+            if (result != null)
+                return result;
+            const string messagFormat = "can't find field [{0}] for table [{1}]";
+            throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));
         }
 
         public bool IsEnum()

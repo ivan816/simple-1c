@@ -19,7 +19,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public string GetDbColumnName()
         {
             return mapping.SingleLayout != null
-                ? mapping.SingleLayout.ColumnName
+                ? mapping.SingleLayout.DbColumnName
                 : mapping.UnionLayout.ReferenceColumnName;
         }
     }

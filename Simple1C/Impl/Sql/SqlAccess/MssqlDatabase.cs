@@ -100,15 +100,15 @@ namespace Simple1C.Impl.Sql.SqlAccess
         protected override string GetSqlType(DataColumn column)
         {
             var type = column.DataType;
-            if (type == typeof(bool))
+            if (type == typeof (bool))
                 return "bit";
-            if (type == typeof(string))
+            if (type == typeof (string) || type == typeof (byte[]))
                 return "varchar(" + (column.MaxLength > 0 ? column.MaxLength : 1000) + ")";
-            if (type == typeof(DateTime))
+            if (type == typeof (DateTime))
                 return "datetime";
-            if (type == typeof(decimal))
+            if (type == typeof (decimal))
                 return "decimal(29,2)";
-            if (type == typeof(int))
+            if (type == typeof (int))
                 return "int";
             if (type == typeof(long))
                 return "bigint";

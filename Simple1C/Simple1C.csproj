@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
@@ -129,20 +129,33 @@
     <Compile Include="Impl\Sql\SqlAccess\Parsing\ParseHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryGrammar.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryParser.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\TableAliasResolver.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\SqlFormatter.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\SubqueryClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunction.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionType.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregationFunction.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\CastExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\DatePart.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\IColumnSource.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ListExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorPrecedenceAttribute.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorSynonymsAttribute.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryTable.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryOperator.cs" />
+    <Compile Include="Impl\Sql\Translation\SqlFormatter.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregateFunctionExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AndExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\BinaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseElement.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\CaseExpression.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Parsing\ColumnReferenceTableNameRewriter.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Parsing\ColumnReferenceTableNameResolver.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\GroupByClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\InExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ColumnReferenceExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\IsNullExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\OrderByClause.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlQuery.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\TableDeclarationClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\EqualityExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ISqlElement.cs" />
@@ -150,14 +163,16 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\LiteralExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\JoinClause.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldElement.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\SqlHelpers.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldExpression.cs" />
+    <Compile Include="Impl\Sql\Translation\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
     <Compile Include="Impl\Sql\QueryExecuter.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\QueryFunctionName.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\KnownQueryFunction.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteralExpression.cs" />
+    <Compile Include="Impl\Sql\SchemaMapping\PropertyNames.cs" />
+    <Compile Include="Impl\Sql\Translation\Visitors\SubqueryVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ColumnReferenceRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\AddAreaToJoinConditionVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntityAccessor.cs" />
@@ -172,13 +187,12 @@
     <Compile Include="Impl\Sql\Translation\QueryToSqlTranslator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlBinaryOperator.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SqlType.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\SqlVisitor.cs" />
+    <Compile Include="Impl\Sql\Translation\SqlVisitor.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\QueryFunctionExpression.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\TableMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\TableType.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\UnionLayout.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\SelectPart.cs" />
-    <Compile Include="Impl\Sql\Translation\Visitors\SingleSelectSqlVisitorBase.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\TableDeclarationVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\TableDeclarationRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ValueLiteralRewriter.cs" />
