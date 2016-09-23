@@ -87,5 +87,19 @@ from contractors1";
 from t1 as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+
+        [Test]
+        public void AllowArbitraryPostgreSqlFunction()
+        {
+            const string sourceSql = @"select length(КПП), now() from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты contractors1 Main
+    КПП Single kpp";
+
+            const string expectedResult = @"select
+    length(kpp),
+    now()
+from contractors1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
     }
 }

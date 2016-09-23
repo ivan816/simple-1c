@@ -203,7 +203,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 c => c.ChildNodes.Count > 1 ? c.ChildNodes[1].AstNode : null);
 
             //rules
-            exprList.Rule = MakePlusRule(exprList, ToTerm(","), expression);
+            exprList.Rule = MakeStarRule(exprList, ToTerm(","), expression);
             parExprList.Rule = "(" + exprList + ")";
             parExpr.Rule = "(" + expression + ")";
             term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral
@@ -337,10 +337,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static QueryFunctionExpression ToQueryFunctionExpression(ParseTreeNode node)
         {
-            var queryFunction = ToQueryFunctionName(node.ChildNodes[0].FindTokenAndGetText().ToLower());
+            var functionName = node.ChildNodes[0].FindTokenAndGetText().ToLower();
+            var queryFunction = ToQueryFunctionName(functionName);
             return new QueryFunctionExpression
             {
                 Function = queryFunction,
+                FunctionName = queryFunction == null ? functionName : null,
                 Arguments = node.ChildNodes[1].Elements().Cast<ISqlElement>().ToList()
             };
         }
@@ -619,7 +621,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             }
         }
 
-        private static KnownQueryFunction ToQueryFunctionName(string name)
+        private static KnownQueryFunction? ToQueryFunctionName(string name)
         {
             switch (name)
             {
@@ -647,11 +649,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 case "beginofperiod":
                 case "началопериода":
                     return KnownQueryFunction.SqlDateTrunc;
-                case "stringlength":
-                case "длинастроки":
-                    return KnownQueryFunction.StringLength;
                 default:
-                    throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
+                    return null;
             }
         }
 

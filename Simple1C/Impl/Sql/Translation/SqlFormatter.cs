@@ -230,7 +230,10 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
-            builder.Append(FormatQueryFunctionName(expression.Function));
+            var functionName = expression.Function.HasValue
+                ? FormatQueryFunctionName(expression.Function.Value)
+                : expression.FunctionName;
+            builder.Append(functionName);
             builder.Append('(');
             VisitEnumerable(expression.Arguments, ", ");
             builder.Append(')');
@@ -257,8 +260,6 @@ namespace Simple1C.Impl.Sql.Translation
                     return "not";
                 case KnownQueryFunction.Substring:
                     return "substring";
-                case KnownQueryFunction.StringLength:
-                    return "length";
                 default:
                     throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }

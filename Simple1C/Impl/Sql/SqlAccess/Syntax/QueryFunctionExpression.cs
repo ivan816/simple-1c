@@ -11,7 +11,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
             Arguments = new List<ISqlElement>();
         }
 
-        public KnownQueryFunction Function { get; set; }
+        public string FunctionName { get; set; }
+        public KnownQueryFunction? Function { get; set; }
         public List<ISqlElement> Arguments { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
