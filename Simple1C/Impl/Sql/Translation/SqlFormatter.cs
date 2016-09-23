@@ -9,6 +9,7 @@ namespace Simple1C.Impl.Sql.Translation
 {
     internal class SqlFormatter : SqlVisitor
     {
+        private ISqlElement parent;
         private readonly StringBuilder builder = new StringBuilder();
 
         public static string Format(ISqlElement element)
@@ -16,6 +17,15 @@ namespace Simple1C.Impl.Sql.Translation
             var formatter = new SqlFormatter();
             formatter.Visit(element);
             return formatter.builder.ToString();
+        }
+
+        public override ISqlElement Visit(ISqlElement element)
+        {
+            var previous = parent;
+            parent = element;
+            var result = base.Visit(element);
+            parent = previous;
+            return result;
         }
 
         public override UnionClause VisitUnion(UnionClause clause)
@@ -149,16 +159,26 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override ISqlElement VisitUnary(UnaryExpression unaryExpression)
         {
+            var needParens = NeedParens(unaryExpression);
+            if (needParens)
+                builder.Append("(");
             builder.AppendFormat(" {0} ", GetOperatorText(unaryExpression.Operator));
             Visit(unaryExpression.Argument);
+            if (needParens)
+                builder.Append(")");
             return unaryExpression;
         }
 
         public override ISqlElement VisitBinary(BinaryExpression expression)
         {
+            var needParens = NeedParens(expression);
+            if (needParens)
+                builder.Append("(");
             Visit(expression.Left);
             builder.AppendFormat(" {0} ", GetOperatorText(expression.Op));
             Visit(expression.Right);
+            if (needParens)
+                builder.Append(")");
             return expression;
         }
 
@@ -398,6 +418,22 @@ namespace Simple1C.Impl.Sql.Translation
                     builder.Append(delimiter);
                 Visit(e);
             }
+        }
+
+        private bool NeedParens(ISqlElement current)
+        {
+            return GetOperatorPrecedence(current) > GetOperatorPrecedence(parent);
+        }
+
+        private static int? GetOperatorPrecedence(ISqlElement element)
+        {
+            var binaryExpression = element as BinaryExpression;
+            var unaryExpression = element as UnaryExpression;
+            if (binaryExpression != null)
+                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(binaryExpression.Op).Precedence;
+            if (unaryExpression!=null)
+                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(unaryExpression.Operator).Precedence;
+            return null;
         }
     }
 }

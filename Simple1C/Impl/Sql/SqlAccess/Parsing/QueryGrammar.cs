@@ -87,12 +87,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
             root.Rule = unionList + orderClauseOpt;
 
-            RegisterOperators(10, "*", "/", "%");
-            RegisterOperators(9, "+", "-");
-            RegisterOperators(8, "=", ">", "<", ">=", "<=", "<>", "!=", "LIKE", "IN", "ПОДОБНО", "В");
-            RegisterOperators(6, "NOT", "НЕ");
-            RegisterOperators(5, "AND", "И");
-            RegisterOperators(4, "OR", "ИЛИ");
+            RegisterOperators<SqlBinaryOperator>();
+            RegisterOperators<UnaryOperator>();
             MarkPunctuation(",", "(", ")");
             MarkPunctuation(asOpt);
             AddOperatorReportGroup("operator");
@@ -740,6 +736,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             if (node.Token != null)
                 return new[] {node.Token};
             return node.ChildNodes.SelectMany(GetTokens);
+        }
+
+        private void RegisterOperators<TEnum>() where TEnum : struct
+        {
+            foreach (var value in Enum.GetValues(typeof(TEnum)).Cast<TEnum>())
+            {
+                var precedence = EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(value).Precedence;
+                var opSymbols = EnumAttributesCache<OperatorSynonymsAttribute>.GetAttribute(value).Synonyms;
+                RegisterOperators(precedence, opSymbols);
+            }
         }
     }
 }

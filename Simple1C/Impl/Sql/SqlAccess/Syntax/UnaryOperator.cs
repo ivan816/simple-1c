@@ -1,7 +1,7 @@
 ﻿namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    public enum UnaryOperator
+    internal enum UnaryOperator
     {
-        Not
+        [OperatorSynonyms("НЕ", "NOT")] [OperatorPrecedence(6)] Not
     }
 }
