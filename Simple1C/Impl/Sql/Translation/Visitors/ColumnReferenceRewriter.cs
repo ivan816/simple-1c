@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
 
@@ -9,6 +10,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         private readonly QueryEntityAccessor queryEntityAccessor;
         private bool isPresentation;
         private SelectPart? currentPart;
+        private readonly HashSet<ColumnReferenceExpression> rewritten = new HashSet<ColumnReferenceExpression>(); 
 
         public ColumnReferenceRewriter(QueryEntityAccessor queryEntityAccessor)
         {
@@ -17,6 +19,9 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
+            if (rewritten.Contains(expression))
+                return expression;
+            rewritten.Add(expression);
             if (!currentPart.HasValue)
                 throw new InvalidOperationException("assertion failure");
             var queryField = queryEntityAccessor.GetOrCreateQueryField(expression,

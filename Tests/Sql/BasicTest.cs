@@ -384,10 +384,8 @@ order by number_count desc";
     count(numberColumn) as number_count
 from documentsTable0
 group by accountingCodeColumn
-order by number_count desc";
+order by count(numberColumn) desc";
             CheckTranslate(mappings, source, expected);
         }
-
-       
     }
 }
