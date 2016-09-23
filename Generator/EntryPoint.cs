@@ -150,8 +150,9 @@ namespace Generator
                         areas = new int[0]
                     });
             var target = new MsSqlDatabase(resultConnectionString);
-            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target,
-                queryFile, dumpSql == "true");
+            var queryText = File.ReadAllText(queryFile);
+            var targetTableName = Path.GetFileNameWithoutExtension(queryFile);
+            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target, queryText, targetTableName, dumpSql == "true");
             var succeeded = sqlExecuter.Execute();
             return succeeded ? 0 : -1;
         }
