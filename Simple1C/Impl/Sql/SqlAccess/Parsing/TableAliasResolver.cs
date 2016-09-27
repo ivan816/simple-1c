@@ -6,15 +6,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     internal class TableAliasResolver : SqlVisitor
     {
-        private Dictionary<string, SelectFieldExpression> aliasedExpressions =
+        private readonly Dictionary<string, SelectFieldExpression> aliasedExpressions =
             new Dictionary<string, SelectFieldExpression>();
 
         private bool inOrderBy;
-
-        public static void Process(ISqlElement element)
-        {
-            new TableAliasResolver().Visit(element);
-        }
 
         public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
         {
@@ -38,15 +33,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             inOrderBy = true;
             var result = base.VisitOrderBy(element);
             inOrderBy = false;
-            return result;
-        }
-
-        public override SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
-        {
-            var previous = aliasedExpressions;
-            aliasedExpressions = new Dictionary<string, SelectFieldExpression>();
-            var result = base.VisitSqlQuery(sqlQuery);
-            aliasedExpressions = previous;
             return result;
         }
     }
