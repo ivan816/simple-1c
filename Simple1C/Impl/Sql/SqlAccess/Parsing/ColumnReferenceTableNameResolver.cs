@@ -9,13 +9,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 {
     internal class ColumnReferenceTableNameResolver : SqlVisitor
     {
-        private readonly List<Context> contexts = new List<Context>();
+        private readonly Stack<SqlQueryContext> contexts = new Stack<SqlQueryContext>();
 
         public override SqlQuery VisitSqlQuery(SqlQuery sqlQuery)
         {
-            PushContext();
+            contexts.Push(new SqlQueryContext());
             var result = base.VisitSqlQuery(sqlQuery);
-            PopContext();
+            contexts.Pop();
             return result;
         }
 
@@ -38,70 +38,33 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         public override SubqueryTable VisitSubqueryTable(SubqueryTable subqueryTable)
         {
             var result = base.VisitSubqueryTable(subqueryTable);
-            Register(result.Alias, result);
+            contexts.Peek().Register(result.Alias, result);
             return result;
         }
 
         public override ISqlElement VisitTableDeclaration(TableDeclarationClause clause)
         {
-            Register(clause.GetRefName(), clause);
+            contexts.Peek().Register(clause.GetRefName(), clause);
             return base.VisitTableDeclaration(clause);
         }
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)
         {
-            var resolvedColumn = ResolveColumn(expression.Name);
-            expression.Name = resolvedColumn.LocalName;
-            expression.Table = resolvedColumn.Table;
-            return base.VisitColumnReference(expression);
-        }
-
-        private void PushContext()
-        {
-            contexts.Add(new Context());
-        }
-
-        private void PopContext()
-        {
-            if (contexts.Count == 0)
-                throw new InvalidOperationException("Assertion failure. Context popped too many times");
-            contexts.RemoveAt(contexts.Count - 1);
-        }
-
-        private void Register(string refName, IColumnSource clause)
-        {
-            var current = contexts.Last();
-            current.LastDeclaration = clause;
-            current.TablesByName[refName] = clause;
-        }
-
-        private ResolvedColumn ResolveColumn(string name)
-        {
-            var items = name.Split('.');
+            var items = expression.Name.Split('.');
             var possiblyAlias = items[0];
-            foreach (var context in Enumerable.Reverse(contexts))
-            {
-                IColumnSource table;
+            IColumnSource table;
+            foreach (var context in contexts)
                 if (context.TablesByName.TryGetValue(possiblyAlias, out table))
                 {
-                    return new ResolvedColumn
-                    {
-                        LocalName = items.Skip(1).JoinStrings("."),
-                        Table = table
-                    };
+                    expression.Name = items.Skip(1).JoinStrings(".");
+                    expression.Table = table;
+                    return expression;
                 }
-            }
-            var currentContext = contexts.LastOrDefault();
-            if (currentContext != null)
-                return new ResolvedColumn
-                {
-                    LocalName = name,
-                    Table = currentContext.LastDeclaration
-                };
-            throw new InvalidOperationException(string.Format("Could not resolve column named {0}", name));
+            expression.Table = contexts.Peek().LastDeclaration;
+            return expression;
         }
 
-        private class Context
+        private class SqlQueryContext
         {
             //мудотня какая-то, разобрать
             //без алиасов соответствие колонка->таблица можно
@@ -111,16 +74,16 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             public Dictionary<string, IColumnSource> TablesByName { get; private set; }
 
-            public Context()
+            public SqlQueryContext()
             {
                 TablesByName = new Dictionary<string, IColumnSource>(StringComparer.InvariantCultureIgnoreCase);
             }
-        }
 
-        private struct ResolvedColumn
-        {
-            public IColumnSource Table { get; set; }
-            public string LocalName { get; set; }
+            public void Register(string refName, IColumnSource clause)
+            {
+                LastDeclaration = clause;
+                TablesByName[refName] = clause;
+            }
         }
     }
 }
