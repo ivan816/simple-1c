@@ -20,12 +20,12 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 {
                     Left = new ColumnReferenceExpression
                     {
-                        Name = PropertyNames.Area,
+                        Name = PropertyNames.area,
                         Table = currentContext.MainTable
                     },
                     Right = new ColumnReferenceExpression
                     {
-                        Name = PropertyNames.Area,
+                        Name = PropertyNames.area,
                         Table = clause.Source
                     }
                 },

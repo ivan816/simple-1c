@@ -22,7 +22,6 @@ namespace Simple1C.Impl.Sql.Translation
         public override UnionClause VisitUnion(UnionClause clause)
         {
             var result = base.VisitUnion(clause);
-
             if (clause.Type.HasValue)
             {
                 builder.Append("\r\n\r\nunion");
@@ -92,7 +91,7 @@ namespace Simple1C.Impl.Sql.Translation
         public override SelectClause VisitSelect(SelectClause clause)
         {
             builder.Append("select\r\n\t");
-            
+
             if (clause.IsDistinct)
                 builder.AppendFormat(" distinct ");
             if (clause.IsSelectAll)
@@ -174,7 +173,7 @@ namespace Simple1C.Impl.Sql.Translation
             if (needParens)
                 builder.Append("(");
             Visit(expression.Left);
-            builder.AppendFormat(" {0} ", GetOperatorText(expression.Op));
+            builder.AppendFormat(" {0} ", GetOperatorText(expression.Operator));
             Visit(expression.Right);
             if (needParens)
                 builder.Append(")");
@@ -342,7 +341,8 @@ namespace Simple1C.Impl.Sql.Translation
                 case UnaryOperator.Not:
                     return "not";
                 default:
-                    throw new InvalidOperationException("Unexpected operator type " + op);
+                    const string messageFormat = "unexpected operator type [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, op));
             }
         }
 
@@ -354,7 +354,6 @@ namespace Simple1C.Impl.Sql.Translation
             var bytes = value as byte[];
             if (bytes != null)
                 return "E'\\\\x" + bytes.ToHex() + "'";
-          
             if (value is bool)
                 return ((bool?) value).Value ? "true" : "false";
             return value.ToString();
@@ -374,7 +373,7 @@ namespace Simple1C.Impl.Sql.Translation
                     const string messageFormat = "can't convert value [{0}] of type [{1}] to [{2}]";
                     throw new InvalidOperationException(string.Format(messageFormat, value,
                         value == null ? "<null>" : value.GetType().FormatName(), sqlType));
-                    case SqlType.DatePart:
+                case SqlType.DatePart:
                     return value.ToString();
                 default:
                     const string message = "unexpected value [{0}] of SqlType";
@@ -429,12 +428,20 @@ namespace Simple1C.Impl.Sql.Translation
         private static int? GetOperatorPrecedence(ISqlElement element)
         {
             var binaryExpression = element as BinaryExpression;
-            var unaryExpression = element as UnaryExpression;
             if (binaryExpression != null)
-                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(binaryExpression.Op).Precedence;
-            if (unaryExpression!=null)
-                return EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(unaryExpression.Operator).Precedence;
+                return GetPrecedence(binaryExpression.Operator);
+
+            var unaryExpression = element as UnaryExpression;
+            if (unaryExpression != null)
+                return GetPrecedence(unaryExpression.Operator);
             return null;
+        }
+
+        private static int GetPrecedence<TOp>(TOp op) 
+            where TOp : struct
+        {
+            var attribute = EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(op);
+            return attribute.Precedence;
         }
     }
 }

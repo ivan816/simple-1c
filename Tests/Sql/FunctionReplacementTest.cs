@@ -18,7 +18,6 @@ from documents1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
 
-
         [Test]
         public void PatchDateTimeFunction()
         {

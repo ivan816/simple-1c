@@ -21,12 +21,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public string GetAreaColumnName()
         {
-            return GetSingleColumnName(PropertyNames.Area);
+            return GetSingleColumnName(PropertyNames.area);
         }
 
         public string GetIdColumnName()
         {
-            return GetSingleColumnName(PropertyNames.Id);
+            return GetSingleColumnName(PropertyNames.id);
         }
 
         public string GetSingleColumnName(string propertyName)

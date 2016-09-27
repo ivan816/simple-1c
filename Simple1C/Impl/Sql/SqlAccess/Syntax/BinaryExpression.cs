@@ -4,13 +4,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class BinaryExpression : ISqlElement
     {
-        public SqlBinaryOperator Op { get; private set; }
+        public SqlBinaryOperator Operator { get; private set; }
         public ISqlElement Left { get; set; }
         public ISqlElement Right { get; set; }
 
         public BinaryExpression(SqlBinaryOperator op)
         {
-            Op = op;
+            Operator = op;
         }
 
         public ISqlElement Accept(SqlVisitor visitor)

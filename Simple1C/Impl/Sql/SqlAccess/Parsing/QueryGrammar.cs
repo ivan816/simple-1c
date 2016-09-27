@@ -37,7 +37,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var selectStatement = NonTerminal("selectStmt", null, ToSelectClause);
             var expression = Expression(identifier, root);
 
-            var asOpt = NonTerminal("asOpt", Empty | "AS"| "КАК");
+            var asOpt = NonTerminal("asOpt", Empty | "AS" | "КАК");
             var alias = NonTerminal("alias", null, TermFlags.IsTransient);
             var aliasOpt = NonTerminal("aliasOpt", null, TermFlags.IsTransient);
 
@@ -68,7 +68,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                                    + topOpt
                                    + distinctOpt
                                    + selectList
-                                   + Transient("from", ToTerm("FROM")| ToTerm("ИЗ")) + columnSource
+                                   + Transient("from", ToTerm("FROM") | ToTerm("ИЗ")) + columnSource
                                    + joinItemList + whereClauseOpt
                                    + groupClauseOpt + havingClauseOpt;
             selectList.Rule = columnItemList | "*";
@@ -83,8 +83,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             columnItemList.Rule = MakePlusRule(columnItemList, ToTerm(","), columnItem);
             subqueryTable.Rule = ToTerm("(") + root + ")" + alias;
             whereClauseOpt.Rule = Empty | (Transient("where", ToTerm("WHERE") | "ГДЕ") + expression);
-            unionStmtOpt.Rule = Empty | (Transient("union", ToTerm("UNION") | "ОБЪЕДИНИТЬ") + Transient("unionAllModifier", Empty | "ALL" | "ВСЕ"));
-            unionList.Rule = MakePlusRule(unionList, null, NonTerminal("unionListElement", selectStatement + unionStmtOpt));
+            unionStmtOpt.Rule = Empty |
+                                (Transient("union", ToTerm("UNION") | "ОБЪЕДИНИТЬ") +
+                                 Transient("unionAllModifier", Empty | "ALL" | "ВСЕ"));
+            unionList.Rule = MakePlusRule(unionList, null,
+                NonTerminal("unionListElement", selectStatement + unionStmtOpt));
             root.Rule = unionList + orderClauseOpt;
 
             RegisterOperators<SqlBinaryOperator>();
@@ -93,11 +96,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             MarkPunctuation(asOpt);
             AddOperatorReportGroup("operator");
             AddToNoReportGroup("as", "КАК");
-           
+
             Root = root;
         }
 
-        
+
         private static SelectFieldExpression ToSelectFieldExpression(ParseTreeNode n)
         {
             return new SelectFieldExpression
@@ -112,7 +115,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return new TableDeclarationClause
             {
                 Name = ((Identifier) n.ChildNodes[0].AstNode).Value,
-                Alias = n.ChildNodes.Count > 1 ? ((Identifier)n.ChildNodes[1].AstNode).Value : null
+                Alias = n.ChildNodes.Count > 1 ? ((Identifier) n.ChildNodes[1].AstNode).Value : null
             };
         }
 
@@ -138,7 +141,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var datePartLiteral = NonTerminal("datePartLiteral", null,
                 c => new LiteralExpression
                 {
-                    Value = ToDatePart(c), SqlType = SqlType.DatePart
+                    Value = ToDatePart(c),
+                    SqlType = SqlType.DatePart
                 });
             var stringLiteral = new StringLiteral("string",
                 "\"",
@@ -153,7 +157,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 });
 
             var boolLiteral = NonTerminal("boolLiteral",
-                ToTerm("true") | "false"| "ложь" | "истина",
+                ToTerm("true") | "false" | "ложь" | "истина",
                 node =>
                 {
                     var text = node.FindTokenAndGetText().ToLower();
@@ -166,7 +170,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 identifier,
                 n => new ColumnReferenceExpression
                 {
-                    Name = ((Identifier)n.ChildNodes[0].AstNode).Value
+                    Name = ((Identifier) n.ChildNodes[0].AstNode).Value
                 });
 
             var term = NonTerminal("term", null, TermFlags.IsTransient);
@@ -181,7 +185,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var aggregateArg = NonTerminal("aggregateArg", null, TermFlags.IsTransient);
             var aggregate = NonTerminal("aggregate", null, ToAggregateFunctionExpression);
             var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
-            
+
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
             var expression = NonTerminal("expression", null, TermFlags.IsTransient);
@@ -212,13 +216,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             subquery.Rule = "(" + selectStatement + ")";
             unOp.Rule = not;
             unExpr.Rule = unOp + expression;
-            binOp.Rule = ToTerm("+") | "-" | "*" | "/" | "%"|
+            binOp.Rule = ToTerm("+") | "-" | "*" | "/" | "%" |
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
                          | "AND" | "OR" | "LIKE" | "И" | "ИЛИ" | "ПОДОБНО";
             binExpr.Rule = expression + binOp + expression;
-            expression.Rule = term | unExpr | binExpr 
-                    | inExpr | isNullExpression 
-                    | dateTruncExpression | caseExpression;
+            expression.Rule = term | unExpr | binExpr
+                              | inExpr | isNullExpression
+                              | dateTruncExpression | caseExpression;
 
             functionArgs.Rule = parExprList | subquery;
 
@@ -226,9 +230,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg" |
                                          "КОЛИЧЕСТВО" | "МИНИМУМ" | "МАКСИМУМ" | "СУММА" | "СРЕДНЕЕ";
-            aggregateArg.Rule = ToTerm("(")+ "*" + ")" | functionArgs;
+            aggregateArg.Rule = ToTerm("(") + "*" + ")" | functionArgs;
             aggregate.Rule = aggregateFunctionName + aggregateArg;
-            inExpr.Rule = columnRef + Transient("in", ToTerm("IN")| "В") + functionArgs;
+            inExpr.Rule = columnRef + Transient("in", ToTerm("IN") | "В") + functionArgs;
 
             datePartLiteral.Rule = ToTerm("year") | "quarter" | "month" | "week" | "day" | "hour" | "minute"
                                    | "ГОД" | "КВАРТАЛ" | "МЕСЯЦ" | "НЕДЕЛЯ" | "ДЕНЬ" | "ЧАС" | "МИНУТА";
@@ -240,11 +244,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             caseElementList.Rule = MakeListRule(caseElementList, Empty, caseElement);
             caseExpression.Rule = Transient("case", ToTerm("CASE") | "ВЫБОР") + caseElementList +
                                   defaultCaseOpt + Transient("end", ToTerm("END") | "КОНЕЦ");
-            defaultCaseOpt.Rule = Empty | (Transient("else", ToTerm("ELSE")| "ИНАЧЕ") + expression);
+            defaultCaseOpt.Rule = Empty | (Transient("else", ToTerm("ELSE") | "ИНАЧЕ") + expression);
 
-            isNull.Rule = NonTerminal("is", ToTerm("IS")| "ЕСТЬ") + (Empty | not) + "NULL";
+            isNull.Rule = NonTerminal("is", ToTerm("IS") | "ЕСТЬ") + (Empty | not) + "NULL";
             isNullExpression.Rule = term + isNull;
-            
+
             return expression;
         }
 
@@ -252,8 +256,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         {
             return new SqlQuery
             {
-                Unions = (List<UnionClause>)node.ChildNodes[0].AstNode,
-                OrderBy = (OrderByClause)(node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
+                Unions = (List<UnionClause>) node.ChildNodes[0].AstNode,
+                OrderBy = (OrderByClause) (node.ChildNodes.Count > 1 ? node.ChildNodes[1].AstNode : null)
             };
         }
 
@@ -272,7 +276,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     });
             groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), expression);
             groupClauseOpt.Rule = Empty |
-                                  NonTerminal("group", ToTerm("GROUP") | "СГРУППИРОВАТЬ") + @by + groupColumnList;
+                                  NonTerminal("group", ToTerm("GROUP") | "СГРУППИРОВАТЬ") + by + groupColumnList;
             return groupClauseOpt;
         }
 
@@ -284,11 +288,13 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var outerJoinKind = NonTerminal("outerJoinKind", null, TermFlags.IsTransient);
             var outerKeywordOpt = NonTerminal("outerKeywordOpt", null, TermFlags.NoAstNode | TermFlags.IsPunctuation);
             var on = NonTerminal("on", ToTerm("ON") | "ПО", TermFlags.NoAstNode);
-            outerKeywordOpt.Rule = ToTerm("OUTER") |"ВНЕШНЕЕ"| Empty;
-            outerJoinKind.Rule = ToTerm("FULL") | "LEFT" | "RIGHT"| "ПОЛНОЕ"| "ЛЕВОЕ"| "ПРАВОЕ" ;
-            joinItem.Rule = joinKindOpt + Transient("join", ToTerm("JOIN")| "СОЕДИНЕНИЕ") + columnSource + on + joinCondition;
+            outerKeywordOpt.Rule = ToTerm("OUTER") | "ВНЕШНЕЕ" | Empty;
+            outerJoinKind.Rule = ToTerm("FULL") | "LEFT" | "RIGHT" | "ПОЛНОЕ" | "ЛЕВОЕ" | "ПРАВОЕ";
+            joinItem.Rule = joinKindOpt + Transient("join", ToTerm("JOIN") | "СОЕДИНЕНИЕ") + columnSource + on +
+                            joinCondition;
 
-            joinKindOpt.Rule = Empty | Transient("inner", ToTerm("INNER") | "ВНУТРЕННЕЕ") | (outerJoinKind + outerKeywordOpt);
+            joinKindOpt.Rule = Empty | Transient("inner", ToTerm("INNER") | "ВНУТРЕННЕЕ") |
+                               (outerJoinKind + outerKeywordOpt);
             joinItemList.Rule = MakeStarRule(joinItemList, null, joinItem);
 
             return joinItemList;
@@ -387,7 +393,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         private static OrderByClause.OrderingElement ToOrderingElement(ParseTreeNode node)
         {
             var orderExpression = node.ChildNodes[0].AstNode as ISqlElement;
-            bool isAsc = true;
+            var isAsc = true;
             if (node.ChildNodes.Count > 1)
             {
                 var token = node.ChildNodes[1].FindTokenAndGetText();
@@ -422,8 +428,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             result.IsDistinct = n.ChildNodes[2].ChildNodes.Any();
             result.JoinClauses.AddRange(elements.OfType<JoinClause>());
             result.WhereExpression = (ISqlElement) n.ChildNodes[7].AstNode;
-            result.GroupBy = (GroupByClause)n.ChildNodes[8].AstNode;
-            result.Having = (ISqlElement)n.ChildNodes[9].AstNode;
+            result.GroupBy = (GroupByClause) n.ChildNodes[8].AstNode;
+            result.Having = (ISqlElement) n.ChildNodes[9].AstNode;
             return result;
         }
 
@@ -525,9 +531,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static BinaryExpression ToBinaryExpression(ParseTreeNode node)
         {
-            var left = (ISqlElement)node.ChildNodes[0].AstNode;
-            var binaryOperator = (SqlBinaryOperator)node.ChildNodes[1].AstNode;
-            var right = (ISqlElement)node.ChildNodes[2].AstNode;
+            var left = (ISqlElement) node.ChildNodes[0].AstNode;
+            var binaryOperator = (SqlBinaryOperator) node.ChildNodes[1].AstNode;
+            var right = (ISqlElement) node.ChildNodes[2].AstNode;
             if (binaryOperator == SqlBinaryOperator.And)
                 return new AndExpression
                 {
@@ -617,7 +623,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 case "not":
                 case "не":
                     return UnaryOperator.Not;
-                default:throw new InvalidOperationException(string.Format("unexpected unary operator [{0}]", text));
+                default:
+                    throw new InvalidOperationException(string.Format("unexpected unary operator [{0}]", text));
             }
         }
 
@@ -696,7 +703,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static NonTerminal Transient(string name, BnfExpression rule)
         {
-            return new NonTerminal(name, rule) { Flags = TermFlags.IsTransient };
+            return new NonTerminal(name, rule) {Flags = TermFlags.IsTransient};
         }
 
         private static NonTerminal NonTerminal(string name, BnfExpression rule, TermFlags flags = TermFlags.None)
@@ -721,8 +728,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 catch (Exception e)
                 {
                     var input = GetTokens(n).JoinStrings(" ");
-                    var message = string.Format("Exception creating ast node from node {0} [{1}]", n, input);
-                    throw new Exception(message, e);
+                    const string messageFormat = "exception creating ast node from node {0} [{1}]";
+                    throw new InvalidOperationException(string.Format(messageFormat, n, input), e);
                 }
             })
             {

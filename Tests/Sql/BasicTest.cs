@@ -349,7 +349,7 @@ having count(idColumn) > 10";
         [Test]
         public void OrderBy_Simple()
         {
-            var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
+            const string source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
 group by СчетУчетаРасчетовСКонтрагентом
 order by count(Номер) desc";
 
@@ -370,7 +370,7 @@ order by count(numberColumn) desc";
         [Test]
         public void OrderBy_Alias()
         {
-            var source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
+            const string source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
 group by СчетУчетаРасчетовСКонтрагентом
 order by number_count desc";
 

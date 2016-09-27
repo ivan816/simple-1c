@@ -21,7 +21,8 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public void RegisterTable(TableDeclarationClause declaration)
         {
             QueryRoot queryRoot;
-            if (queryTables.TryGetValue(declaration, out queryRoot)) return;
+            if (queryTables.TryGetValue(declaration, out queryRoot)) 
+                return;
             var queryEntity = CreateQueryEntity(null, declaration.Name);
             queryRoot = new QueryRoot(queryEntity, declaration);
             queryTables.Add(declaration, queryRoot);
@@ -30,7 +31,8 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public void RegisterSubquery(SubqueryTable clause)
         {
             QueryRoot queryRoot;
-            if (queryTables.TryGetValue(clause, out queryRoot)) return;
+            if (queryTables.TryGetValue(clause, out queryRoot)) 
+                return;
             var subqueryProperties = CreateSubqueryProperties(clause.Query.Query.Unions.First().SelectClause);
             var mapping = new TableMapping(clause.Alias, clause.Alias, TableType.Main, subqueryProperties);
             var queryEntity = new QueryEntity(mapping, null);

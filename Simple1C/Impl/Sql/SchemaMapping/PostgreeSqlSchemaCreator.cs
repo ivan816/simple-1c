@@ -141,14 +141,14 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     TableMapping mainTableMapping;
                     if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
                         continue;
-                    if(!mainTableMapping.HasProperty(PropertyNames.Area))
+                    if(!mainTableMapping.HasProperty(PropertyNames.area))
                         continue;
                     var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
-                    additionalProperties.Add(new PropertyMapping(PropertyNames.Id, refLayout, null));
+                    additionalProperties.Add(new PropertyMapping(PropertyNames.id, refLayout, null));
                     var areaLayout = new SingleLayout(
-                        mainTableMapping.GetByPropertyName(PropertyNames.Area).SingleLayout.DbColumnName,
+                        mainTableMapping.GetByPropertyName(PropertyNames.area).SingleLayout.DbColumnName,
                         null);
-                    var areaMapping = new PropertyMapping(PropertyNames.Area, areaLayout, null);
+                    var areaMapping = new PropertyMapping(PropertyNames.area, areaLayout, null);
                     additionalProperties.Add(areaMapping);
                     tableType = TableType.TableSection;
                 }

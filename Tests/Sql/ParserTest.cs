@@ -154,7 +154,7 @@ namespace Simple1C.Tests.Sql
 
             var left = ((BinaryExpression)havingClause).Left;
             Assert.That(left, Is.TypeOf<AggregateFunctionExpression>());
-            Assert.That(((BinaryExpression)havingClause).Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
+            Assert.That(((BinaryExpression)havingClause).Operator, Is.EqualTo(SqlBinaryOperator.GreaterThan));
 
             Assert.That(((AggregateFunctionExpression)left).Function, Is.EqualTo(AggregationFunction.Count));
             Assert.That(((AggregateFunctionExpression)left).Argument, Is.TypeOf<ColumnReferenceExpression>());
@@ -202,7 +202,7 @@ order by a1");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
-            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.GreaterThan));
+            Assert.That(binaryExpression.Operator, Is.EqualTo(SqlBinaryOperator.GreaterThan));
             
             var left = binaryExpression.Left as ColumnReferenceExpression;
             Assert.NotNull(left);
@@ -221,7 +221,7 @@ order by a1");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
-            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.And));
+            Assert.That(binaryExpression.Operator, Is.EqualTo(SqlBinaryOperator.And));
             
             var leftAnd = binaryExpression.Left as BinaryExpression;
             Assert.NotNull(leftAnd);
@@ -285,7 +285,7 @@ order by a1");
             Assert.NotNull(binaryExperssion);
             var left = binaryExperssion.Left as BinaryExpression;
             var right = binaryExperssion.Right as BinaryExpression;
-            Assert.That(binaryExperssion.Op, Is.EqualTo(SqlBinaryOperator.And));
+            Assert.That(binaryExperssion.Operator, Is.EqualTo(SqlBinaryOperator.And));
             Assert.NotNull(left);
             Assert.NotNull(right);
         }
@@ -303,7 +303,7 @@ order by a1");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
-            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.Like));
+            Assert.That(binaryExpression.Operator, Is.EqualTo(SqlBinaryOperator.Like));
 
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
@@ -317,7 +317,7 @@ order by a1");
             var binaryExpression = selectClause.WhereExpression as BinaryExpression;
             
             Assert.NotNull(binaryExpression);
-            Assert.That(binaryExpression.Op, Is.EqualTo(SqlBinaryOperator.Neq));
+            Assert.That(binaryExpression.Operator, Is.EqualTo(SqlBinaryOperator.Neq));
 
             var right = binaryExpression.Right as LiteralExpression;
             Assert.NotNull(right);
@@ -452,7 +452,7 @@ full outer join testTable4 as t4 on t4.id4 = t1.id1");
             var right = binary.Right as LiteralExpression;
             Assert.NotNull(left);
             Assert.NotNull(right);
-            Assert.That(binary.Op, Is.EqualTo(SqlBinaryOperator.Mult));
+            Assert.That(binary.Operator, Is.EqualTo(SqlBinaryOperator.Mult));
         }
 
         [Test]
