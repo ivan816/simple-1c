@@ -387,5 +387,29 @@ group by accountingCodeColumn
 order by count(numberColumn) desc";
             CheckTranslate(mappings, source, expected);
         }
+        
+        [Test]
+        public void OrderBy_Alias_WithSubqueries()
+        {
+            const string source = @"select a, count(*) b
+from (select a, 22 as b from testTable) z
+group by a
+order by b";
+
+            const string mappings = @"testTable t0 Main
+    a Single f1";
+
+            const string expected =
+               @"select
+    z.f1,
+    count(*) as b
+from (select
+    f1,
+    22 as b
+from t0) as z
+group by z.f1
+order by count(*) asc";
+            CheckTranslate(mappings, source, expected);
+        }
     }
 }

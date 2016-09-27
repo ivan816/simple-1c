@@ -43,7 +43,7 @@ namespace Simple1C.Impl.Sql.Translation
 
         private void RewriteSqlQuery(SqlQuery sqlQuery, QueryEntityRegistry queryEntityRegistry, QueryEntityAccessor queryEntityAccessor, NameGenerator nameGenerator)
         {
-            new TableAliasResolver().Visit(sqlQuery);
+            new OrderByAliasInliner().Visit(sqlQuery);
             TableDeclarationVisitor.Visit(sqlQuery, clause =>
             {
                 queryEntityRegistry.RegisterTable(clause);
