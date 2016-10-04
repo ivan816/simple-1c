@@ -11,5 +11,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
         {
             return visitor.VisitLiteral(this);
         }
+
+        public override string ToString()
+        {
+            return string.Format("{0} Value: [{1}], SqlType: [{2}]",
+                typeof(LiteralExpression).Name, Value, SqlType);
+        }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Diagnostics;
-using System.IO;
 using System.Threading;
 using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
@@ -17,7 +16,8 @@ namespace Simple1C.Impl.Sql
         private readonly string queryText;
         private readonly string targetTableName;
 
-        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryText, string targetTableName, bool dumpSql)
+        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryText, string targetTableName,
+            bool dumpSql)
         {
             this.sources = sources;
             this.target = target;

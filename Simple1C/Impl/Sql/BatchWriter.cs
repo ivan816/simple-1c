@@ -53,9 +53,12 @@ namespace Simple1C.Impl.Sql
                 for (var i = 0; i < columns.Length; i++)
                 {
                     var c = npgsqlColumns[i];
+                    var columnName = reader.GetName(i);
+                    if (string.IsNullOrEmpty(columnName) || columnName == "?column?")
+                        columnName = "col_" + i;
                     columns[i] = new DataColumn
                     {
-                        ColumnName = reader.GetName(i),
+                        ColumnName = columnName,
                         AllowDBNull = true,
                         DataType = c.DataType,
                         MaxLength = c.ColumnSize.GetValueOrDefault(-1)

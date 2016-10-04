@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public void RegisterTable(TableDeclarationClause declaration)
         {
             QueryRoot queryRoot;
-            if (queryTables.TryGetValue(declaration, out queryRoot)) 
+            if (queryTables.TryGetValue(declaration, out queryRoot))
                 return;
             var queryEntity = CreateQueryEntity(null, declaration.Name);
             queryRoot = new QueryRoot(queryEntity, declaration);
@@ -31,7 +31,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public void RegisterSubquery(SubqueryTable clause)
         {
             QueryRoot queryRoot;
-            if (queryTables.TryGetValue(clause, out queryRoot)) 
+            if (queryTables.TryGetValue(clause, out queryRoot))
                 return;
             var subqueryProperties = CreateSubqueryProperties(clause.Query.Query.Unions.First().SelectClause);
             var mapping = new TableMapping(clause.Alias, clause.Alias, TableType.Main, subqueryProperties);
@@ -72,13 +72,13 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         private static ColumnReferenceExpression ExtractColumnReferenceOrDie(SelectFieldExpression c)
         {
-            var columnReference = c.Expression as ColumnReferenceExpression;
-            if (columnReference == null)
+            var result = c.Expression as ColumnReferenceExpression;
+            if (result == null)
             {
-                var message = string.Format("Could not determine subquery property name from expressio [{0}]", c.Expression);
-                throw new NotSupportedException(message);
+                const string messageFormat = "could not determine subquery property name from expression [{0}]";
+                throw new NotSupportedException(string.Format(messageFormat, c.Expression));
             }
-            return columnReference;
+            return result;
         }
     }
 }

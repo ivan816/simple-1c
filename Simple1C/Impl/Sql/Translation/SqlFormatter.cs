@@ -90,10 +90,10 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override SelectClause VisitSelect(SelectClause clause)
         {
-            builder.Append("select\r\n\t");
-
+            builder.Append("select");
             if (clause.IsDistinct)
-                builder.AppendFormat(" distinct ");
+                builder.AppendFormat(" distinct");
+            builder.Append("\r\n\t");
             if (clause.IsSelectAll)
                 builder.Append("*");
             else
