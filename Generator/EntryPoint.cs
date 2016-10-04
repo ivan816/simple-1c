@@ -199,7 +199,7 @@ namespace Generator
 
             var postgreeSqlDatabase = new PostgreeSqlDatabase(dbConnectionString);
             var postgreeSqlSchemaStore = new PostgreeSqlSchemaStore(postgreeSqlDatabase);
-            var schemaCreator = new PostgreeSqlSchemaCreator(postgreeSqlSchemaStore, globalContext);
+            var schemaCreator = new PostgreeSqlSchemaCreator(postgreeSqlSchemaStore, postgreeSqlDatabase, globalContext);
             schemaCreator.Recreate();
             return 0;
         }

@@ -10,7 +10,6 @@
         SqlDateTrunc,
         SqlNot,
         IsNull,
-        Substring,
-        StringLength
+        Substring
     }
 }

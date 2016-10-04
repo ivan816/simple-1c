@@ -10,7 +10,6 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
         {
             expression = (QueryFunctionExpression) base.VisitQueryFunction(expression);
-
             if (expression.KnownFunction == KnownQueryFunction.DateTime)
             {
                 ExpectArgumentCount(expression, 3);
@@ -19,20 +18,20 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 var dayLiteral = expression.Arguments[2] as LiteralExpression;
                 if (yearLiteral == null || monthLiteral == null || dayLiteral == null)
                 {
-                    var message = string.Format("Expected DateTime function parameter to be literals, " +
-                                                "but was [{0}]", expression.Arguments.JoinStrings(","));
-                    throw new InvalidOperationException(message);
+                    const string messageFormat = "expected DateTime function parameters " +
+                                                 "to be literals, but was [{0}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
+                        expression.Arguments.JoinStrings(",")));
                 }
                 return new CastExpression
                 {
                     Type = "date",
                     Expression = new LiteralExpression
                     {
-                        Value =
-                            new DateTime((int) yearLiteral.Value,
-                                (int) monthLiteral.Value,
-                                (int) dayLiteral.Value)
-                                .ToString("yyyy-MM-dd")
+                        Value = new DateTime((int) yearLiteral.Value,
+                            (int) monthLiteral.Value,
+                            (int) dayLiteral.Value)
+                            .ToString("yyyy-MM-dd")
                     }
                 };
             }

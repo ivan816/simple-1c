@@ -6,18 +6,22 @@ using Simple1C.Impl.Com;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Queries;
-using Simple1C.Impl.Sql.Translation.QueryEntities;
+using Simple1C.Impl.Sql.SqlAccess;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
 {
     internal class PostgreeSqlSchemaCreator
     {
         private readonly PostgreeSqlSchemaStore store;
+        private readonly PostgreeSqlDatabase database;
         private readonly GlobalContext globalContext;
 
-        public PostgreeSqlSchemaCreator(PostgreeSqlSchemaStore store, GlobalContext globalContext)
+        public PostgreeSqlSchemaCreator(PostgreeSqlSchemaStore store,
+            PostgreeSqlDatabase database,
+            GlobalContext globalContext)
         {
             this.store = store;
+            this.database = database;
             this.globalContext = globalContext;
         }
 
@@ -41,6 +45,46 @@ namespace Simple1C.Impl.Sql.SchemaMapping
 
             LogHelpers.LogWithTiming("writing enum mappings to PostgreeSQL",
                 () => store.WriteEnumMappings(enumMappings));
+
+            LogHelpers.LogWithTiming("creating helper functions", CreateHelperFunctions);
+        }
+
+        private void CreateHelperFunctions()
+        {
+            const string sql =
+                @"CREATE OR REPLACE FUNCTION simple1c__to_guid(bytea) RETURNS varchar(36) LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
+DECLARE
+	guid_text varchar(50);
+BEGIN
+	guid_text := replace(cast($1 as varchar(50)), '\\x', '');
+	guid_text := substring(guid_text from 25 for 8) || '-' ||
+				substring(guid_text from 21 for 4) || '-' ||
+				substring(guid_text from 17 for 4) || '-' ||
+				substring(guid_text from 1 for 4) || '-' ||
+              	substring(guid_text from 5 for 12);
+	return guid_text;
+END
+$$;
+
+CREATE OR REPLACE FUNCTION simple1c__date_from_guid(varchar(36)) RETURNS timestamp LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
+DECLARE
+	guid_text varchar(50);
+	ticks bigint;
+	seconds bigint;
+BEGIN
+	guid_text := replace(cast($1 as varchar(50)), '-', '');
+	guid_text := substring(guid_text from 14 for 3) ||
+							substring(guid_text from 9 for 4) ||
+							substring(guid_text from 1 for 8);
+	ticks := CAST(CAST(('x' || CAST(guid_text AS text)) AS bit(60)) AS BIGINT);
+	if ticks < 60000000000000000 or ticks > 400000000000000000 then
+		return null;
+	end if;
+	seconds := ticks / 10000000;
+	return timestamp '1582-10-15 04:00:00' + seconds * interval '1 second' + interval '1 hour';
+END
+$$;";
+            database.ExecuteNonQuery(sql);
         }
 
         private EnumMapping[] ExtractEnumMappingsFromCom()
@@ -141,7 +185,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     TableMapping mainTableMapping;
                     if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
                         continue;
-                    if(!mainTableMapping.HasProperty(PropertyNames.area))
+                    if (!mainTableMapping.HasProperty(PropertyNames.area))
                         continue;
                     var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
                     additionalProperties.Add(new PropertyMapping(PropertyNames.id, refLayout, null));
@@ -166,7 +210,8 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     })
                     .Where(x => !string.IsNullOrEmpty(x.queryName))
                     .Where(x => !string.IsNullOrEmpty(x.dbName))
-                    .GroupBy(x => x.queryName, (x, y) => new {queryName = x, columns = y.Select(z => z.dbName).ToArray()})
+                    .GroupBy(x => x.queryName,
+                        (x, y) => new {queryName = x, columns = y.Select(z => z.dbName).ToArray()})
                     .Select(x =>
                     {
                         var propertyTypes = propertyDescriptors.GetOrDefault(x.queryName);
@@ -191,9 +236,9 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                 var tableMapping = new TableMapping(queryTableName, dbTableName, tableType, propertyMappings);
                 result.Add(tableMapping);
                 tableMappingByQueryName.Add(queryTableName, tableMapping);
-                if ((i + 1) % 50 == 0)
+                if ((i + 1)%50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
-                        i + 1, tableRowsToProcess.Length, (double)(i + 1) / tableRowsToProcess.Length* 100);
+                        i + 1, tableRowsToProcess.Length, (double) (i + 1)/tableRowsToProcess.Length*100);
             }
             return result.ToArray();
         }
@@ -230,7 +275,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             var lastDot = s.LastIndexOf('.');
             return s.Substring(0, lastDot) + ".ТабличнаяЧасть." + s.Substring(lastDot + 1);
         }
-        
+
         private static string GetTableSectionIdColumnNameByTableName(string s)
         {
             var separator = s.LastIndexOf('_');
