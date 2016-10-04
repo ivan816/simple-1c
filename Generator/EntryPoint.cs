@@ -44,7 +44,7 @@ namespace Generator
             var namespaceRoot = parameters["namespace-root"];
             var scanItems = (parameters["scan-items"] ?? "").Split(',');
             var sourcePath = parameters["source-path"];
-            var csprojFilePath = parameters["csproj-file-spath"];
+            var csprojFilePath = parameters["csproj-file-path"];
             var parametersAreValid =
                 !string.IsNullOrEmpty(connectionString) &&
                 (!string.IsNullOrEmpty(resultAssemblyFullPath) || !string.IsNullOrEmpty(sourcePath)) &&
