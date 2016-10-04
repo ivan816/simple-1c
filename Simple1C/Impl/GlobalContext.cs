@@ -37,6 +37,11 @@ namespace Simple1C.Impl
         public ConfigurationItem FindByName(ConfigurationName fullname)
         {
             var itemMetadata = ComHelpers.Invoke(Metadata, "НайтиПоПолномуИмени", fullname.Fullname);
+            if (itemMetadata == null)
+            {
+                const string messageFormat = "can't find [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, fullname.Fullname));
+            }
             return new ConfigurationItem(fullname, itemMetadata);
         }
 

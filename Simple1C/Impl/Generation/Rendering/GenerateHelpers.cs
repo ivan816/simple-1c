@@ -4,7 +4,7 @@
     {
         public static string EscapeString(string input)
         {
-            return input == null ? null : input.Replace("\"", "\\\"");
+            return input == null ? null : input.Replace("\\", "\\\\").Replace("\"", "\\\"");
         }
     }
 }

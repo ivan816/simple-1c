@@ -28,7 +28,7 @@ namespace Simple1C.Impl.Generation
             var generationContext = new GenerationContext(targetDirectory);
             foreach (var itemName in itemNames)
             {
-                var item = FindByFullName(itemName);
+                var item = globalContext.FindByName(ConfigurationName.Parse(itemName));
                 generationContext.EnqueueIfNeeded(item);
             }
             EmitConstants(generationContext);
@@ -58,11 +58,6 @@ namespace Simple1C.Impl.Generation
                         processedCount, generationContext.ItemsToProcess.Count);
             }
             return generationContext.GetWrittenFiles();
-        }
-
-        private ConfigurationItem FindByFullName(string fullname)
-        {
-            return globalContext.FindByName(ConfigurationName.Parse(fullname));
         }
 
         private ConfigurationItem FindByType(object typeObject)
