@@ -49,5 +49,21 @@ from t1 as contractors
 where contractors.c2 = 'test-name'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+
+        [Test]
+        public void LiteralQueryFieldWithSubquery()
+        {
+            const string sourceSql = @"select top 10 1 from документ.поступлениетоваровуслуг";
+            const string mappings = @"документ.поступлениетоваровуслуг t1 Main
+    ОбластьДанныхОсновныеДанные Single c2";
+            const string expectedResult = @"select
+    1
+from (select
+    *
+from t1 as __nested_table0
+where __nested_table0.c2 in (100, 200)) as __subquery0
+limit 10";
+            CheckTranslate(mappings, sourceSql, expectedResult, 100,200);
+        }
     }
 }

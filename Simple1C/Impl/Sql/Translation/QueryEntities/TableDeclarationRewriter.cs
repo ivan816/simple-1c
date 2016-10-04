@@ -51,8 +51,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 declaration.Name = queryRoot.entity.mapping.DbTableName;
                 return declaration;
             }
-            if (Strip(queryRoot.entity) == StripResult.HasNoReferences)
-                throw new InvalidOperationException("assertion failure");
+            var stripResult = Strip(queryRoot.entity);
             var selectClause = new SelectClause
             {
                 Source = queryEntityAccessor.GetTableDeclaration(queryRoot.entity)
@@ -63,12 +62,17 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     Column = new ColumnReferenceExpression
                     {
                         Name = queryRoot.entity.GetAreaColumnName(),
-                        Table = (TableDeclarationClause)selectClause.Source
+                        Table = (TableDeclarationClause) selectClause.Source
                     },
                     Source = new ListExpression {Elements = areas}
                 };
-            AddJoinClauses(queryRoot.entity, selectClause);
-            AddColumns(queryRoot, selectClause);
+            if (stripResult == StripResult.HasNoReferences)
+                selectClause.IsSelectAll = true;
+            else
+            {
+                AddJoinClauses(queryRoot.entity, selectClause);
+                AddColumns(queryRoot, selectClause);
+            }
             return new SubqueryTable
             {
                 Alias = declaration.Alias ?? nameGenerator.GenerateSubqueryName(),
@@ -148,7 +152,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     expression = new QueryFunctionExpression
                     {
                         KnownFunction = KnownQueryFunction.SqlNot,
-                        Arguments = new List<ISqlElement> { expression }
+                        Arguments = new List<ISqlElement> {expression}
                     };
                 target.Fields.Add(new SelectFieldExpression
                 {
@@ -194,7 +198,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    Table = (TableDeclarationClause)enumMappingsJoinClause.Source
+                    Table = (TableDeclarationClause) enumMappingsJoinClause.Source
                 };
             }
             return new ColumnReferenceExpression

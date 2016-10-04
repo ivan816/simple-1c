@@ -114,15 +114,17 @@ namespace Simple1C.Impl.Sql
             filledRowsCount = 0;
         }
 
+        private static readonly DateTime minSqlDate = new DateTime(1753, 1, 1);
+
         private static object ConvertType(object source, DataColumn column)
         {
             if (!(source is string))
                 return source;
-            if (column.DataType == typeof (decimal))
-                return Convert.ChangeType(((string) source).Replace('.', ','), typeof (decimal));
-            if (column.DataType == typeof (bool))
+            if (column.DataType == typeof(decimal))
+                return Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal));
+            if (column.DataType == typeof(bool))
                 return ((string) source).EqualsIgnoringCase("t");
-            if (column.DataType == typeof (DateTime))
+            if (column.DataType == typeof(DateTime))
             {
                 DateTime dateTime;
                 if (!TryParseDate((string) source, out dateTime))
@@ -131,7 +133,7 @@ namespace Simple1C.Impl.Sql
                     throw new InvalidOperationException(string.Format(messageFormat,
                         source, column.ColumnName));
                 }
-                return dateTime == DateTime.MinValue ? (object) null : dateTime;
+                return dateTime < minSqlDate ? (object) null : dateTime;
             }
             return source;
         }
