@@ -122,6 +122,19 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void DistinctInAggregateFunction()
+        {
+            var selectClause = ParseSelect("select count(distinct a) from testTable group by b");
+            var aggregateFunctionExpression = selectClause.Fields[0].Expression as AggregateFunctionExpression;
+            Assert.NotNull(aggregateFunctionExpression);
+            Assert.That(aggregateFunctionExpression.IsDistinct);
+            var aggregateFunctionColumn = aggregateFunctionExpression.Argument as ColumnReferenceExpression;
+            Assert.NotNull(aggregateFunctionColumn);
+            Assert.That(aggregateFunctionColumn.Name, Is.EqualTo("a"));
+            Assert.That(((TableDeclarationClause)aggregateFunctionColumn.Table).Name, Is.EqualTo("testTable"));
+        }
+        
+        [Test]
         public void CanGroupByExpression()
         {
             var selectClause = ParseSelect("select count(*) from testTable group by (c+1), presentation(d)");

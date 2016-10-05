@@ -24,6 +24,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private readonly BnfExpression not;
         private readonly NonTerminal by;
+        private readonly NonTerminal distinctOpt;
 
         public QueryGrammar()
             : base(false)
@@ -31,6 +32,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             LanguageFlags = LanguageFlags.CreateAst;
             not = Transient("not", ToTerm("NOT") | "НЕ");
             by = NonTerminal("by", ToTerm("by") | "ПО", TermFlags.NoAstNode);
+            distinctOpt = NonTerminal("distinctOpt", null);
             var identifier = Identifier();
 
             var root = NonTerminal("root", null, ToSqlQuery);
@@ -57,7 +59,6 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var columnItemList = NonTerminal("columnItemList", null);
 
             var topOpt = NonTerminal("topOpt", null);
-            var distinctOpt = NonTerminal("distinctOpt", null);
             var selectList = NonTerminal("selectList", null);
             var unionStmtOpt = NonTerminal("unionStmt", null, ToUnionType);
             var unionList = NonTerminal("unionList", null, ToUnionList);
@@ -182,7 +183,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var binExpr = NonTerminal("binExpr", null, ToBinaryExpression);
             var exprList = NonTerminal("exprList", null);
             var aggregateFunctionName = NonTerminal("aggregationFunctionName", null, ToAggregationFunction);
-            var aggregateArg = NonTerminal("aggregateArg", null, TermFlags.IsTransient);
+            var aggregateArg = NonTerminal("aggregateArg", null);
             var aggregate = NonTerminal("aggregate", null, ToAggregateFunctionExpression);
             var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
 
@@ -230,8 +231,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg" |
                                          "КОЛИЧЕСТВО" | "МИНИМУМ" | "МАКСИМУМ" | "СУММА" | "СРЕДНЕЕ";
-            aggregateArg.Rule = ToTerm("(") + "*" + ")" | functionArgs;
-            aggregate.Rule = aggregateFunctionName + aggregateArg;
+            aggregateArg.Rule = ToTerm("*") | distinctOpt + expression;
+            aggregate.Rule = aggregateFunctionName + "(" + aggregateArg + ")";
             inExpr.Rule = columnRef + Transient("in", ToTerm("IN") | "В") + functionArgs;
 
             datePartLiteral.Rule = ToTerm("year") | "quarter" | "month" | "week" | "day" | "hour" | "minute"
@@ -482,15 +483,29 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
         private static AggregateFunctionExpression ToAggregateFunctionExpression(ParseTreeNode node)
         {
             var argumentNode = node.ChildNodes[1];
-            var argumentText = argumentNode.FindTokenAndGetText();
-            var isSelectAll = argumentText.Equals("*");
+            var isSelectAll = false;
+            var isDistinct = false;
+            if (argumentNode.ChildNodes.Count == 1)
+            {
+                var argumentText = argumentNode.ChildNodes[0].Token.Text;
+                if (argumentText != "*")
+                    throw new InvalidOperationException("assertion failure");
+                isSelectAll = true;
+            }
+            else
+            {
+                var distinctText = argumentNode.ChildNodes[0].FindTokenAndGetText();
+                if (!string.IsNullOrEmpty(distinctText))
+                    isDistinct = true;
+            }
             if (!isSelectAll && argumentNode.AstNode == null)
                 throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
             return new AggregateFunctionExpression
             {
                 Function = (AggregationFunction) node.ChildNodes[0].AstNode,
-                Argument = isSelectAll ? null : (ISqlElement) argumentNode.ChildNodes[0].AstNode,
-                IsSelectAll = isSelectAll
+                Argument = isSelectAll ? null : (ISqlElement) argumentNode.ChildNodes[1].AstNode,
+                IsSelectAll = isSelectAll,
+                IsDistinct = isDistinct
             };
         }
 

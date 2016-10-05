@@ -389,6 +389,21 @@ order by count(numberColumn) desc";
         }
 
         [Test]
+        public void CanUseDistinctInAggregateFunction()
+        {
+            const string sourceSql = @"select a, count(distinct b)
+    from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    a Single f1
+    b Single f2";
+            const string expectedResult = @"select
+    f1,
+    count(distinct f2)
+from t1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void CanSelectFieldMultipleTimesWithDifferentCase()
         {
             const string sourceSql = @"select Ссылка, ссылка

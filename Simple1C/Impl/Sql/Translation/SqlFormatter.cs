@@ -39,7 +39,11 @@ namespace Simple1C.Impl.Sql.Translation
             if (expression.IsSelectAll)
                 builder.Append("*");
             else
+            {
+                if (expression.IsDistinct)
+                    builder.Append("distinct ");
                 Visit(expression.Argument);
+            }
             builder.Append(")");
             return expression;
         }
