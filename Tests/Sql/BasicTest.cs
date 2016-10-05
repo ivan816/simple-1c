@@ -387,6 +387,24 @@ group by accountingCodeColumn
 order by count(numberColumn) desc";
             CheckTranslate(mappings, source, expected);
         }
+
+        [Test]
+        public void CanSelectFieldMultipleTimesWithDifferentCase()
+        {
+            const string sourceSql = @"select Ссылка, ссылка
+    from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    Ссылка Single c1
+    ОбластьДанныхОсновныеДанные Single c2";
+            const string expectedResult = @"select
+    __subquery0.c1,
+    __subquery0.c1
+from (select
+    __nested_table0.c1
+from t1 as __nested_table0
+where __nested_table0.c2 in (10, 20)) as __subquery0";
+            CheckTranslate(mappings, sourceSql, expectedResult, 10, 20);
+        }
         
         [Test]
         public void OrderBy_Alias_WithSubqueries()

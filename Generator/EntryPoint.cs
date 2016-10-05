@@ -125,6 +125,7 @@ namespace Generator
             var queryFile = parameters["query-file"];
             var resultConnectionString = parameters["result-connection-string"];
             var dumpSql = parameters["dump-sql"];
+            var historyMode = parameters["history-mode"];
             var parametersAreValid =
                 (!string.IsNullOrEmpty(connectionStrings) || !string.IsNullOrEmpty(connectionStringsFile)) &&
                 !string.IsNullOrEmpty(queryFile) &&
@@ -133,7 +134,7 @@ namespace Generator
             {
                 Console.Out.WriteLine("Invalid arguments");
                 Console.Out.WriteLine(
-                    "Usage: Generator.exe -cmd run-sql [-connection-strings <1c db connection strings comma delimited> | -connection-strings-file <connection strings with areas>] -query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true]");
+                    "Usage: Generator.exe -cmd run-sql [-connection-strings <1c db connection strings comma delimited> | -connection-strings-file <connection strings with areas>] -query-file <path to file with 1c query> -result-connection-string <where to put results> [-dump-sql true] [-history-mode true]");
                 return -1;
             }
             var querySources = string.IsNullOrEmpty(connectionStrings)
@@ -152,7 +153,8 @@ namespace Generator
             var target = new MsSqlDatabase(resultConnectionString);
             var queryText = File.ReadAllText(queryFile);
             var targetTableName = Path.GetFileNameWithoutExtension(queryFile);
-            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target, queryText, targetTableName, dumpSql == "true");
+            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target, queryText,
+                targetTableName, dumpSql == "true", historyMode == "true");
             var succeeded = sqlExecuter.Execute();
             return succeeded ? 0 : -1;
         }

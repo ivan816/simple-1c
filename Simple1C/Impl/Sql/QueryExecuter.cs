@@ -12,25 +12,27 @@ namespace Simple1C.Impl.Sql
         private readonly QuerySource[] sources;
         private readonly MsSqlDatabase target;
         private readonly bool dumpSql;
+        private readonly bool historyMode;
         private volatile bool errorOccured;
         private readonly string queryText;
         private readonly string targetTableName;
 
-        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryText, string targetTableName,
-            bool dumpSql)
+        public QueryExecuter(QuerySource[] sources, MsSqlDatabase target, string queryText,
+            string targetTableName, bool dumpSql, bool historyMode)
         {
             this.sources = sources;
             this.target = target;
-            this.dumpSql = dumpSql;
             this.queryText = queryText;
             this.targetTableName = targetTableName;
+            this.dumpSql = dumpSql;
+            this.historyMode = historyMode;
         }
 
         public bool Execute()
         {
             var s = Stopwatch.StartNew();
             var sourceThreads = new Thread[sources.Length];
-            using (var writer = new BatchWriter(target, targetTableName, 1000))
+            using (var writer = new BatchWriter(target, targetTableName, 1000, historyMode))
             {
                 var w = writer;
                 for (var i = 0; i < sourceThreads.Length; i++)

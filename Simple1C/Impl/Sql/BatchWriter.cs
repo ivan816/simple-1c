@@ -1,12 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
 using System.Linq;
 using Npgsql;
-using Npgsql.Schema;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess;
 
@@ -22,12 +20,14 @@ namespace Simple1C.Impl.Sql
         private readonly MsSqlDatabase target;
         private readonly string tableName;
         private readonly int batchSize;
+        private readonly bool historyMode;
 
-        public BatchWriter(MsSqlDatabase target, string tableName, int batchSize)
+        public BatchWriter(MsSqlDatabase target, string tableName, int batchSize, bool historyMode)
         {
             this.target = target;
             this.tableName = tableName;
             this.batchSize = batchSize;
+            this.historyMode = historyMode;
         }
 
         public void EnsureTable(DbDataReader dbReader)
@@ -35,49 +35,57 @@ namespace Simple1C.Impl.Sql
             var reader = (NpgsqlDataReader) dbReader;
             lock (lockObject)
             {
-                //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
-                //reader.GetSchemaTable() какую-то хрень в ColumnSize возвращает
-                var npgsqlColumns = reader.GetColumnSchema();
+                var readerColumns = PostgreeSqlDatabase.GetColumns(reader);
                 if (columns != null)
                 {
-                    if (!CheckColumnsConsistency(npgsqlColumns))
-                    {
-                        const string messageFormat = "inconsistent columns, original [{0}], current [{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            columns.Select(x => x.ColumnName + ":" + x.DataType.FormatName()).JoinStrings(","),
-                            npgsqlColumns.Select(x => x.ColumnName + ":" + x.DataType.FormatName()).JoinStrings(",")));
-                    }
+                    CheckColumns(columns, "original", readerColumns, "current");
                     return;
                 }
-                columns = new DataColumn[npgsqlColumns.Count];
-                for (var i = 0; i < columns.Length; i++)
+                columns = readerColumns;
+                if (historyMode)
                 {
-                    var c = npgsqlColumns[i];
-                    var columnName = reader.GetName(i);
-                    if (string.IsNullOrEmpty(columnName) || columnName == "?column?")
-                        columnName = "col_" + i;
-                    columns[i] = new DataColumn
+                    if (!target.TableExists(tableName))
+                        target.CreateTable(tableName, columns);
+                    else
                     {
-                        ColumnName = columnName,
-                        AllowDBNull = true,
-                        DataType = c.DataType,
-                        MaxLength = c.ColumnSize.GetValueOrDefault(-1)
-                    };
+                        var existingColumns = target.GetColumns(tableName);
+                        CheckColumns(existingColumns, "existing", columns, "new");
+                    }
                 }
-                if (target.TableExists(tableName))
-                    target.DropTable("dbo." + tableName);
-                target.CreateTable(tableName, columns);
+                else
+                {
+                    if (target.TableExists(tableName))
+                        target.DropTable("dbo." + tableName);
+                    target.CreateTable(tableName, columns);
+                }
             }
         }
 
-        private bool CheckColumnsConsistency(ReadOnlyCollection<NpgsqlDbColumn> npgsqlColumns)
+        private static void CheckColumns(DataColumn[] a, string aName, DataColumn[] b, string bName)
         {
-            if (npgsqlColumns.Count != columns.Length)
-                return false;
-            for (var i = 0; i < columns.Length; i++)
-                if (npgsqlColumns[i].DataType != columns[i].DataType)
-                    return false;
-            return true;
+            var aFormat = FormatColumns(a);
+            var bFormat = FormatColumns(b);
+            if (aFormat == bFormat)
+                return;
+            const string messageFormat = "inconsistent columns {0}(first) and {1}(second):\r\n{2}\r\n{3}\r\n";
+            throw new InvalidOperationException(string.Format(messageFormat,
+                aName, bName, aFormat, bFormat));
+        }
+
+        private static string FormatColumns(DataColumn[] c)
+        {
+            return c.Select(FormatColumn).JoinStrings(",");
+        }
+
+        private static string FormatColumn(DataColumn c)
+        {
+            var lengthSpec = "";
+            if (c.DataType == typeof(string))
+            {
+                var maxLength = c.MaxLength == -1 ? 1000 : c.MaxLength;
+                lengthSpec = "[" + maxLength + "]";
+            }
+            return string.Format("{0}:{1}{2}", c.ColumnName, c.DataType.FormatName(), lengthSpec);
         }
 
         public void InsertRow(DbDataReader dbReader)

@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 
@@ -7,7 +8,10 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
     {
         public readonly QueryEntity entity;
         public readonly IColumnSource tableDeclaration;
-        public readonly Dictionary<string, QueryField> fields = new Dictionary<string, QueryField>();
+
+        public readonly Dictionary<string, QueryField> fields =
+            new Dictionary<string, QueryField>(StringComparer.OrdinalIgnoreCase);
+
         public bool subqueryRequired;
 
         public QueryRoot(QueryEntity entity, IColumnSource tableDeclaration)

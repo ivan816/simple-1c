@@ -13,7 +13,35 @@ namespace Simple1C.Impl.Sql.SqlAccess
             : base(connectionString, commandTimeout)
         {
         }
-        
+
+        public DataColumn[] GetColumns(string tableName)
+        {
+            return ExecuteWithResult(string.Format("select top 0 * from {0}", tableName),
+                new object[0], c =>
+                {
+                    using (var reader = c.ExecuteReader())
+                    {
+                        var schemaTable = reader.GetSchemaTable();
+                        if (schemaTable == null)
+                            throw new InvalidOperationException("assertion failure");
+                        var result = new DataColumn[schemaTable.Rows.Count];
+                        for (var i = 0; i < result.Length; i++)
+                        {
+                            var r = schemaTable.Rows[i];
+                            var type = (Type) r[SchemaTableColumn.DataType];
+                            result[i] = new DataColumn
+                            {
+                                ColumnName = (string) r[SchemaTableColumn.ColumnName],
+                                AllowDBNull = true,
+                                DataType = type,
+                                MaxLength = type == typeof(string) ? (int) r[SchemaTableColumn.ColumnSize] : -1
+                            };
+                        }
+                        return result;
+                    }
+                });
+        }
+
         public void BulkCopy(IDataReader dataReader, string tableName, int columnsCount)
         {
             using (var sqlBulkCopy = new SqlBulkCopy(ConnectionString))
@@ -100,15 +128,15 @@ namespace Simple1C.Impl.Sql.SqlAccess
         protected override string GetSqlType(DataColumn column)
         {
             var type = column.DataType;
-            if (type == typeof (bool))
+            if (type == typeof(bool))
                 return "bit";
-            if (type == typeof (string) || type == typeof (byte[]))
+            if (type == typeof(string) || type == typeof(byte[]))
                 return "varchar(" + (column.MaxLength > 0 ? column.MaxLength : 1000) + ")";
-            if (type == typeof (DateTime))
+            if (type == typeof(DateTime))
                 return "datetime";
-            if (type == typeof (decimal))
+            if (type == typeof(decimal))
                 return "decimal(29,2)";
-            if (type == typeof (int))
+            if (type == typeof(int))
                 return "int";
             if (type == typeof(long))
                 return "bigint";
