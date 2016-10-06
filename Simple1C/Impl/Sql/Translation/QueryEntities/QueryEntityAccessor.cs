@@ -68,9 +68,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             foreach (var f in queryEntity.properties)
                 if (f.mapping.PropertyName.EqualsIgnoringCase(name))
                     return f;
-            if (!queryEntity.mapping.HasProperty(name))
+            PropertyMapping propertyMapping;
+            if (!queryEntity.mapping.TryGetProperty(name, out propertyMapping))
                 return null;
-            var propertyMapping = queryEntity.mapping.GetByPropertyName(name);
             var property = new QueryEntityProperty(queryEntity, propertyMapping);
             if (propertyMapping.SingleLayout != null)
             {

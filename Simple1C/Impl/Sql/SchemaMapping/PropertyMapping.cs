@@ -73,7 +73,8 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             }
             catch (Exception e)
             {
-                throw new Exception(string.Format("Could not parse property mapping from [{0}]", s), e);
+                const string messageFormat = "could not parse property mapping from [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, s), e);
             }
         }
 

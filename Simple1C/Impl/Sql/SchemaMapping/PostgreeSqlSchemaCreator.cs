@@ -149,98 +149,183 @@ $$;";
             {
                 var tableRow = tableRowsToProcess[i];
                 var queryTableName = tableRow.GetString("ИмяТаблицы");
-                if (string.IsNullOrEmpty(queryTableName))
-                    continue;
-                var dbTableName = tableRow.GetString("ИмяТаблицыХранения");
-                if (string.IsNullOrEmpty(dbTableName))
-                    continue;
-                var purpose = tableRow.GetString("Назначение");
-                ConfigurationItemDescriptor descriptor;
-                object comObject;
-                TableType tableType;
-                var additionalProperties = new List<PropertyMapping>();
-                if (purpose == "Основная")
+                if (!string.IsNullOrEmpty(queryTableName))
                 {
-                    var configurationName = ConfigurationName.ParseOrNull(queryTableName);
-                    if (!configurationName.HasValue)
-                        continue;
-                    tableType = TableType.Main;
-                    descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
-                    if (descriptor == null)
-                        comObject = null;
-                    else
+                    var tableMapping = queryTableName == "РегистрБухгалтерии.Хозрасчетный.Остатки"
+                        ? CreateAccountingBalancesTableMapping(tableRow)
+                        : CreateDefaultTableMapping(tableRow, tableMappingByQueryName);
+                    if (tableMapping != null)
                     {
-                        var configurationItem = globalContext.FindByName(configurationName.Value);
-                        comObject = configurationItem.ComObject;
+                        result.Add(tableMapping);
+                        tableMappingByQueryName.Add(queryTableName, tableMapping);
                     }
                 }
-                else if (purpose == "ТабличнаяЧасть")
-                {
-                    descriptor = MetadataHelpers.tableSectionDescriptor;
-                    var fullname = TableSectionQueryNameToFullName(queryTableName);
-                    comObject = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоПолномуИмени", fullname);
-                    if (comObject == null)
-                        continue;
-                    var mainQueryName = TableMapping.GetMainQueryNameByTableSectionQueryName(queryTableName);
-                    TableMapping mainTableMapping;
-                    if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
-                        continue;
-                    if (!mainTableMapping.HasProperty(PropertyNames.area))
-                        continue;
-                    var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
-                    additionalProperties.Add(new PropertyMapping(PropertyNames.id, refLayout, null));
-                    var areaLayout = new SingleLayout(
-                        mainTableMapping.GetByPropertyName(PropertyNames.area).SingleLayout.DbColumnName,
-                        null);
-                    var areaMapping = new PropertyMapping(PropertyNames.area, areaLayout, null);
-                    additionalProperties.Add(areaMapping);
-                    tableType = TableType.TableSection;
-                }
-                else
-                    continue;
-                var propertyDescriptors = comObject == null
-                    ? new Dictionary<string, string[]>()
-                    : MetadataHelpers.GetAttributes(comObject, descriptor)
-                        .ToDictionary(Call.Имя, GetPropertyTypes);
-                var propertyMappings = new ValueTable(tableRow["Поля"])
-                    .Select(x => new
-                    {
-                        queryName = x.GetString("ИмяПоля"),
-                        dbName = x.GetString("ИмяПоляХранения")
-                    })
-                    .Where(x => !string.IsNullOrEmpty(x.queryName))
-                    .Where(x => !string.IsNullOrEmpty(x.dbName))
-                    .GroupBy(x => x.queryName,
-                        (x, y) => new {queryName = x, columns = y.Select(z => z.dbName).ToArray()})
-                    .Select(x =>
-                    {
-                        var propertyTypes = propertyDescriptors.GetOrDefault(x.queryName);
-                        if (propertyTypes == null || propertyTypes.Length == 1)
-                        {
-                            if (x.columns.Length != 1)
-                                return null;
-                            var nestedTableName = propertyTypes == null ? null : propertyTypes[0];
-                            var singleLayout = new SingleLayout(x.columns[0], nestedTableName);
-                            return new PropertyMapping(x.queryName, singleLayout, null);
-                        }
-                        var unionLayout = new UnionLayout(
-                            GetColumnBySuffixOrNull("_type", x.columns),
-                            GetColumnBySuffixOrNull("_rtref", x.columns),
-                            GetColumnBySuffixOrNull("_rrref", x.columns),
-                            propertyTypes);
-                        return new PropertyMapping(x.queryName, null, unionLayout);
-                    })
-                    .NotNull()
-                    .Union(additionalProperties)
-                    .ToArray();
-                var tableMapping = new TableMapping(queryTableName, dbTableName, tableType, propertyMappings);
-                result.Add(tableMapping);
-                tableMappingByQueryName.Add(queryTableName, tableMapping);
                 if ((i + 1)%50 == 0)
                     Console.Out.WriteLine("processed [{0}] from [{1}], {2}%",
                         i + 1, tableRowsToProcess.Length, (double) (i + 1)/tableRowsToProcess.Length*100);
             }
             return result.ToArray();
+        }
+
+        private TableMapping CreateDefaultTableMapping(ValueTableRow tableRow,
+            Dictionary<string, TableMapping> tableMappingByQueryName)
+        {
+            var queryTableName = tableRow.GetString("ИмяТаблицы");
+            if (string.IsNullOrEmpty(queryTableName))
+                return null;
+            var dbTableName = tableRow.GetString("ИмяТаблицыХранения");
+            if (string.IsNullOrEmpty(dbTableName))
+                return null;
+            var purpose = tableRow.GetString("Назначение");
+            ConfigurationItemDescriptor descriptor;
+            object comObject;
+            TableType tableType;
+            if (purpose == "Основная")
+            {
+                var configurationName = ConfigurationName.ParseOrNull(queryTableName);
+                if (!configurationName.HasValue)
+                    return null;
+                tableType = TableType.Main;
+                descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Value.Scope);
+                if (descriptor == null)
+                    comObject = null;
+                else
+                {
+                    var configurationItem = globalContext.FindByName(configurationName.Value);
+                    comObject = configurationItem.ComObject;
+                }
+            }
+            else if (purpose == "ТабличнаяЧасть")
+            {
+                descriptor = MetadataHelpers.tableSectionDescriptor;
+                var fullname = TableSectionQueryNameToFullName(queryTableName);
+                comObject = ComHelpers.Invoke(globalContext.Metadata, "НайтиПоПолномуИмени", fullname);
+                if (comObject == null)
+                    return null;
+                tableType = TableType.TableSection;
+            }
+            else
+                return null;
+            var propertyDescriptors = comObject == null
+                ? new Dictionary<string, string[]>()
+                : MetadataHelpers.GetAttributes(comObject, descriptor)
+                    .ToDictionary(Call.Имя, GetPropertyTypes);
+            var propertyMappings = new ValueTable(tableRow["Поля"])
+                .Select(x => new
+                {
+                    queryName = x.GetString("ИмяПоля"),
+                    dbName = x.GetString("ИмяПоляХранения")
+                })
+                .Where(x => !string.IsNullOrEmpty(x.queryName))
+                .Where(x => !string.IsNullOrEmpty(x.dbName))
+                .GroupBy(x => x.queryName,
+                    (x, y) => new
+                    {
+                        queryName = x,
+                        columns = y.Select(z => z.dbName).ToArray()
+                    }, StringComparer.OrdinalIgnoreCase)
+                .Select(x =>
+                {
+                    var propertyTypes = propertyDescriptors.GetOrDefault(x.queryName);
+                    if (propertyTypes == null || propertyTypes.Length == 1)
+                    {
+                        if (x.columns.Length != 1)
+                            return null;
+                        var nestedTableName = propertyTypes == null ? null : propertyTypes[0];
+                        var singleLayout = new SingleLayout(x.columns[0], nestedTableName);
+                        return new PropertyMapping(x.queryName, singleLayout, null);
+                    }
+                    var unionLayout = new UnionLayout(
+                        GetColumnBySuffixOrNull("_type", x.columns),
+                        GetColumnBySuffixOrNull("_rtref", x.columns),
+                        GetColumnBySuffixOrNull("_rrref", x.columns),
+                        propertyTypes);
+                    return new PropertyMapping(x.queryName, null, unionLayout);
+                })
+                .NotNull()
+                .ToList();
+            if (tableType == TableType.TableSection)
+            {
+                if (!HasProperty(propertyMappings, PropertyNames.id))
+                {
+                    var refLayout = new SingleLayout(GetTableSectionIdColumnNameByTableName(dbTableName), null);
+                    propertyMappings.Add(new PropertyMapping(PropertyNames.id, refLayout, null));
+                }
+                if (!HasProperty(propertyMappings, PropertyNames.area))
+                {
+                    var mainQueryName = TableMapping.GetMainQueryNameByTableSectionQueryName(queryTableName);
+                    TableMapping mainTableMapping;
+                    if (!tableMappingByQueryName.TryGetValue(mainQueryName, out mainTableMapping))
+                        return null;
+                    PropertyMapping mainAreaProperty;
+                    if (!mainTableMapping.TryGetProperty(PropertyNames.area, out mainAreaProperty))
+                        return null;
+                    propertyMappings.Add(mainAreaProperty);
+                }
+            }
+            return new TableMapping(queryTableName, dbTableName, tableType, propertyMappings.ToArray());
+        }
+
+        private static bool HasProperty(List<PropertyMapping> properties, string name)
+        {
+            foreach (var p in properties)
+                if (p.PropertyName.EqualsIgnoringCase(name))
+                    return true;
+            return false;
+        }
+
+        private static TableMapping CreateAccountingBalancesTableMapping(ValueTableRow tableRow)
+        {
+            var queryTableName = tableRow.GetString("ИмяТаблицы");
+            if (string.IsNullOrEmpty(queryTableName))
+                return null;
+            var dbTableName = tableRow.GetString("ИмяТаблицыХранения");
+            if (string.IsNullOrEmpty(dbTableName))
+                return null;
+            var fieldsTable = new ValueTable(tableRow["Поля"]);
+            var propertyMappings = new PropertyMapping[fieldsTable.Count];
+            for (var i = 0; i < fieldsTable.Count; i++)
+            {
+                var fieldRow = fieldsTable[i];
+                var queryName = fieldRow.GetString("ИмяПоля");
+                var dbName = fieldRow.GetString("ИмяПоляХранения");
+                if (string.IsNullOrWhiteSpace(dbName))
+                    throw new InvalidOperationException("assertion failure");
+                if (string.IsNullOrWhiteSpace(queryName))
+                {
+                    if (dbName == "_Period")
+                        queryName = "Период";
+                    else if (dbName == "_Splitter")
+                        queryName = "Разделитель";
+                    else
+                    {
+                        const string messageFormat = "unexpected empty query name for field, db name [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, dbName));
+                    }
+                }
+                string nestedTableName;
+                if (queryName == "Счет")
+                    nestedTableName = "ПланСчетов.Хозрасчетный";
+                else if (queryName == "Организация")
+                    nestedTableName = "Справочник.Организации";
+                else if (queryName == "Валюта")
+                    nestedTableName = "Справочник.Валюты";
+                else if (queryName == "Подразделение")
+                    nestedTableName = "Справочник.ПодразделенияОрганизаций";
+                else
+                    nestedTableName = null;
+                if (dbName.ContainsIgnoringCase("Turnover"))
+                {
+                    queryName += "Оборот";
+                    if (dbName.Contains("Dt"))
+                        queryName += "Дт";
+                    else if (dbName.Contains("Ct"))
+                        queryName += "Кт";
+                }
+                var singleLayout = new SingleLayout(dbName, nestedTableName);
+                propertyMappings[i] = new PropertyMapping(queryName, singleLayout, null);
+            }
+            return new TableMapping(queryTableName, dbTableName, TableType.Main, propertyMappings);
         }
 
         private static string GetColumnBySuffixOrNull(string suffix, string[] candidates)

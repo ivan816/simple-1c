@@ -135,6 +135,18 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void Negation()
+        {
+            var selectClause = ParseSelect("select -sum(a) from testTable group by b");
+            var e1 = selectClause.Fields[0].Expression as UnaryExpression;
+            Assert.NotNull(e1);
+            Assert.That(e1.Operator, Is.EqualTo(UnaryOperator.Negation));
+            var e2 = e1.Argument as AggregateFunctionExpression;
+            Assert.NotNull(e2);
+            Assert.That(e2.Function, Is.EqualTo(AggregationFunction.Sum));
+        }
+        
+        [Test]
         public void CanGroupByExpression()
         {
             var selectClause = ParseSelect("select count(*) from testTable group by (c+1), presentation(d)");

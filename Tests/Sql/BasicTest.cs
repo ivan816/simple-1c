@@ -402,6 +402,18 @@ order by count(numberColumn) desc";
 from t1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
+        
+        [Test]
+        public void Negation()
+        {
+            const string sourceSql = @"select -sum(a) from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    a Single f1";
+            const string expectedResult = @"select
+     -sum(f1)
+from t1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
 
         [Test]
         public void CanSelectFieldMultipleTimesWithDifferentCase()

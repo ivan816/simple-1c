@@ -215,7 +215,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                         | aggregate | queryFunctionExpr
                         | parExpr | subquery;
             subquery.Rule = "(" + selectStatement + ")";
-            unOp.Rule = not;
+            unOp.Rule = not | "-";
             unExpr.Rule = unOp + expression;
             binOp.Rule = ToTerm("+") | "-" | "*" | "/" | "%" |
                          "=" | ">" | "<" | ">=" | "<=" | "<>" | "!="
@@ -638,6 +638,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 case "not":
                 case "не":
                     return UnaryOperator.Not;
+                case "-":
+                    return UnaryOperator.Negation;
                 default:
                     throw new InvalidOperationException(string.Format("unexpected unary operator [{0}]", text));
             }

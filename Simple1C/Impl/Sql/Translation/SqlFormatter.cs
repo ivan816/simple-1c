@@ -159,9 +159,16 @@ namespace Simple1C.Impl.Sql.Translation
             var needParens = NeedParens(unaryExpression);
             var previous = parentOperatorExpression;
             parentOperatorExpression = unaryExpression;
-            if (needParens)
-                builder.Append("(");
-            builder.AppendFormat(" {0} ", GetOperatorText(unaryExpression.Operator));
+            builder.Append(needParens ? "(" : " ");
+            if (unaryExpression.Operator == UnaryOperator.Not)
+                builder.Append("not ");
+            else if (unaryExpression.Operator == UnaryOperator.Negation)
+                builder.Append("-");
+            else
+            {
+                const string messageFormat = "unexpected unary operator type [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, unaryExpression.Operator));
+            }
             Visit(unaryExpression.Argument);
             if (needParens)
                 builder.Append(")");
@@ -338,18 +345,6 @@ namespace Simple1C.Impl.Sql.Translation
             }
         }
 
-        private static string GetOperatorText(UnaryOperator op)
-        {
-            switch (op)
-            {
-                case UnaryOperator.Not:
-                    return "not";
-                default:
-                    const string messageFormat = "unexpected operator type [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, op));
-            }
-        }
-
         private static string FormatValueAsString(object value)
         {
             var str = value as string;
@@ -441,7 +436,7 @@ namespace Simple1C.Impl.Sql.Translation
             return null;
         }
 
-        private static int GetPrecedence<TOp>(TOp op) 
+        private static int GetPrecedence<TOp>(TOp op)
             where TOp : struct
         {
             var attribute = EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(op);

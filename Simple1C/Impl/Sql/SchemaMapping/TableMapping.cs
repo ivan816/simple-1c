@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
-using Simple1C.Impl.Helpers;
 using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
@@ -43,14 +42,14 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             if (indexMatch.Success)
                 Index = int.Parse(indexMatch.Groups[1].Value);
             foreach (var p in Properties)
-                if (!byPropertyName.ContainsKey(p.PropertyName))
+            {
+                if (byPropertyName.ContainsKey(p.PropertyName))
                 {
-                    //какие-то дурацкие дубли с полем
-                    //сумма в РегистрБухгалтерии.Хозрасчетный.Остатки, забил пока
-                    byPropertyName.Add(p.PropertyName, p);
-                    //const string messageFormat = "property [{0}] for table [{1}] already exist";
-                    //throw new InvalidOperationException(string.Format(messageFormat, p.PropertyName, QueryName));
+                    const string messageFormat = "property [{0}] for table [{1}] already exist";
+                    throw new InvalidOperationException(string.Format(messageFormat, p.PropertyName, QueryTableName));
                 }
+                byPropertyName.Add(p.PropertyName, p);
+            }
         }
 
         public static TableType ParseTableType(string s)
@@ -58,15 +57,15 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             return (TableType) Enum.Parse(typeof(TableType), s);
         }
 
-        public bool HasProperty(string queryName)
+        public bool TryGetProperty(string queryName, out PropertyMapping result)
         {
-            return byPropertyName.ContainsKey(queryName);
+            return byPropertyName.TryGetValue(queryName, out result);
         }
 
         public PropertyMapping GetByPropertyName(string queryName)
         {
-            var result = byPropertyName.GetOrDefault(queryName);
-            if (result != null)
+            PropertyMapping result;
+            if (TryGetProperty(queryName, out result))
                 return result;
             const string messagFormat = "can't find field [{0}] for table [{1}]";
             throw new InvalidOperationException(string.Format(messagFormat, queryName, QueryTableName));

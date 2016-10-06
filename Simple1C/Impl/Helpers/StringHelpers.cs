@@ -10,6 +10,11 @@ namespace Simple1C.Impl.Helpers
             return string.Equals(s1, s2, StringComparison.OrdinalIgnoreCase);
         }
 
+        public static bool ContainsIgnoringCase(this string s1, string s2)
+        {
+            return s1.IndexOf(s2, StringComparison.OrdinalIgnoreCase) >= 0;
+        }
+
         public static IEnumerable<T> ParseLinesWithTabs<T>(string source, Func<string, List<string>, T> func)
         {
             var lines = source.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);
