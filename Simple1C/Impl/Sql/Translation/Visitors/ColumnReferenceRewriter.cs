@@ -10,11 +10,13 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         private readonly QueryEntityAccessor queryEntityAccessor;
         private bool isPresentation;
         private SelectPart? currentPart;
-        private readonly HashSet<ColumnReferenceExpression> rewritten = new HashSet<ColumnReferenceExpression>(); 
+        private readonly HashSet<ColumnReferenceExpression> rewritten;
 
-        public ColumnReferenceRewriter(QueryEntityAccessor queryEntityAccessor)
+        public ColumnReferenceRewriter(QueryEntityAccessor queryEntityAccessor,
+            HashSet<ColumnReferenceExpression> rewritten)
         {
             this.queryEntityAccessor = queryEntityAccessor;
+            this.rewritten = rewritten;
         }
 
         public override ISqlElement VisitColumnReference(ColumnReferenceExpression expression)

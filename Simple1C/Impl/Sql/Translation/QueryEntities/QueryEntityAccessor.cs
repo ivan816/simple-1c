@@ -10,12 +10,14 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class QueryEntityAccessor
     {
-        private readonly NameGenerator nameGenerator = new NameGenerator();
         private readonly QueryEntityRegistry queryEntityRegistry;
+        private readonly NameGenerator nameGenerator;
+        private const byte configurationItemReferenceType = 8;
 
-        public QueryEntityAccessor(QueryEntityRegistry queryEntityRegistry)
+        public QueryEntityAccessor(QueryEntityRegistry queryEntityRegistry, NameGenerator nameGenerator)
         {
             this.queryEntityRegistry = queryEntityRegistry;
+            this.nameGenerator = nameGenerator;
         }
 
         public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
@@ -61,6 +63,66 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             if (!field.parts.Contains(selectPart))
                 field.parts.Add(selectPart);
             return field;
+        }
+
+        public ISqlElement GetUnionCondition(QueryEntityProperty property, QueryEntity entity)
+        {
+            if (property.mapping.UnionLayout == null)
+                return null;
+            return entity.unionCondition ?? (entity.unionCondition = CreateUnionCondition(property, entity));
+        }
+
+        private ISqlElement CreateUnionCondition(QueryEntityProperty property, QueryEntity nestedEntity)
+        {
+            var typeColumnName = property.mapping.UnionLayout.TypeColumnName;
+            if (string.IsNullOrEmpty(typeColumnName))
+            {
+                const string messageFormat = "type column is not defined for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
+            }
+            if (!nestedEntity.mapping.Index.HasValue)
+            {
+                var message = string.Format("Invalid table name {0}. Table name must contain index.",
+                    nestedEntity.mapping.DbTableName);
+                throw new InvalidOperationException(message);
+            }
+            var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
+            if (string.IsNullOrEmpty(tableIndexColumnName))
+            {
+                const string messageFormat = "tableIndex column is not defined for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
+            }
+            return new AndExpression
+            {
+                Left = new EqualityExpression
+                {
+                    Left = new ColumnReferenceExpression
+                    {
+                        Name = typeColumnName,
+                        Table = GetTableDeclaration(property.referer)
+                    },
+                    Right = new LiteralExpression
+                    {
+                        Value = configurationItemReferenceType,
+                        SqlType = SqlType.ByteArray
+                    }
+                },
+                Right = new EqualityExpression
+                {
+                    Left = new ColumnReferenceExpression
+                    {
+                        Name = tableIndexColumnName,
+                        Table = GetTableDeclaration(property.referer)
+                    },
+                    Right = new LiteralExpression
+                    {
+                        Value = nestedEntity.mapping.Index,
+                        SqlType = SqlType.ByteArray
+                    }
+                }
+            };
         }
 
         public QueryEntityProperty GetOrCreatePropertyIfExists(QueryEntity queryEntity, string name)

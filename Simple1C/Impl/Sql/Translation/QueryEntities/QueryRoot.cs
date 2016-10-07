@@ -12,6 +12,8 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         public readonly Dictionary<string, QueryField> fields =
             new Dictionary<string, QueryField>(StringComparer.OrdinalIgnoreCase);
 
+        public List<SelectFieldExpression> additionalFields;
+
         public bool subqueryRequired;
 
         public QueryRoot(QueryEntity entity, IColumnSource tableDeclaration)

@@ -205,7 +205,7 @@ where contractors.name <> 'test-name' and contractors.inn <> 'test-inn'
 group by contractors.id";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void MatchEntityAliasCaseInsensitive()
         {
@@ -218,7 +218,7 @@ group by contractors.id";
 from t1 as Contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void DoNotIncludeBraceInPropertyName()
         {
@@ -231,7 +231,7 @@ from t1 as Contractors";
 from t1 as contractors";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void DoNotIncludeEqualSignInPropertyName()
         {
@@ -281,7 +281,7 @@ from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and __nested_table1.с2 = __nested_table0.c1) as contracts";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void CorrectCrashForInvalidUseOfPresentationFunction()
         {
@@ -292,16 +292,18 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
 Документ.ПоступлениеТоваровУслуг t2 Main
     Ссылка Single с2
     Наименование Single c3";
-            
-            var exception = Assert.Throws<InvalidOperationException>(() => 
+
+            var exception = Assert.Throws<InvalidOperationException>(() =>
                 CheckTranslate(mappings, sourceSql, ""));
-            Assert.That(exception.Message, Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
+            Assert.That(exception.Message,
+                Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
         }
 
         [Test]
         public void AddAreaToJoin()
         {
-            const string sourceSql = @"выбрать contractors.Наименование as ContractorName,contractors.Родитель.Наименование as ParentName из
+            const string sourceSql =
+                @"выбрать contractors.Наименование as ContractorName,contractors.Родитель.Наименование as ParentName из
 Справочник.Контрагенты as contractors
 left join Справочник.КонтактныеЛица as contacts on contractors.ОсновноеКонтактноеЛицо = contacts.Ссылка";
             const string mappings = @"Справочник.Контрагенты t1 Main
@@ -349,7 +351,8 @@ having count(idColumn) > 10";
         [Test]
         public void OrderBy_Simple()
         {
-            const string source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
+            const string source =
+                @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) from Документ.ПоступлениеНаРасчетныйСчет
 group by СчетУчетаРасчетовСКонтрагентом
 order by count(Номер) desc";
 
@@ -358,7 +361,7 @@ order by count(Номер) desc";
     Номер Single numberColumn";
 
             const string expected =
-               @"select
+                @"select
     accountingCodeColumn,
     count(numberColumn)
 from documentsTable0
@@ -370,7 +373,8 @@ order by count(numberColumn) desc";
         [Test]
         public void OrderBy_Alias()
         {
-            const string source = @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
+            const string source =
+                @"select СчетУчетаРасчетовСКонтрагентом, count(Номер) as number_count from Документ.ПоступлениеНаРасчетныйСчет
 group by СчетУчетаРасчетовСКонтрагентом
 order by number_count desc";
 
@@ -379,7 +383,7 @@ order by number_count desc";
     Номер Single numberColumn";
 
             const string expected =
-               @"select
+                @"select
     accountingCodeColumn,
     count(numberColumn) as number_count
 from documentsTable0
@@ -402,7 +406,7 @@ order by count(numberColumn) desc";
 from t1";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
-        
+
         [Test]
         public void Negation()
         {
@@ -432,7 +436,7 @@ from t1 as __nested_table0
 where __nested_table0.c2 in (10, 20)) as __subquery0";
             CheckTranslate(mappings, sourceSql, expectedResult, 10, 20);
         }
-        
+
         [Test]
         public void OrderBy_Alias_WithSubqueries()
         {
@@ -445,7 +449,7 @@ order by b";
     a Single f1";
 
             const string expected =
-               @"select
+                @"select
     z.f1,
     count(*) as b
 from (select

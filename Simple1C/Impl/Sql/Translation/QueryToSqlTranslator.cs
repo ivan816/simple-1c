@@ -31,8 +31,9 @@ namespace Simple1C.Impl.Sql.Translation
         public string Translate(string source)
         {
             var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry);
             var nameGenerator = new NameGenerator();
+            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry, nameGenerator);
+            
             var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
             source = nowMacroRegex.Replace(source, currentDateString);
             var selectClause = queryParser.Parse(source);
@@ -57,7 +58,14 @@ namespace Simple1C.Impl.Sql.Translation
 
             new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
 
-            new ColumnReferenceRewriter(queryEntityAccessor).Visit(sqlQuery);
+            new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(
+                sqlQuery);
+
+            var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
+            new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator, rewrittenColumns).Visit(
+                sqlQuery);
+
+            new ColumnReferenceRewriter(queryEntityAccessor, rewrittenColumns).Visit(sqlQuery);
 
             var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
                 queryEntityAccessor, nameGenerator, areas);

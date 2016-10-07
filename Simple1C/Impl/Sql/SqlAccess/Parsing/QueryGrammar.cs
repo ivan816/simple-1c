@@ -188,6 +188,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
 
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
+            var isReferenceExpression = NonTerminal("isReference", 
+                columnRef + "ССЫЛКА" + identifier,
+                ToIsReferenceExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
             var expression = NonTerminal("expression", null, TermFlags.IsTransient);
 
@@ -222,7 +225,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                          | "AND" | "OR" | "LIKE" | "И" | "ИЛИ" | "ПОДОБНО";
             binExpr.Rule = expression + binOp + expression;
             expression.Rule = term | unExpr | binExpr
-                              | inExpr | isNullExpression
+                              | inExpr | isNullExpression | isReferenceExpression
                               | dateTruncExpression | caseExpression;
 
             functionArgs.Rule = parExprList | subquery;
@@ -585,6 +588,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Argument = (ISqlElement) arg.ChildNodes[0].AstNode,
                 IsNotNull = notToken != null && (notToken.ValueString.EqualsIgnoringCase("not")
                                                  || notToken.ValueString.EqualsIgnoringCase("не"))
+            };
+        }
+
+        private static IsReferenceExpression ToIsReferenceExpression(ParseTreeNode arg)
+        {
+            return new IsReferenceExpression
+            {
+                Argument = (ColumnReferenceExpression) arg.ChildNodes[0].AstNode,
+                ObjectName = ((Identifier)arg.ChildNodes[2].AstNode).Value
             };
         }
 

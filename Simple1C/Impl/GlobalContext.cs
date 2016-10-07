@@ -34,7 +34,7 @@ namespace Simple1C.Impl
             return Convert.ToString(Invoke("СтрокаСоединенияИнформационнойБазы"));
         }
 
-        public ConfigurationItem FindByName(ConfigurationName fullname)
+        public ConfigurationItem FindMetaByName(ConfigurationName fullname)
         {
             var itemMetadata = ComHelpers.Invoke(Metadata, "НайтиПоПолномуИмени", fullname.Fullname);
             if (itemMetadata == null)

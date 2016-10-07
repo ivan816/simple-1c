@@ -11,7 +11,6 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityAccessor queryEntityAccessor;
         private readonly List<ISqlElement> areas;
-        private const byte configurationItemReferenceType = 8;
 
         public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
             QueryEntityAccessor queryEntityAccessor,
@@ -45,7 +44,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         private IColumnSource RewriteTableIfNeeded(TableDeclarationClause declaration)
         {
             var queryRoot = queryEntityRegistry.Get(declaration);
-            var subqueryRequired = queryRoot.subqueryRequired || areas != null;
+            var subqueryRequired = queryRoot.subqueryRequired ||
+                                   areas != null ||
+                                   queryRoot.additionalFields != null;
             if (!subqueryRequired)
             {
                 declaration.Name = queryRoot.entity.mapping.DbTableName;
@@ -72,6 +73,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             {
                 AddJoinClauses(queryRoot.entity, selectClause);
                 AddColumns(queryRoot, selectClause);
+                if (queryRoot.additionalFields != null)
+                    foreach (var c in queryRoot.additionalFields)
+                        selectClause.Fields.Add(c);
             }
             return new SubqueryTable
             {
@@ -108,8 +112,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                                 Table = queryEntityAccessor.GetTableDeclaration(p.referer)
                             }
                         });
-                    if (p.mapping.UnionLayout != null)
-                        eqConditions.Add(nestedEntity.unionCondition = GetUnionCondition(p, nestedEntity));
+                    var unionCondition = queryEntityAccessor.GetUnionCondition(p, nestedEntity);
+                    if (unionCondition != null)
+                        eqConditions.Add(unionCondition);
                     var referenceColumnName = p.mapping.SingleLayout == null
                         ? p.mapping.UnionLayout.ReferenceColumnName
                         : p.mapping.SingleLayout.DbColumnName;
@@ -231,59 +236,6 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                     queryEntity.properties.RemoveAt(i);
             }
             return result;
-        }
-
-        private ISqlElement GetUnionCondition(QueryEntityProperty property, QueryEntity nestedEntity)
-        {
-            var typeColumnName = property.mapping.UnionLayout.TypeColumnName;
-            if (string.IsNullOrEmpty(typeColumnName))
-            {
-                const string messageFormat = "type column is not defined for [{0}.{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
-            }
-            if (!nestedEntity.mapping.Index.HasValue)
-            {
-                var message = string.Format("Invalid table name {0}. Table name must contain index.",
-                    nestedEntity.mapping.DbTableName);
-                throw new InvalidOperationException(message);
-            }
-            var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
-            if (string.IsNullOrEmpty(tableIndexColumnName))
-            {
-                const string messageFormat = "tableIndex column is not defined for [{0}.{1}]";
-                throw new InvalidOperationException(string.Format(messageFormat,
-                    property.referer.mapping.QueryTableName, property.mapping.PropertyName));
-            }
-            return new AndExpression
-            {
-                Left = new EqualityExpression
-                {
-                    Left = new ColumnReferenceExpression
-                    {
-                        Name = typeColumnName,
-                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
-                    },
-                    Right = new LiteralExpression
-                    {
-                        Value = configurationItemReferenceType,
-                        SqlType = SqlType.ByteArray
-                    }
-                },
-                Right = new EqualityExpression
-                {
-                    Left = new ColumnReferenceExpression
-                    {
-                        Name = tableIndexColumnName,
-                        Table = queryEntityAccessor.GetTableDeclaration(property.referer)
-                    },
-                    Right = new LiteralExpression
-                    {
-                        Value = nestedEntity.mapping.Index,
-                        SqlType = SqlType.ByteArray
-                    }
-                }
-            };
         }
 
         private enum StripResult

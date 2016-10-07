@@ -28,7 +28,7 @@ namespace Simple1C.Impl.Generation
             var generationContext = new GenerationContext(targetDirectory);
             foreach (var itemName in itemNames)
             {
-                var item = globalContext.FindByName(ConfigurationName.Parse(itemName));
+                var item = globalContext.FindMetaByName(ConfigurationName.Parse(itemName));
                 generationContext.EnqueueIfNeeded(item);
             }
             EmitConstants(generationContext);

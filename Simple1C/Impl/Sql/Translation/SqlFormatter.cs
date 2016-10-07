@@ -19,6 +19,11 @@ namespace Simple1C.Impl.Sql.Translation
             return formatter.builder.ToString();
         }
 
+        public override ISqlElement VisitIsReference(IsReferenceExpression expression)
+        {
+            throw new InvalidOperationException("assertion failure");
+        }
+
         public override UnionClause VisitUnion(UnionClause clause)
         {
             var result = base.VisitUnion(clause);

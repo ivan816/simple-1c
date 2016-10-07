@@ -28,7 +28,7 @@ namespace Simple1C.Impl
 
         private Metadata CreateMetadata(ConfigurationName name)
         {
-            var metadata = globalContext.FindByName(name);
+            var metadata = globalContext.FindMetaByName(name);
             if (name.Scope == ConfigurationScope.Константы)
                 return new Metadata(name.Fullname, new[]
                 {

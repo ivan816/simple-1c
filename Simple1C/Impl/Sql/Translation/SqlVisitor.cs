@@ -20,6 +20,12 @@ namespace Simple1C.Impl.Sql.Translation
         {
             return expression;
         }
+        
+        public virtual ISqlElement VisitIsReference(IsReferenceExpression expression)
+        {
+            expression.Argument = (ColumnReferenceExpression) VisitColumnReference(expression.Argument);
+            return expression;
+        }
 
         public virtual GroupByClause VisitGroupBy(GroupByClause clause)
         {
