@@ -67,11 +67,13 @@ namespace Simple1C.Impl.Sql.Translation
 
         private static string FormatDateTime(DateTime dateTime)
         {
-            return string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime);
+            return dateTime.Hour == 0 && dateTime.Minute == 0 && dateTime.Second == 0
+                ? string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd})", dateTime)
+                : string.Format("ДАТАВРЕМЯ({0:yyyy},{0:MM},{0:dd},{0:HH},{0:mm},{0:ss})", dateTime);
         }
 
         private static readonly Regex nowMacroRegex = new Regex(@"&Now",
-         RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+            RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
 
         private class TranslationContext
         {
@@ -82,7 +84,7 @@ namespace Simple1C.Impl.Sql.Translation
             private readonly QueryEntityRegistry queryEntityRegistry;
             private readonly QueryEntityAccessor queryEntityAccessor;
 
-            public TranslationContext(IMappingSource mappingSource, List<ISqlElement> areas, 
+            public TranslationContext(IMappingSource mappingSource, List<ISqlElement> areas,
                 SqlQuery sqlQuery)
             {
                 this.mappingSource = mappingSource;
@@ -106,10 +108,12 @@ namespace Simple1C.Impl.Sql.Translation
                     return clause;
                 });
                 new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
-                new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(sqlQuery);
-                var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
-                new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator, rewrittenColumns).Visit(
+                new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(
                     sqlQuery);
+                var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
+                new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator,
+                    rewrittenColumns).Visit(
+                        sqlQuery);
                 new ColumnReferenceRewriter(queryEntityAccessor, rewrittenColumns).Visit(sqlQuery);
                 var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
                     queryEntityAccessor, nameGenerator, areas);

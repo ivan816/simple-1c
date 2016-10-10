@@ -431,6 +431,21 @@ where __nested_table0.c2 in (10, 20)) as __subquery0";
         }
 
         [Test]
+        public void CanUseDateTimeFunctionWithTime()
+        {
+            const string sourceSql = @"select *
+    from Документ.ПоступлениеТоваровУслуг
+    where Дата >= ДатаВремя(2016, 10, 11, 12, 13, 14)";
+            const string mappings = @"Документ.ПоступлениеТоваровУслуг t1 Main
+    Дата Single c1";
+            const string expectedResult = @"select
+    *
+from t1
+where c1 >= cast('2016-10-11 12:13:14' as timestamp)";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void AddDefaultAliases()
         {
             const string sourceSql = @"select ИНН,Владелец.ИНН,ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ30Символов.ИНН

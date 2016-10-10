@@ -12,26 +12,44 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             expression = (QueryFunctionExpression) base.VisitQueryFunction(expression);
             if (expression.KnownFunction == KnownQueryFunction.DateTime)
             {
-                ExpectArgumentCount(expression, 3);
-                var yearLiteral = expression.Arguments[0] as LiteralExpression;
-                var monthLiteral = expression.Arguments[1] as LiteralExpression;
-                var dayLiteral = expression.Arguments[2] as LiteralExpression;
-                if (yearLiteral == null || monthLiteral == null || dayLiteral == null)
+                ExpectArgumentCount(expression, 3, 6);
+                var dateTimeComponents = new int[expression.Arguments.Count];
+                for (var i = 0; i < expression.Arguments.Count; i++)
                 {
-                    const string messageFormat = "expected DateTime function parameters " +
-                                                 "to be literals, but was [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat,
-                        expression.Arguments.JoinStrings(",")));
+                    var literal = expression.Arguments[i] as LiteralExpression;
+                    if (literal == null)
+                    {
+                        const string messageFormat = "expected DateTime function parameters " +
+                                                     "to be literals, but was [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            expression.Arguments.JoinStrings(",")));
+                    }
+                    dateTimeComponents[i] = (int) literal.Value;
                 }
+                if (expression.Arguments.Count == 3)
+                    return new CastExpression
+                    {
+                        Type = "date",
+                        Expression = new LiteralExpression
+                        {
+                            Value = new DateTime(dateTimeComponents[0],
+                                dateTimeComponents[1],
+                                dateTimeComponents[2])
+                                .ToString("yyyy-MM-dd")
+                        }
+                    };
                 return new CastExpression
                 {
-                    Type = "date",
+                    Type = "timestamp",
                     Expression = new LiteralExpression
                     {
-                        Value = new DateTime((int) yearLiteral.Value,
-                            (int) monthLiteral.Value,
-                            (int) dayLiteral.Value)
-                            .ToString("yyyy-MM-dd")
+                        Value = new DateTime(dateTimeComponents[0],
+                            dateTimeComponents[1],
+                            dateTimeComponents[2],
+                            dateTimeComponents[3],
+                            dateTimeComponents[4],
+                            dateTimeComponents[5])
+                            .ToString("yyyy-MM-dd HH:mm:ss")
                     }
                 };
             }
@@ -112,14 +130,20 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             return expression;
         }
 
-        private static void ExpectArgumentCount(QueryFunctionExpression expression, int expectedCount)
+        private static void ExpectArgumentCount(QueryFunctionExpression expression,
+            int expectedCount, int? expectedCount2 = null)
         {
-            if (expression.Arguments.Count != expectedCount)
-            {
-                var message = string.Format("{0} function expected exactly {1} arguments but was {2}",
-                    expression.KnownFunction, expectedCount, expression.Arguments.Count);
-                throw new InvalidOperationException(message);
-            }
+            var isOk = expression.Arguments.Count == expectedCount ||
+                       (expectedCount2.HasValue && expression.Arguments.Count == expectedCount2.Value);
+            if (isOk)
+                return;
+            const string messageFormat = "[{0}] function expected to have {1} arguments but was [{2}]";
+            throw new InvalidOperationException(string.Format(messageFormat,
+                expression.KnownFunction,
+                expectedCount2.HasValue
+                    ? "[" + expectedCount + "] or [" + expectedCount2 + "]"
+                    : "exactly [" + expectedCount + "]",
+                expression.Arguments.Count));
         }
     }
 }
