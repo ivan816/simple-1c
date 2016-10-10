@@ -107,7 +107,7 @@ namespace Simple1C.Tests.Sql
             var selectClause = ParseSelect("select a from testTable where b = value(Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо)");
             var binaryExpression = (BinaryExpression)selectClause.WhereExpression;
             var queryFunction = (ValueLiteralExpression) binaryExpression.Right;
-            Assert.That(queryFunction.ObjectName, Is.EqualTo("Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо"));
+            Assert.That(queryFunction.Value, Is.EqualTo("Перечисление.ЮридическоеФизическоеЛицо.ФизическоеЛицо"));
         }
         
         [Test]

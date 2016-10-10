@@ -154,7 +154,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 Transient("valueFunction", ToTerm("value") | "ЗНАЧЕНИЕ") + "(" + identifier + ")",
                 node => new ValueLiteralExpression
                 {
-                    ObjectName = ((Identifier) node.ChildNodes[1].AstNode).Value
+                    Value = ((Identifier) node.ChildNodes[1].AstNode).Value
                 });
 
             var boolLiteral = NonTerminal("boolLiteral",

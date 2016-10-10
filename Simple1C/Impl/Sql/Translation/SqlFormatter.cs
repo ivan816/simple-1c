@@ -21,7 +21,14 @@ namespace Simple1C.Impl.Sql.Translation
 
         public override ISqlElement VisitIsReference(IsReferenceExpression expression)
         {
-            throw new InvalidOperationException("assertion failure");
+            NotSupported(expression, expression.Argument, expression.ObjectName);
+            return expression;
+        }
+
+        public override ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
+        {
+            NotSupported(expression, expression.Value);
+            return expression;
         }
 
         public override UnionClause VisitUnion(UnionClause clause)
@@ -278,12 +285,6 @@ namespace Simple1C.Impl.Sql.Translation
                 default:
                     throw new InvalidOperationException(string.Format("unexpected function [{0}]", name));
             }
-        }
-
-        public override ISqlElement VisitValueLiteral(ValueLiteralExpression expression)
-        {
-            NotSupported(expression, expression.ObjectName);
-            return expression;
         }
 
         public override ISqlElement VisitIsNullExpression(IsNullExpression expression)

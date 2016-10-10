@@ -5,6 +5,23 @@ namespace Simple1C.Tests.Sql
     public class LiteralsTest : TranslationTestBase
     {
         [Test]
+        public void EmptyReferenceLiteral()
+        {
+            const string sourceSql = @"select ИНН inn from Документ.ПоступлениеТоваровУслуг
+where Контрагент = Значение(Справочник.Контрагенты.ПустаяСсылка)";
+            const string mappings = @"Документ.ПоступлениеТоваровУслуг t1 Main
+    ИНН Single c1
+    Контрагент Single c2
+Справочник.Контрагенты t2 Main
+    Ссылка Single c3";
+            const string expectedResult = @"select
+    c1 as inn
+from t1
+where c2 = E'\\x00000000000000000000000000000000'";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void BoolLiteral()
         {
             const string sourceSql = @"select *

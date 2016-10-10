@@ -4,7 +4,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
     internal class ValueLiteralExpression : ISqlElement
     {
-        public string ObjectName { get; set; }
+        public string Value { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
         {
