@@ -61,6 +61,30 @@ namespace Simple1C.Impl.Sql
             }
         }
 
+        public void InsertRow(DbDataReader dbReader)
+        {
+            var reader = (NpgsqlDataReader) dbReader;
+            lock (lockObject)
+            {
+                var currentRowIndex = filledRowsCount;
+                object[] rowData;
+                if (currentRowIndex < rows.Count)
+                    rowData = rows[currentRowIndex];
+                else
+                    rows.Add(rowData = new object[columns.Length]);
+                reader.GetValues(rowData);
+                filledRowsCount++;
+                if (filledRowsCount == batchSize)
+                    Flush();
+            }
+        }
+
+        public void Dispose()
+        {
+            if (filledRowsCount > 0)
+                Flush();
+        }
+
         private static void CheckColumns(DataColumn[] a, string aName, DataColumn[] b, string bName)
         {
             var aFormat = FormatColumns(a);
@@ -86,30 +110,6 @@ namespace Simple1C.Impl.Sql
                 lengthSpec = "[" + maxLength + "]";
             }
             return string.Format("{0}:{1}{2}", c.ColumnName, c.DataType.FormatName(), lengthSpec);
-        }
-
-        public void InsertRow(DbDataReader dbReader)
-        {
-            var reader = (NpgsqlDataReader) dbReader;
-            lock (lockObject)
-            {
-                var currentRowIndex = filledRowsCount;
-                object[] rowData;
-                if (currentRowIndex < rows.Count)
-                    rowData = rows[currentRowIndex];
-                else
-                    rows.Add(rowData = new object[columns.Length]);
-                reader.GetValues(rowData);
-                filledRowsCount++;
-                if (filledRowsCount == batchSize)
-                    Flush();
-            }
-        }
-
-        public void Dispose()
-        {
-            if (filledRowsCount > 0)
-                Flush();
         }
 
         private void Flush()

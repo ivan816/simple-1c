@@ -27,8 +27,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             {
                 var tableDeclaration = queryRoot.tableDeclaration as TableDeclarationClause;
                 var tableDescription = tableDeclaration != null ? tableDeclaration.GetRefName() : "(subquery)";
-                var message = string.Format("no properties found for [{0}.{1}]", tableDescription, propertyNames.JoinStrings("."));
-                throw new InvalidOperationException(message);
+                const string messageFormat = "no properties found for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat, tableDescription,
+                    propertyNames.JoinStrings(".")));
             }
             return properties;
         }
@@ -49,12 +50,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 {
                     var tableDeclaration = queryRoot.tableDeclaration as TableDeclarationClause;
                     var tableDescription = tableDeclaration != null ? tableDeclaration.Alias : "(subqyery)";
-                    var message = string.Format("property [{0}] in [{1}.{2}] has multiple types [{3}] " +
-                                                "and none of them has property [{4}]",
+                    const string messageFormat = "property [{0}] in [{1}.{2}] has multiple types [{3}] " +
+                                                 "and none of them has property [{4}]";
+                    throw new InvalidOperationException(string.Format(messageFormat,
                         propertyNames[index], tableDescription, propertyNames.JoinStrings("."),
                         property.nestedEntities.Select(x => x.mapping.QueryTableName).JoinStrings(","),
-                        propertyNames[index + 1]);
-                    throw new InvalidOperationException(message);
+                        propertyNames[index + 1]));
                 }
             }
             else if (property.nestedEntities.Count == 1)

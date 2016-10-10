@@ -83,9 +83,9 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             }
             if (!nestedEntity.mapping.Index.HasValue)
             {
-                var message = string.Format("Invalid table name {0}. Table name must contain index.",
-                    nestedEntity.mapping.DbTableName);
-                throw new InvalidOperationException(message);
+                const string messageFormat = "invalid table name [{0}], table name must contain index";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    nestedEntity.mapping.DbTableName));
             }
             var tableIndexColumnName = property.mapping.UnionLayout.TableIndexColumnName;
             if (string.IsNullOrEmpty(tableIndexColumnName))
