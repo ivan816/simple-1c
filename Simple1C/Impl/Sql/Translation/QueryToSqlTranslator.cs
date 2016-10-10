@@ -15,6 +15,7 @@ namespace Simple1C.Impl.Sql.Translation
         private readonly QueryParser queryParser;
         private readonly IMappingSource mappingSource;
         private readonly List<ISqlElement> areas;
+        private const int postgreSqlMaxAliasLength = 31;
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
@@ -55,13 +56,20 @@ namespace Simple1C.Impl.Sql.Translation
                     else
                         continue;
                 }
-                const int lengthThreshold = 27;
+                const int lengthThreshold = postgreSqlMaxAliasLength - 2;
                 if (f.Alias.Length > lengthThreshold)
                     f.Alias = f.Alias.Substring(f.Alias.Length - lengthThreshold, lengthThreshold);
                 var s = f.Alias;
                 var index = 1;
                 while (!used.Add(f.Alias))
+                {
+                    if (index == 9)
+                    {
+                        const string messageFormat = "too many fields with same prefix [{0}]";
+                        throw new InvalidOperationException(string.Format(messageFormat, s));
+                    }
                     f.Alias = s + '_' + ++index;
+                }
             }
         }
 

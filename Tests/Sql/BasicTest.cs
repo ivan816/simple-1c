@@ -362,7 +362,7 @@ order by count(Номер) desc";
 
             const string expected =
                 @"select
-    accountingCodeColumn as тУчетаРасчетовСКонтрагентом,
+    accountingCodeColumn as четУчетаРасчетовСКонтрагентом,
     count(numberColumn)
 from documentsTable0
 group by accountingCodeColumn
@@ -448,18 +448,18 @@ where c1 >= cast('2016-10-11 12:13:14' as timestamp)";
         [Test]
         public void AddDefaultAliases()
         {
-            const string sourceSql = @"select ИНН,Владелец.ИНН,ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ30Символов.ИНН
+            const string sourceSql = @"select ИНН,Владелец.ИНН,ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ31Символ.ИНН
     from Справочник.Контрагенты";
             const string mappings = @"Справочник.Контрагенты t1 Main
     ИНН Single c1
     Владелец Single c2 Справочник.Контрагенты
     ОбластьДанныхОсновныеДанные Single c3
     ССылка Single c4
-    ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ30Символов Single c5 Справочник.Контрагенты";
+    ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ31Символ Single c5 Справочник.Контрагенты";
             const string expectedResult = @"select
     __subquery0.c1 as ИНН,
     __subquery0.__nested_field0 as Владелец_ИНН,
-    __subquery0.__nested_field1 as ениеПосгресаВ30Символов_ИНН
+    __subquery0.__nested_field1 as аничениеПосгресаВ31Символ_ИНН
 from (select
     __nested_table0.c1,
     __nested_table1.c1 as __nested_field0,
