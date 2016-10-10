@@ -129,7 +129,6 @@
     <Compile Include="Impl\Sql\SqlAccess\Parsing\ParseHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryGrammar.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Parsing\QueryParser.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Parsing\OrderByAliasInliner.cs" />
     <Compile Include="Impl\Sql\SqlAccess\PostgreeSqlDatabase.cs" />
     <Compile Include="Impl\Sql\SqlAccess\InMemoryDataReader.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\AggregationFunction.cs" />
