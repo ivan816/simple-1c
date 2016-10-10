@@ -414,5 +414,19 @@ from t1 as __nested_table0
 where __nested_table0.c2 in (10, 20)) as __subquery0";
             CheckTranslate(mappings, sourceSql, expectedResult, 10, 20);
         }
+
+        [Test]
+        public void CheckIsReferenceObjectName()
+        {
+            const string sourceSql = @"select ИНН as CounterpartyInn
+    from Справочник.Контрагенты
+    where Владелец Ссылка Справочник.НеизвестныйСправочник";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1
+    Владелец Single Справочник.Контрагенты";
+
+            var exception = Assert.Throws<InvalidOperationException>(() => CheckTranslate(mappings, sourceSql, null));
+            Assert.That(exception.Message, Is.EqualTo("operator [Ссылка] has unknown object name [Справочник.НеизвестныйСправочник]"));
+        }
     }
 }

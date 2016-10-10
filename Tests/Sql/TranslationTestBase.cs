@@ -65,12 +65,9 @@ namespace Simple1C.Tests.Sql
                 this.mappings = mappings;
             }
 
-            public TableMapping ResolveTable(string queryName)
+            public TableMapping ResolveTableOrNull(string queryName)
             {
-                TableMapping mapping;
-                if (mappings.TryGetValue(queryName, out mapping))
-                    return mapping;
-                throw new InvalidOperationException(string.Format("Could not find mapping by name {0}", queryName));
+                return mappings.GetOrDefault(queryName);
             }
         }
     }

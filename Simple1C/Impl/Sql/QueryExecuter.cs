@@ -30,6 +30,7 @@ namespace Simple1C.Impl.Sql
 
         public bool Execute()
         {
+            var runTimestamp = DateTime.Now;
             var s = Stopwatch.StartNew();
             var sourceThreads = new Thread[sources.Length];
             using (var writer = new BatchWriter(target, targetTableName, 1000, historyMode))
@@ -43,7 +44,10 @@ namespace Simple1C.Impl.Sql
                         try
                         {
                             var mappingSchema = new PostgreeSqlSchemaStore(source.db);
-                            var translator = new QueryToSqlTranslator(mappingSchema, source.areas);
+                            var translator = new QueryToSqlTranslator(mappingSchema, source.areas)
+                            {
+                                CurrentDate = runTimestamp
+                            };
                             var sql = translator.Translate(queryText);
                             if (dumpSql)
                                 Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",

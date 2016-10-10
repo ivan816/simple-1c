@@ -53,7 +53,12 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public QueryEntity CreateQueryEntity(QueryEntityProperty referer, string queryName)
         {
-            var tableMapping = mappingSource.ResolveTable(queryName);
+            var tableMapping = mappingSource.ResolveTableOrNull(queryName);
+            if (tableMapping == null)
+            {
+                const string messageFormat = "can't find table mapping for [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat, queryName));
+            }
             return new QueryEntity(tableMapping, referer);
         }
 

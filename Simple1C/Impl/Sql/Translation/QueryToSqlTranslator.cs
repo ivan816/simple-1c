@@ -30,49 +30,12 @@ namespace Simple1C.Impl.Sql.Translation
 
         public string Translate(string source)
         {
-            var queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-            var nameGenerator = new NameGenerator();
-            var queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry, nameGenerator);
-            
             var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
             source = nowMacroRegex.Replace(source, currentDateString);
-            var selectClause = queryParser.Parse(source);
-
-            RewriteSqlQuery(selectClause, queryEntityRegistry, queryEntityAccessor, nameGenerator);
-            return SqlFormatter.Format(selectClause);
-        }
-
-        private void RewriteSqlQuery(SqlQuery sqlQuery, QueryEntityRegistry queryEntityRegistry, QueryEntityAccessor queryEntityAccessor, NameGenerator nameGenerator)
-        {
-            TableDeclarationVisitor.Visit(sqlQuery, clause =>
-            {
-                queryEntityRegistry.RegisterTable(clause);
-                return clause;
-            });
-            SubqueryVisitor.Visit(sqlQuery, clause =>
-            {
-                queryEntityRegistry.RegisterSubquery(clause);
-                return clause;
-            });
-
-            new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
-
-            new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(
-                sqlQuery);
-
-            var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
-            new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator, rewrittenColumns).Visit(
-                sqlQuery);
-
-            new ColumnReferenceRewriter(queryEntityAccessor, rewrittenColumns).Visit(sqlQuery);
-
-            var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
-                queryEntityAccessor, nameGenerator, areas);
-            tableDeclarationRewriter.RewriteTables(sqlQuery);
-
-            new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(sqlQuery);
-
-            new QueryFunctionRewriter().Visit(sqlQuery);
+            var sqlQuery = queryParser.Parse(source);
+            var translationContext = new TranslationContext(mappingSource, areas, sqlQuery);
+            translationContext.Execute();
+            return SqlFormatter.Format(sqlQuery);
         }
 
         private static string FormatDateTime(DateTime dateTime)
@@ -82,5 +45,51 @@ namespace Simple1C.Impl.Sql.Translation
 
         private static readonly Regex nowMacroRegex = new Regex(@"&Now",
          RegexOptions.Compiled | RegexOptions.Singleline | RegexOptions.IgnoreCase);
+
+        private class TranslationContext
+        {
+            private readonly IMappingSource mappingSource;
+            private readonly List<ISqlElement> areas;
+            private readonly SqlQuery sqlQuery;
+            private readonly NameGenerator nameGenerator = new NameGenerator();
+            private readonly QueryEntityRegistry queryEntityRegistry;
+            private readonly QueryEntityAccessor queryEntityAccessor;
+
+            public TranslationContext(IMappingSource mappingSource, List<ISqlElement> areas, 
+                SqlQuery sqlQuery)
+            {
+                this.mappingSource = mappingSource;
+                this.areas = areas;
+                this.sqlQuery = sqlQuery;
+                queryEntityRegistry = new QueryEntityRegistry(mappingSource);
+                queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry, nameGenerator);
+            }
+
+            public void Execute()
+            {
+                new ObjectNameCheckingVisitor(mappingSource).Visit(sqlQuery);
+                TableDeclarationVisitor.Visit(sqlQuery, clause =>
+                {
+                    queryEntityRegistry.RegisterTable(clause);
+                    return clause;
+                });
+                SubqueryVisitor.Visit(sqlQuery, clause =>
+                {
+                    queryEntityRegistry.RegisterSubquery(clause);
+                    return clause;
+                });
+                new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
+                new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(sqlQuery);
+                var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
+                new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator, rewrittenColumns).Visit(
+                    sqlQuery);
+                new ColumnReferenceRewriter(queryEntityAccessor, rewrittenColumns).Visit(sqlQuery);
+                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
+                    queryEntityAccessor, nameGenerator, areas);
+                tableDeclarationRewriter.RewriteTables(sqlQuery);
+                new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(sqlQuery);
+                new QueryFunctionRewriter().Visit(sqlQuery);
+            }
+        }
     }
 }

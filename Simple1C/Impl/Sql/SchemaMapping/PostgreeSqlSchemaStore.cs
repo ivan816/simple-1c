@@ -110,19 +110,11 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             });
         }
 
-        public TableMapping ResolveTable(string queryName)
+        public TableMapping ResolveTableOrNull(string queryName)
         {
             TableMapping result;
             if (!cache.TryGetValue(queryName, out result))
-            {
-                result = LoadMappingOrNull(queryName);
-                if (result == null)
-                {
-                    const string messageFormat = "can't find table mapping for [{0}]";
-                    throw new InvalidOperationException(string.Format(messageFormat, queryName));
-                }
-                cache.Add(queryName, result);
-            }
+                cache.Add(queryName, result = LoadMappingOrNull(queryName));
             return result;
         }
 

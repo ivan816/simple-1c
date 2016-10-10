@@ -2,6 +2,6 @@
 {
     internal interface IMappingSource
     {
-        TableMapping ResolveTable(string queryName);
+        TableMapping ResolveTableOrNull(string queryName);
     }
 }
