@@ -3,6 +3,6 @@
     internal enum UnaryOperator
     {
         [OperatorSynonyms("НЕ", "NOT")] [OperatorPrecedence(6)] Not,
-        [OperatorSynonyms("-")] [OperatorPrecedence(3)] Negation
+        [OperatorSynonyms("-")] [OperatorPrecedence(11)] Negation
     }
 }
