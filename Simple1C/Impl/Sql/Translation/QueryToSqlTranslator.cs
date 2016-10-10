@@ -33,9 +33,36 @@ namespace Simple1C.Impl.Sql.Translation
             var currentDateString = FormatDateTime(CurrentDate ?? DateTime.Today);
             source = nowMacroRegex.Replace(source, currentDateString);
             var sqlQuery = queryParser.Parse(source);
+            foreach (var unionClause in sqlQuery.Unions)
+                SetDefaultAliases(unionClause.SelectClause);
             var translationContext = new TranslationContext(mappingSource, areas, sqlQuery);
             translationContext.Execute();
             return SqlFormatter.Format(sqlQuery);
+        }
+
+        private static void SetDefaultAliases(SelectClause selectClause)
+        {
+            var used = new HashSet<string>();
+            if (selectClause.Fields == null)
+                return;
+            foreach (var f in selectClause.Fields)
+            {
+                if (string.IsNullOrEmpty(f.Alias))
+                {
+                    var columnReference = f.Expression as ColumnReferenceExpression;
+                    if (columnReference != null)
+                        f.Alias = columnReference.Name.Replace('.', '_');
+                    else
+                        continue;
+                }
+                const int lengthThreshold = 27;
+                if (f.Alias.Length > lengthThreshold)
+                    f.Alias = f.Alias.Substring(f.Alias.Length - lengthThreshold, lengthThreshold);
+                var s = f.Alias;
+                var index = 1;
+                while (!used.Add(f.Alias))
+                    f.Alias = s + '_' + ++index;
+            }
         }
 
         private static string FormatDateTime(DateTime dateTime)

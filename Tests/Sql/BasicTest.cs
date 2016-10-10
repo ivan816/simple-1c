@@ -169,7 +169,7 @@ select СуммаДокумента,
     СуммаДокумента Single sum";
             const string expected = @"
 select
-    sum,
+    sum as СуммаДокумента,
     case
     when sum > 1000 then 3
     when sum > 300 then 2
@@ -197,7 +197,7 @@ from t1";
     ОбластьДанныхОсновныеДанные Single area
     Владелец Single owner Справочник.Контрагенты";
             const string expectedResult = @"select
-    contractors.inn,
+    contractors.inn as ИНН,
     count(contracts.owner) as ContractCount
 from contractors0 as contractors
 full outer join contracts1 as contracts on contractors.area = contracts.area and contracts.owner = contractors.id
@@ -255,7 +255,7 @@ where contractors.c1 = 'test-inn'";
             const string mappings = @"Справочник.Контрагенты contractors1 Main
     Наименование Single name";
             const string expectedResult = @"select
-    name
+    name as Наименование
 from contractors1
 where (true or false) and false";
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -340,7 +340,7 @@ having count(Идентификатор) > 10";
     БухСчет Single accountingCodeColumn
     Идентификатор Single idColumn";
             const string expectedResult = @"select
-    accountingCodeColumn,
+    accountingCodeColumn as БухСчет,
     count(idColumn)
 from documentsTable0
 group by accountingCodeColumn
@@ -362,7 +362,7 @@ order by count(Номер) desc";
 
             const string expected =
                 @"select
-    accountingCodeColumn,
+    accountingCodeColumn as тУчетаРасчетовСКонтрагентом,
     count(numberColumn)
 from documentsTable0
 group by accountingCodeColumn
@@ -379,7 +379,7 @@ order by count(numberColumn) desc";
     a Single f1
     b Single f2";
             const string expectedResult = @"select
-    f1,
+    f1 as a,
     count(distinct f2)
 from t1";
             CheckTranslate(mappings, sourceSql, expectedResult);
@@ -406,8 +406,8 @@ from t1";
     Ссылка Single c1
     ОбластьДанныхОсновныеДанные Single c2";
             const string expectedResult = @"select
-    __subquery0.c1,
-    __subquery0.c1
+    __subquery0.c1 as Ссылка,
+    __subquery0.c1 as ссылка
 from (select
     __nested_table0.c1
 from t1 as __nested_table0
@@ -426,7 +426,33 @@ where __nested_table0.c2 in (10, 20)) as __subquery0";
     Владелец Single Справочник.Контрагенты";
 
             var exception = Assert.Throws<InvalidOperationException>(() => CheckTranslate(mappings, sourceSql, null));
-            Assert.That(exception.Message, Is.EqualTo("operator [Ссылка] has unknown object name [Справочник.НеизвестныйСправочник]"));
+            Assert.That(exception.Message,
+                Is.EqualTo("operator [Ссылка] has unknown object name [Справочник.НеизвестныйСправочник]"));
+        }
+
+        [Test]
+        public void AddDefaultAliases()
+        {
+            const string sourceSql = @"select ИНН,Владелец.ИНН,ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ30Символов.ИНН
+    from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1
+    Владелец Single c2 Справочник.Контрагенты
+    ОбластьДанныхОсновныеДанные Single c3
+    ССылка Single c4
+    ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ30Символов Single c5 Справочник.Контрагенты";
+            const string expectedResult = @"select
+    __subquery0.c1 as ИНН,
+    __subquery0.__nested_field0 as Владелец_ИНН,
+    __subquery0.__nested_field1 as ениеПосгресаВ30Символов_ИНН
+from (select
+    __nested_table0.c1,
+    __nested_table1.c1 as __nested_field0,
+    __nested_table2.c1 as __nested_field1
+from t1 as __nested_table0
+left join t1 as __nested_table1 on __nested_table1.c3 = __nested_table0.c3 and __nested_table1.c4 = __nested_table0.c2
+left join t1 as __nested_table2 on __nested_table2.c3 = __nested_table0.c3 and __nested_table2.c4 = __nested_table0.c5) as __subquery0";
+            CheckTranslate(mappings, sourceSql, expectedResult);
         }
     }
 }

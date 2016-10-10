@@ -173,7 +173,7 @@ from справочник.ДоговорыКонтрагентов as contracts"
     ОбластьДанныхОсновныеДанные Single d1";
 
             const string expectedResult = @"select
-    contracts.f4,
+    contracts.f4 as наименование,
     contracts.__nested_field0 as ContractorInn
 from (select
     __nested_table0.f4,

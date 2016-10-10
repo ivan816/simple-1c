@@ -13,8 +13,8 @@ namespace Simple1C.Tests.Sql
     Наименование Single name";
 
             const string expected = @"select
-    t.inn,
-    t.name
+    t.inn as ИНН,
+    t.name as Наименование
 from (select
     *
 from contractors0) as t";
@@ -53,9 +53,9 @@ from contractors0) as t";
     ОбластьДанныхОсновныеДанные Single mainData";
 
             const string expected = @"select
-    subquery.contractName,
-    subquery.inn,
-    docs.number
+    subquery.contractName as contractName,
+    subquery.inn as inn,
+    docs.number as Номер
 from contractors2 as contractorsOuter
 left join (select
     contracts.name as contractName,
@@ -91,8 +91,8 @@ left join Справочник.ДоговорыКонтрагентов contract
     ОбластьДанныхОсновныеДанные Single mainData";
 
             const string expected = @"select
-    contracts.name,
-    contractor.name
+    contracts.name as Наименование,
+    contractor.name as Наименование_2
 from (select
     contractors.name,
     contractors.id
@@ -123,8 +123,8 @@ where __nested_table1.mainData in (10, 200)) as contracts on contracts.contracto
 
             const string expected =
                 @"select
-    t.inn,
-    t.Наименование_Alias
+    t.inn as ИНН,
+    t.Наименование_Alias as Наименование_Alias
 from (select
     __subquery0.inn,
     __subquery0.name as Наименование_Alias
@@ -139,7 +139,7 @@ where __nested_table0.mainData in (10, 20, 30)) as __subquery0) as t";
         [Test]
         public void SubqueryInFilterExpressionRefersToOuterTable()
         {
-            var source = @"select Номер from Документ.ПоступлениеНаРасчетныйСчет dOuter 
+            const string source = @"select Номер from Документ.ПоступлениеНаРасчетныйСчет dOuter 
     where СуммаДокумента in 
     (select СуммаДокумента from Документ.ПоступлениеНаРасчетныйСчет where Номер <> dOuter.Номер)";
 
@@ -147,8 +147,8 @@ where __nested_table0.mainData in (10, 20, 30)) as __subquery0) as t";
     Номер Single number
     СуммаДокумента Single sum";
 
-            var expected = @"select
-    dOuter.number
+            const string expected = @"select
+    dOuter.number as Номер
 from documents1 as dOuter
 where dOuter.sum in (select
     sum
