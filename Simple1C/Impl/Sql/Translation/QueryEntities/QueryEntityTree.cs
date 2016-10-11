@@ -36,7 +36,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             return entity.unionCondition ?? (entity.unionCondition = CreateUnionCondition(property, entity));
         }
 
-        public List<QueryEntityProperty> GetProperties(string[] propertyNames, QueryRoot queryRoot)
+        public List<QueryEntityProperty> GetProperties(QueryRoot queryRoot, string[] propertyNames)
         {
             var enumerator = new PropertiesEnumerator(propertyNames, queryRoot, this);
             return enumerator.Enumerate();

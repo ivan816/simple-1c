@@ -41,7 +41,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             var queryRoot = queryEntityTree.Get(columnReference.Table);
             var propertyNames = columnReference.Name.Split('.');
-            var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
+            var referencedProperties = queryEntityTree.GetProperties(queryRoot, propertyNames);
             foreach (var property in referencedProperties)
                 property.nestedEntities.RemoveAll(entity => entity.mapping.QueryTableName != name);
         }

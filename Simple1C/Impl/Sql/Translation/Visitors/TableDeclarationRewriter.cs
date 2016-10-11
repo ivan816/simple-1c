@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
-using Simple1C.Impl.Sql.Translation.Visitors;
+using Simple1C.Impl.Sql.Translation.QueryEntities;
 
-namespace Simple1C.Impl.Sql.Translation.QueryEntities
+namespace Simple1C.Impl.Sql.Translation.Visitors
 {
     internal class TableDeclarationRewriter
     {
@@ -194,7 +194,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 return new ColumnReferenceExpression
                 {
                     Name = "enumValueName",
-                    Table = (TableDeclarationClause) enumMappingsJoinClause.Source
+                    Table = enumMappingsJoinClause.Source
                 };
             }
             return new ColumnReferenceExpression

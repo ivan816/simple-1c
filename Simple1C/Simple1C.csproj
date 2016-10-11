@@ -197,7 +197,7 @@
     <Compile Include="Impl\Sql\SchemaMapping\UnionLayout.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\SelectPart.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\TableDeclarationVisitor.cs" />
-    <Compile Include="Impl\Sql\Translation\QueryEntities\TableDeclarationRewriter.cs" />
+    <Compile Include="Impl\Sql\Translation\Visitors\TableDeclarationRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ValueLiteralRewriter.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />

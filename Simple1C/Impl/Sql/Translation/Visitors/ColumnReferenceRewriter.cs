@@ -38,7 +38,51 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             return expression;
         }
 
-        public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
+        public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
+        {
+            WithCurrentPart(SelectPart.Select, () => base.VisitSelectField(clause));
+            return clause;
+        }
+
+        public override ISqlElement VisitWhere(ISqlElement element)
+        {
+            WithCurrentPart(SelectPart.Other, () => base.VisitWhere(element));
+            return element;
+        }
+
+        public override GroupByClause VisitGroupBy(GroupByClause element)
+        {
+            WithCurrentPart(SelectPart.GroupBy, () => base.VisitGroupBy(element));
+            return element;
+        }
+
+        public override JoinClause VisitJoin(JoinClause element)
+        {
+            WithCurrentPart(SelectPart.Other, () => base.VisitJoin(element));
+            return element;
+        }
+
+        public override OrderByClause VisitOrderBy(OrderByClause element)
+        {
+            WithCurrentPart(SelectPart.Other, () => base.VisitOrderBy(element));
+            return element;
+        }
+
+        public override ISqlElement VisitHaving(ISqlElement element)
+        {
+            WithCurrentPart(SelectPart.Other, () => base.VisitHaving(element));
+            return element;
+        }
+
+        public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
+        {
+            isPresentation = expression.KnownFunction == KnownQueryFunction.Presentation;
+            base.VisitQueryFunction(expression);
+            isPresentation = false;
+            return expression;
+        }
+
+        private QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
             bool isRepresentation, SelectPart selectPart)
         {
             var queryRoot = queryEntityTree.Get(columnReference.Table);
@@ -62,7 +106,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     needInvert = true;
                     subqueryRequired = true;
                 }
-                var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
+                var referencedProperties = queryEntityTree.GetProperties(queryRoot, propertyNames);
                 if (isRepresentation)
                     if (ReplaceWithRepresentation(referencedProperties))
                         subqueryRequired = true;
@@ -126,50 +170,6 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             currentPart = part;
             handle();
             currentPart = oldPart;
-        }
-
-        public override SelectFieldExpression VisitSelectField(SelectFieldExpression clause)
-        {
-            WithCurrentPart(SelectPart.Select, () => base.VisitSelectField(clause));
-            return clause;
-        }
-
-        public override ISqlElement VisitWhere(ISqlElement element)
-        {
-            WithCurrentPart(SelectPart.Other, () => base.VisitWhere(element));
-            return element;
-        }
-
-        public override GroupByClause VisitGroupBy(GroupByClause element)
-        {
-            WithCurrentPart(SelectPart.GroupBy, () => base.VisitGroupBy(element));
-            return element;
-        }
-
-        public override JoinClause VisitJoin(JoinClause element)
-        {
-            WithCurrentPart(SelectPart.Other, () => base.VisitJoin(element));
-            return element;
-        }
-
-        public override OrderByClause VisitOrderBy(OrderByClause element)
-        {
-            WithCurrentPart(SelectPart.Other, () => base.VisitOrderBy(element));
-            return element;
-        }
-
-        public override ISqlElement VisitHaving(ISqlElement element)
-        {
-            WithCurrentPart(SelectPart.Other, () => base.VisitHaving(element));
-            return element;
-        }
-
-        public override ISqlElement VisitQueryFunction(QueryFunctionExpression expression)
-        {
-            isPresentation = expression.KnownFunction == KnownQueryFunction.Presentation;
-            base.VisitQueryFunction(expression);
-            isPresentation = false;
-            return expression;
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             var queryRoot = queryEntityTree.Get(expression.Argument.Table);
             var propertyNames = expression.Argument.Name.Split('.');
-            var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
+            var referencedProperties = queryEntityTree.GetProperties(queryRoot, propertyNames);
             if (referencedProperties.Count != 1)
             {
                 const string messageFormat = "operator IsReference property [{0}] has many " +
