@@ -90,7 +90,8 @@ namespace Simple1C.Impl.Sql.Translation
             private readonly SqlQuery sqlQuery;
             private readonly NameGenerator nameGenerator = new NameGenerator();
             private readonly QueryEntityRegistry queryEntityRegistry;
-            private readonly QueryEntityAccessor queryEntityAccessor;
+            private readonly QueryEntityTree queryEntityTree;
+            private readonly EnumSqlBuilder enumSqlBuilder;
 
             public TranslationContext(IMappingSource mappingSource, List<ISqlElement> areas,
                 SqlQuery sqlQuery)
@@ -99,7 +100,8 @@ namespace Simple1C.Impl.Sql.Translation
                 this.areas = areas;
                 this.sqlQuery = sqlQuery;
                 queryEntityRegistry = new QueryEntityRegistry(mappingSource);
-                queryEntityAccessor = new QueryEntityAccessor(queryEntityRegistry, nameGenerator);
+                queryEntityTree = new QueryEntityTree(queryEntityRegistry, nameGenerator);
+                enumSqlBuilder = new EnumSqlBuilder(queryEntityRegistry, queryEntityTree, nameGenerator);
             }
 
             public void Execute()
@@ -116,17 +118,16 @@ namespace Simple1C.Impl.Sql.Translation
                     return clause;
                 });
                 new AddAreaToJoinConditionVisitor().Visit(sqlQuery);
-                new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityAccessor).Visit(
-                    sqlQuery);
+                new DeduceEntityTypeFromIsReferenceExpressionVisitor(queryEntityRegistry, queryEntityTree)
+                    .Visit(sqlQuery);
                 var rewrittenColumns = new HashSet<ColumnReferenceExpression>();
-                new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityAccessor, nameGenerator,
-                    rewrittenColumns).Visit(
-                        sqlQuery);
-                new ColumnReferenceRewriter(queryEntityAccessor, rewrittenColumns).Visit(sqlQuery);
-                var tableDeclarationRewriter = new TableDeclarationRewriter(queryEntityRegistry,
-                    queryEntityAccessor, nameGenerator, areas);
-                tableDeclarationRewriter.RewriteTables(sqlQuery);
-                new ValueLiteralRewriter(queryEntityAccessor, queryEntityRegistry).Visit(sqlQuery);
+                new IsReferenceExpressionRewriter(queryEntityRegistry, queryEntityTree, nameGenerator, rewrittenColumns)
+                    .Visit(sqlQuery);
+                new ColumnReferenceRewriter(queryEntityTree, queryEntityRegistry, rewrittenColumns, nameGenerator)
+                    .Visit(sqlQuery);
+                new TableDeclarationRewriter(queryEntityRegistry, queryEntityTree, enumSqlBuilder, nameGenerator, areas)
+                    .RewriteTables(sqlQuery);
+                new ValueLiteralRewriter(enumSqlBuilder).Visit(sqlQuery);
                 new QueryFunctionRewriter().Visit(sqlQuery);
             }
         }

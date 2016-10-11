@@ -9,16 +9,16 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     internal class IsReferenceExpressionRewriter : SqlVisitor
     {
         private readonly QueryEntityRegistry queryEntityRegistry;
-        private readonly QueryEntityAccessor queryEntityAccessor;
+        private readonly QueryEntityTree queryEntityTree;
         private readonly NameGenerator nameGenerator;
         private readonly HashSet<ColumnReferenceExpression> rewritten;
 
         public IsReferenceExpressionRewriter(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityAccessor queryEntityAccessor, NameGenerator nameGenerator,
+            QueryEntityTree queryEntityTree, NameGenerator nameGenerator,
             HashSet<ColumnReferenceExpression> rewritten)
         {
             this.queryEntityRegistry = queryEntityRegistry;
-            this.queryEntityAccessor = queryEntityAccessor;
+            this.queryEntityTree = queryEntityTree;
             this.nameGenerator = nameGenerator;
             this.rewritten = rewritten;
         }
@@ -27,8 +27,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             var queryRoot = queryEntityRegistry.Get(expression.Argument.Table);
             var propertyNames = expression.Argument.Name.Split('.');
-            var propertiesEnumerator = new PropertiesEnumerator(propertyNames, queryRoot, queryEntityAccessor);
-            var referencedProperties = propertiesEnumerator.Enumerate();
+            var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
             if (referencedProperties.Count != 1)
             {
                 const string messageFormat = "operator IsReference property [{0}] has many " +
@@ -44,7 +43,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 throw new InvalidOperationException(string.Format(messageFormat,
                     expression.ObjectName, expression.Argument.Name));
             }
-            var unionCondition = queryEntityAccessor.GetUnionCondition(property, entity);
+            var unionCondition = queryEntityTree.GetUnionCondition(property, entity);
             if (unionCondition == null)
             {
                 const string messageFormat = "property [{0}] has only one possible type";

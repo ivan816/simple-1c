@@ -6,13 +6,13 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     internal class DeduceEntityTypeFromIsReferenceExpressionVisitor : SqlVisitor
     {
         private readonly QueryEntityRegistry queryEntityRegistry;
-        private readonly QueryEntityAccessor queryEntityAccessor;
+        private readonly QueryEntityTree queryEntityTree;
 
         public DeduceEntityTypeFromIsReferenceExpressionVisitor(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityAccessor queryEntityAccessor)
+            QueryEntityTree queryEntityTree)
         {
             this.queryEntityRegistry = queryEntityRegistry;
-            this.queryEntityAccessor = queryEntityAccessor;
+            this.queryEntityTree = queryEntityTree;
         }
 
         public override SelectClause VisitSelect(SelectClause clause)
@@ -44,8 +44,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         {
             var queryRoot = queryEntityRegistry.Get(columnReference.Table);
             var propertyNames = columnReference.Name.Split('.');
-            var propertiesEnumerator = new PropertiesEnumerator(propertyNames, queryRoot, queryEntityAccessor);
-            var referencedProperties = propertiesEnumerator.Enumerate();
+            var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
             foreach (var property in referencedProperties)
                 property.nestedEntities.RemoveAll(entity => entity.mapping.QueryTableName != name);
         }

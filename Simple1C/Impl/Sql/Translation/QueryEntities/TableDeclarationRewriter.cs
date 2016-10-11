@@ -9,15 +9,18 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
     {
         private readonly NameGenerator nameGenerator;
         private readonly QueryEntityRegistry queryEntityRegistry;
-        private readonly QueryEntityAccessor queryEntityAccessor;
+        private readonly QueryEntityTree queryEntityTree;
+        private readonly EnumSqlBuilder enumSqlBuilder;
         private readonly List<ISqlElement> areas;
 
         public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityAccessor queryEntityAccessor,
+            QueryEntityTree queryEntityTree,
+            EnumSqlBuilder enumSqlBuilder,
             NameGenerator nameGenerator, List<ISqlElement> areas)
         {
             this.queryEntityRegistry = queryEntityRegistry;
-            this.queryEntityAccessor = queryEntityAccessor;
+            this.queryEntityTree = queryEntityTree;
+            this.enumSqlBuilder = enumSqlBuilder;
             this.areas = areas;
             this.nameGenerator = nameGenerator;
         }
@@ -55,7 +58,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             var stripResult = Strip(queryRoot.entity);
             var selectClause = new SelectClause
             {
-                Source = queryEntityAccessor.GetTableDeclaration(queryRoot.entity)
+                Source = queryEntityTree.GetTableDeclaration(queryRoot.entity)
             };
             if (areas != null)
                 selectClause.WhereExpression = new InExpression
@@ -104,42 +107,33 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                             Left = new ColumnReferenceExpression
                             {
                                 Name = nestedEntity.GetAreaColumnName(),
-                                Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                                Table = queryEntityTree.GetTableDeclaration(nestedEntity)
                             },
                             Right = new ColumnReferenceExpression
                             {
                                 Name = p.referer.GetAreaColumnName(),
-                                Table = queryEntityAccessor.GetTableDeclaration(p.referer)
+                                Table = queryEntityTree.GetTableDeclaration(p.referer)
                             }
                         });
-                    var unionCondition = queryEntityAccessor.GetUnionCondition(p, nestedEntity);
+                    var unionCondition = queryEntityTree.GetUnionCondition(p, nestedEntity);
                     if (unionCondition != null)
                         eqConditions.Add(unionCondition);
-                    var referenceColumnName = p.mapping.SingleLayout == null
-                        ? p.mapping.UnionLayout.ReferenceColumnName
-                        : p.mapping.SingleLayout.DbColumnName;
-                    if (string.IsNullOrEmpty(referenceColumnName))
-                    {
-                        const string messageFormat = "ref column is not defined for [{0}.{1}]";
-                        throw new InvalidOperationException(string.Format(messageFormat,
-                            p.referer.mapping.QueryTableName, p.mapping.PropertyName));
-                    }
                     eqConditions.Add(new EqualityExpression
                     {
                         Left = new ColumnReferenceExpression
                         {
                             Name = nestedEntity.GetIdColumnName(),
-                            Table = queryEntityAccessor.GetTableDeclaration(nestedEntity)
+                            Table = queryEntityTree.GetTableDeclaration(nestedEntity)
                         },
                         Right = new ColumnReferenceExpression
                         {
-                            Name = referenceColumnName,
-                            Table = queryEntityAccessor.GetTableDeclaration(p.referer)
+                            Name = p.GetDbColumnName(),
+                            Table = queryEntityTree.GetTableDeclaration(p.referer)
                         }
                     });
                     var joinClause = new JoinClause
                     {
-                        Source = queryEntityAccessor.GetTableDeclaration(nestedEntity),
+                        Source = queryEntityTree.GetTableDeclaration(nestedEntity),
                         JoinKind = JoinKind.Left,
                         Condition = eqConditions.Combine()
                     };
@@ -198,7 +192,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
         {
             if (property.referer.mapping.IsEnum())
             {
-                var enumMappingsJoinClause = queryEntityAccessor.CreateEnumMappingsJoinClause(property.referer);
+                var enumMappingsJoinClause = enumSqlBuilder.GetJoinSql(property.referer);
                 selectClause.JoinClauses.Add(enumMappingsJoinClause);
                 return new ColumnReferenceExpression
                 {
@@ -209,7 +203,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             return new ColumnReferenceExpression
             {
                 Name = property.GetDbColumnName(),
-                Table = queryEntityAccessor.GetTableDeclaration(property.referer)
+                Table = queryEntityTree.GetTableDeclaration(property.referer)
             };
         }
 

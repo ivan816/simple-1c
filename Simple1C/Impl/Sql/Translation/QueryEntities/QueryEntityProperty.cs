@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using Simple1C.Impl.Sql.SchemaMapping;
 
@@ -18,9 +19,16 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public string GetDbColumnName()
         {
-            return mapping.SingleLayout != null
+            var result = mapping.SingleLayout != null
                 ? mapping.SingleLayout.DbColumnName
                 : mapping.UnionLayout.ReferenceColumnName;
+            if (string.IsNullOrEmpty(result))
+            {
+                const string messageFormat = "ref column is not defined for [{0}.{1}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    referer.mapping.QueryTableName, mapping.PropertyName));
+            }
+            return result;
         }
     }
 }

@@ -172,15 +172,15 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ValueLiteralExpression.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PropertyNames.cs" />
+    <Compile Include="Impl\Sql\Translation\QueryEntities\EnumSqlBuilder.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\IsReferenceExpressionRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\DeduceEntityTypeFromIsReferenceExpressionVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ObjectNameCheckingVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\SubqueryVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ColumnReferenceRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\AddAreaToJoinConditionVisitor.cs" />
-    <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntityAccessor.cs" />
+    <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntityTree.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\NameGenerator.cs" />
-    <Compile Include="Impl\Sql\Translation\QueryEntities\PropertiesEnumerator.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntity.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntityProperty.cs" />
     <Compile Include="Impl\Sql\Translation\QueryEntities\QueryEntityRegistry.cs" />
