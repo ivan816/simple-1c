@@ -5,15 +5,11 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 {
     internal class EnumSqlBuilder
     {
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityTree queryEntityTree;
         private readonly NameGenerator nameGenerator;
 
-        public EnumSqlBuilder(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityTree queryEntityTree,
-            NameGenerator nameGenerator)
+        public EnumSqlBuilder(QueryEntityTree queryEntityTree, NameGenerator nameGenerator)
         {
-            this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityTree = queryEntityTree;
             this.nameGenerator = nameGenerator;
         }
@@ -64,7 +60,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         public ISqlElement GetValueSql(string enumName, string enumValueName)
         {
-            var table = queryEntityRegistry.CreateQueryEntity(null, enumName);
+            var table = queryEntityTree.CreateQueryEntity(null, enumName);
             var selectClause = new SelectClause {Source = queryEntityTree.GetTableDeclaration(table)};
             selectClause.Fields.Add(new SelectFieldExpression
             {

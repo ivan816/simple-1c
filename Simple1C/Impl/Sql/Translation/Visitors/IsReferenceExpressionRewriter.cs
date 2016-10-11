@@ -8,16 +8,13 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 {
     internal class IsReferenceExpressionRewriter : SqlVisitor
     {
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityTree queryEntityTree;
         private readonly NameGenerator nameGenerator;
         private readonly HashSet<ColumnReferenceExpression> rewritten;
 
-        public IsReferenceExpressionRewriter(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityTree queryEntityTree, NameGenerator nameGenerator,
-            HashSet<ColumnReferenceExpression> rewritten)
+        public IsReferenceExpressionRewriter(QueryEntityTree queryEntityTree,
+            NameGenerator nameGenerator, HashSet<ColumnReferenceExpression> rewritten)
         {
-            this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityTree = queryEntityTree;
             this.nameGenerator = nameGenerator;
             this.rewritten = rewritten;
@@ -25,7 +22,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         public override ISqlElement VisitIsReference(IsReferenceExpression expression)
         {
-            var queryRoot = queryEntityRegistry.Get(expression.Argument.Table);
+            var queryRoot = queryEntityTree.Get(expression.Argument.Table);
             var propertyNames = expression.Argument.Name.Split('.');
             var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
             if (referencedProperties.Count != 1)

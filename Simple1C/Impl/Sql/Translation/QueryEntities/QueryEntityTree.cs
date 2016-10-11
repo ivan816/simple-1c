@@ -19,6 +19,16 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
             this.nameGenerator = nameGenerator;
         }
 
+        public QueryRoot Get(IColumnSource declaration)
+        {
+            return queryEntityRegistry.Get(declaration);
+        }
+
+        public QueryEntity CreateQueryEntity(QueryEntityProperty referer, string queryName)
+        {
+            return queryEntityRegistry.CreateQueryEntity(referer, queryName);
+        }
+
         public ISqlElement GetUnionCondition(QueryEntityProperty property, QueryEntity entity)
         {
             if (property.mapping.UnionLayout == null)

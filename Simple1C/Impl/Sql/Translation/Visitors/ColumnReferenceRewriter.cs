@@ -11,19 +11,16 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
     internal class ColumnReferenceRewriter : SqlVisitor
     {
         private readonly QueryEntityTree queryEntityTree;
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private bool isPresentation;
         private SelectPart? currentPart;
         private readonly HashSet<ColumnReferenceExpression> rewritten;
         private readonly NameGenerator nameGenerator;
 
         public ColumnReferenceRewriter(QueryEntityTree queryEntityTree,
-            QueryEntityRegistry queryEntityRegistry,
             HashSet<ColumnReferenceExpression> rewritten,
             NameGenerator nameGenerator)
         {
             this.queryEntityTree = queryEntityTree;
-            this.queryEntityRegistry = queryEntityRegistry;
             this.rewritten = rewritten;
             this.nameGenerator = nameGenerator;
         }
@@ -44,7 +41,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
         public QueryField GetOrCreateQueryField(ColumnReferenceExpression columnReference,
             bool isRepresentation, SelectPart selectPart)
         {
-            var queryRoot = queryEntityRegistry.Get(columnReference.Table);
+            var queryRoot = queryEntityTree.Get(columnReference.Table);
             if (!isRepresentation && selectPart == SelectPart.GroupBy)
             {
                 QueryField fieldWithFunction;
@@ -98,7 +95,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                 {
                     var scope = nestedEntity.mapping.ObjectName.HasValue
                         ? nestedEntity.mapping.ObjectName.Value.Scope
-                        : (ConfigurationScope?)null;
+                        : (ConfigurationScope?) null;
                     var validScopes = new ConfigurationScope?[]
                     {
                         ConfigurationScope.Перечисления, ConfigurationScope.Справочники

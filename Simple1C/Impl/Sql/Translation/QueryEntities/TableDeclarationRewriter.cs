@@ -8,17 +8,14 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
     internal class TableDeclarationRewriter
     {
         private readonly NameGenerator nameGenerator;
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityTree queryEntityTree;
         private readonly EnumSqlBuilder enumSqlBuilder;
         private readonly List<ISqlElement> areas;
 
-        public TableDeclarationRewriter(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityTree queryEntityTree,
+        public TableDeclarationRewriter(QueryEntityTree queryEntityTree,
             EnumSqlBuilder enumSqlBuilder,
             NameGenerator nameGenerator, List<ISqlElement> areas)
         {
-            this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityTree = queryEntityTree;
             this.enumSqlBuilder = enumSqlBuilder;
             this.areas = areas;
@@ -46,7 +43,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
 
         private IColumnSource RewriteTableIfNeeded(TableDeclarationClause declaration)
         {
-            var queryRoot = queryEntityRegistry.Get(declaration);
+            var queryRoot = queryEntityTree.Get(declaration);
             var subqueryRequired = queryRoot.subqueryRequired ||
                                    areas != null ||
                                    queryRoot.additionalFields != null;

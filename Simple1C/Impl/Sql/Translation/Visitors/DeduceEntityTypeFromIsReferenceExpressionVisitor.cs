@@ -5,13 +5,10 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 {
     internal class DeduceEntityTypeFromIsReferenceExpressionVisitor : SqlVisitor
     {
-        private readonly QueryEntityRegistry queryEntityRegistry;
         private readonly QueryEntityTree queryEntityTree;
 
-        public DeduceEntityTypeFromIsReferenceExpressionVisitor(QueryEntityRegistry queryEntityRegistry,
-            QueryEntityTree queryEntityTree)
+        public DeduceEntityTypeFromIsReferenceExpressionVisitor(QueryEntityTree queryEntityTree)
         {
-            this.queryEntityRegistry = queryEntityRegistry;
             this.queryEntityTree = queryEntityTree;
         }
 
@@ -42,7 +39,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
 
         private void SetPropertyType(ColumnReferenceExpression columnReference, string name)
         {
-            var queryRoot = queryEntityRegistry.Get(columnReference.Table);
+            var queryRoot = queryEntityTree.Get(columnReference.Table);
             var propertyNames = columnReference.Name.Split('.');
             var referencedProperties = queryEntityTree.GetProperties(propertyNames, queryRoot);
             foreach (var property in referencedProperties)
