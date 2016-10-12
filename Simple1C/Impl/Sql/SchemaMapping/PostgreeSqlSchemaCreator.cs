@@ -213,7 +213,7 @@ $$;";
             var propertyDescriptors = comObject == null
                 ? new Dictionary<string, string[]>()
                 : MetadataHelpers.GetAttributes(comObject, descriptor)
-                    .ToDictionary(Call.Имя, GetPropertyTypes);
+                    .ToDictionary(Call.Имя, GetConfigurationTypes);
             var propertyMappings = new ValueTable(tableRow["Поля"])
                 .Select(x => new
                 {
@@ -287,7 +287,7 @@ $$;";
                 var configurationName = new ConfigurationName(ConfigurationScope.ПланыВидовХарактеристик,
                     "ВидыСубконтоХозрасчетные");
                 var characteristicsPlan = globalContext.FindMetaByName(configurationName);
-                var propertyTypes = GetPropertyTypes(characteristicsPlan.ComObject);
+                var propertyTypes = GetConfigurationTypes(characteristicsPlan.ComObject);
                 if (propertyTypes == null)
                     throw new InvalidOperationException("can't get characteristics types");
                 subkontoTypes = propertyTypes
@@ -393,26 +393,18 @@ $$;";
             return candidates.SingleOrDefault(x => x.EndsWith(suffix, StringComparison.OrdinalIgnoreCase));
         }
 
-        private string[] GetPropertyTypes(object a)
+        private string[] GetConfigurationTypes(object a)
         {
-            var type = ComHelpers.GetProperty(a, "Тип");
-            var typesObject = ComHelpers.Invoke(type, "Типы");
-            var typesCount = Call.Количество(typesObject);
-            if (typesCount == 0)
-                throw new InvalidOperationException("assertion failure");
-            var types = new string[typesCount];
-            for (var i = 0; i < typesCount; i++)
-            {
-                var typeObject = Call.Получить(typesObject, i);
-                var stringPresentation = globalContext.String(typeObject);
-                if (MetadataHelpers.simpleTypesMap.ContainsKey(stringPresentation))
+            var types = globalContext.GetTypesOrNull(a);
+            if (types == null)
+                return null;
+            foreach (var t in types)
+                if (t.configurationItem == null)
                     return null;
-                var propertyComObject = Call.НайтиПоТипу(globalContext.Metadata, typeObject);
-                if (propertyComObject == null)
-                    return null;
-                types[i] = Call.ПолноеИмя(propertyComObject);
-            }
-            return types;
+            var result = new string[types.Count];
+            for (var i = 0; i < types.Count; i++)
+                result[i] = Call.ПолноеИмя(types[i].configurationItem.ComObject);
+            return result;
         }
 
         private static string TableSectionQueryNameToFullName(string s)

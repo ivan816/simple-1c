@@ -114,6 +114,7 @@
     <Compile Include="Impl\Queries\QueryResult.cs" />
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
+    <Compile Include="Impl\SimpleTypeInfo.cs" />
     <Compile Include="Impl\Sql\BatchWriter.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\EnumMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PostgreeSqlSchemaCreator.cs" />
@@ -199,6 +200,7 @@
     <Compile Include="Impl\Sql\Translation\Visitors\TableDeclarationVisitor.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\TableDeclarationRewriter.cs" />
     <Compile Include="Impl\Sql\Translation\Visitors\ValueLiteralRewriter.cs" />
+    <Compile Include="Impl\TypeInfo.cs" />
     <Compile Include="Impl\TypeRegistry.cs" />
     <Compile Include="Interface\DataContextExtensions.cs" />
     <Compile Include="Interface\IDataContext.cs" />

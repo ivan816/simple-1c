@@ -123,7 +123,7 @@ namespace Simple1C.Impl
 
         private Type ConvertType(object source)
         {
-            var metadata = Call.НайтиПоТипу(globalContext.Metadata, source);
+            var metadata = globalContext.GetMetaByType(source);
             var typeName = Call.ПолноеИмя(metadata);
             return mappingSource.TypeRegistry.GetType(typeName);
         }

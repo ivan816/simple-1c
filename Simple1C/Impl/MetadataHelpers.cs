@@ -10,19 +10,78 @@ namespace Simple1C.Impl
 {
     internal static class MetadataHelpers
     {
-        public static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
+        private static readonly Dictionary<string, string> simpleTypesMap = new Dictionary<string, string>
         {
             {"Строка", "string"},
             {"Булево", "bool"},
             {"Дата", "DateTime?"},
             {"Уникальный идентификатор", "Guid?"},
-            {"Хранилище значения", null},
-            {"Описание типов", "Type[]"}
+            {"Описание типов", "Type[]"},
+            {"ВидСчета", "int"}
         };
+
+        public static List<TypeInfo> GetTypesOrNull(this GlobalContext globalContext, object item)
+        {
+            var typeDescriptor = ComHelpers.GetProperty(item, "Тип");
+            var types = ComHelpers.Invoke(typeDescriptor, "Типы");
+            var typesCount = Call.Количество(types);
+            if (typesCount == 0)
+                throw new InvalidOperationException("assertion failure");
+            var result = new List<TypeInfo>();
+            for (var i = 0; i < typesCount; i++)
+            {
+                var typeObject = Call.Получить(types, i);
+                var typeInfo = GetTypeInfoOrNull(globalContext, typeDescriptor, typeObject);
+                if (typeInfo.HasValue)
+                    result.Add(typeInfo.Value);
+            }
+            return result.Count == 0 ? null : result;
+        }
+
+        private static TypeInfo? GetTypeInfoOrNull(GlobalContext globalContext, object typeDescriptor, object type)
+        {
+            var typeAsString = globalContext.String(type);
+            if (typeAsString == "Число")
+            {
+                var квалификаторыЧисла = ComHelpers.GetProperty(typeDescriptor, "КвалификаторыЧисла");
+                var floatLength = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "РазрядностьДробнойЧасти"));
+                var digits = Convert.ToInt32(ComHelpers.GetProperty(квалификаторыЧисла, "Разрядность"));
+                return TypeInfo.Simple(floatLength == 0 ? (digits < 10 ? "int" : "long") : "decimal");
+            }
+            if (typeAsString == "Строка")
+            {
+                var квалификаторыСтроки = ComHelpers.GetProperty(typeDescriptor, "КвалификаторыСтроки");
+                var maxLength = Call.IntProp(квалификаторыСтроки, "Длина");
+                return TypeInfo.Simple("string", maxLength == 0 ? (int?) null : maxLength);
+            }
+            if (typeAsString == "Хранилище значения")
+                return null;
+            string typeName;
+            if (simpleTypesMap.TryGetValue(typeAsString, out typeName))
+                return TypeInfo.Simple(typeName);
+            var comObject = GetMetaByType(globalContext, type);
+            var fullName = Call.ПолноеИмя(comObject);
+            var name = ConfigurationName.ParseOrNull(fullName);
+            if (!name.HasValue)
+                return null;
+            return new TypeInfo {configurationItem = new ConfigurationItem(name.Value, comObject)};
+        }
+
+        public static object GetMetaByType(this GlobalContext globalContext, object type)
+        {
+            var result = Call.НайтиПоТипу(globalContext.Metadata, type);
+            if (result == null)
+            {
+                const string messageFormat = "can't find meta by type [{0}]";
+                throw new InvalidOperationException(string.Format(messageFormat,
+                    globalContext.String(type)));
+            }
+            return result;
+        }
 
         public static readonly ConfigurationItemDescriptor tableSectionDescriptor = new ConfigurationItemDescriptor
         {
-            AttributePropertyNames = new[] { "Реквизиты" }
+            AttributePropertyNames = new[] {"Реквизиты"}
         };
 
         public static readonly ConfigurationItemDescriptor standardTableSectionDescriptor = new ConfigurationItemDescriptor
@@ -46,7 +105,7 @@ namespace Simple1C.Impl
             }
             return result;
         }
-        
+
         public static ConfigurationItemDescriptor GetDescriptorOrNull(ConfigurationScope scope)
         {
             ConfigurationItemDescriptor result;
@@ -56,12 +115,9 @@ namespace Simple1C.Impl
         public static IEnumerable<object> GetAttributes(object comObject, ConfigurationItemDescriptor descriptor)
         {
             var standardAttributes = ComHelpers.GetProperty(comObject, "СтандартныеРеквизиты");
-            var isChartOfAccounts = Call.Имя(comObject) == "Хозрасчетный";
-            foreach (var attr in (IEnumerable)standardAttributes)
+            foreach (var attr in (IEnumerable) standardAttributes)
             {
                 var name = Call.Имя(attr);
-                if (isChartOfAccounts && name != "Код" && name != "Наименование")
-                    continue;
                 if (standardPropertiesToExclude.Contains(name))
                     continue;
                 yield return attr;
