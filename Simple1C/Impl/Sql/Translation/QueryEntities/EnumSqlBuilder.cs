@@ -20,7 +20,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 throw new InvalidOperationException("assertion failure");
             var declaration = new TableDeclarationClause
             {
-                Name = "simple1c__enumMappings",
+                Name = "simple1c.enumMappings",
                 Alias = nameGenerator.GenerateTableName()
             };
             return new JoinClause

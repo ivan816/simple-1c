@@ -38,6 +38,29 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return result;
         }
 
+        public void RecreateSchema(string schemaName)
+        {
+            if (SchemaExists(schemaName))
+                DropSchema(schemaName);
+            CreateSchema(schemaName);
+        }
+
+        public bool SchemaExists(string schemaName)
+        {
+            const string sqlFormat = "SELECT schema_name FROM information_schema.schemata WHERE schema_name = '{0}'";
+            return Exists(string.Format(sqlFormat, schemaName));
+        }
+
+        public void DropSchema(string schemaName)
+        {
+            ExecuteNonQuery(string.Format("drop schema {0} cascade", schemaName));
+        }
+
+        public void CreateSchema(string schemaName)
+        {
+            ExecuteNonQuery(string.Format("create schema {0}", schemaName));
+        }
+
         public bool TableExists(string tableName)
         {
             const string sqlFormat = @"SELECT cast(to_regclass('public.{0}') as varchar(200));";

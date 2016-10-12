@@ -90,11 +90,13 @@ from t1 as contracts";
         [Test]
         public void AllowArbitraryPostgreSqlFunction()
         {
-            const string sourceSql = @"select length(КПП), now() from Справочник.Контрагенты";
+            const string sourceSql = @"select simple1c.to_guid(Ссылка), length(КПП), now() from Справочник.Контрагенты";
             const string mappings = @"Справочник.Контрагенты contractors1 Main
-    КПП Single kpp";
+    КПП Single kpp
+    Ссылка Single ref";
 
             const string expectedResult = @"select
+    simple1c.to_guid(ref),
     length(kpp),
     now()
 from contractors1";

@@ -201,7 +201,7 @@ namespace Generator
 
             var postgreeSqlDatabase = new PostgreeSqlDatabase(dbConnectionString);
             var postgreeSqlSchemaStore = new PostgreeSqlSchemaStore(postgreeSqlDatabase);
-            var schemaCreator = new PostgreeSqlSchemaCreator(postgreeSqlSchemaStore, postgreeSqlDatabase, globalContext);
+            var schemaCreator = new Simple1CSchemaCreator(postgreeSqlSchemaStore, postgreeSqlDatabase, globalContext);
             schemaCreator.Recreate();
             return 0;
         }

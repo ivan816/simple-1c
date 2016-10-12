@@ -17,7 +17,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
         private static readonly TableDesc typeMappingsTableDesc =
             new TableDesc
             {
-                tableName = "simple1c__tableMappings",
+                tableName = "simple1c.tableMappings",
                 columns = new[]
                 {
                     new DataColumn
@@ -50,13 +50,13 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     }
                 },
                 createIndexesSql =
-                    "CREATE INDEX simple1c__tableMappings_index ON simple1c__tableMappings ((lower(queryTableName)))"
+                    "CREATE INDEX tableMappings_index ON simple1c.tableMappings ((lower(queryTableName)))"
             };
 
         private static readonly TableDesc enumMappingsTableDesc =
             new TableDesc
             {
-                tableName = "simple1c__enumMappings",
+                tableName = "simple1c.enumMappings",
                 columns = new[]
                 {
                     new DataColumn
@@ -81,7 +81,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
                     }
                 },
                 createIndexesSql =
-                    "CREATE INDEX simple1c__enumMappings_index ON simple1c__enumMappings (enumName,orderIndex)"
+                    "CREATE INDEX enumMappings_index ON simple1c.enumMappings (enumName,orderIndex)"
             };
 
         public PostgreeSqlSchemaStore(PostgreeSqlDatabase database)
@@ -121,7 +121,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
         private TableMapping LoadMappingOrNull(string queryName)
         {
             const string sql = "select queryTableName,dbName,type,properties " +
-                               "from simple1c__tableMappings " +
+                               "from simple1c.tableMappings " +
                                "where lower(queryTableName) = lower(@p0)" +
                                "limit 1";
             return database.ExecuteEnumerable(
@@ -137,9 +137,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
 
         private void RecreateTable<T>(TableDesc tableDesc, IEnumerable<T> data, Func<T, object[]> getColumnValues)
         {
-            if (database.TableExists(tableDesc.tableName))
-                database.DropTable(tableDesc.tableName);
-            database.CreateTable("public." + tableDesc.tableName, tableDesc.columns);
+            database.CreateTable(tableDesc.tableName, tableDesc.columns);
             database.BulkCopy(tableDesc.tableName, tableDesc.columns, data.Select(delegate(T x)
             {
                 var columnValues = getColumnValues(x);

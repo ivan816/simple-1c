@@ -11,13 +11,13 @@ using Simple1C.Interface;
 
 namespace Simple1C.Impl.Sql.SchemaMapping
 {
-    internal class PostgreeSqlSchemaCreator
+    internal class Simple1CSchemaCreator
     {
         private readonly PostgreeSqlSchemaStore store;
         private readonly PostgreeSqlDatabase database;
         private readonly GlobalContext globalContext;
 
-        public PostgreeSqlSchemaCreator(PostgreeSqlSchemaStore store,
+        public Simple1CSchemaCreator(PostgreeSqlSchemaStore store,
             PostgreeSqlDatabase database,
             GlobalContext globalContext)
         {
@@ -37,14 +37,17 @@ namespace Simple1C.Impl.Sql.SchemaMapping
             LogHelpers.LogWithTiming("extracting table mappings from COM schema info",
                 () => tableMappings = ExtractTableMappingsFromCom(comTable));
 
-            LogHelpers.LogWithTiming("writing table mappings to PostgreeSQL",
+            LogHelpers.LogWithTiming("recreating db schema",
+                () => database.RecreateSchema("simple1c"));
+
+            LogHelpers.LogWithTiming("writing table mappings to db",
                 () => store.WriteTableMappings(tableMappings));
 
             EnumMapping[] enumMappings = null;
             LogHelpers.LogWithTiming("extracting enum mappings from COM ",
                 () => enumMappings = ExtractEnumMappingsFromCom());
 
-            LogHelpers.LogWithTiming("writing enum mappings to PostgreeSQL",
+            LogHelpers.LogWithTiming("writing enum mappings to db",
                 () => store.WriteEnumMappings(enumMappings));
 
             LogHelpers.LogWithTiming("creating helper functions", CreateHelperFunctions);
@@ -53,7 +56,7 @@ namespace Simple1C.Impl.Sql.SchemaMapping
         private void CreateHelperFunctions()
         {
             const string sql =
-                @"CREATE OR REPLACE FUNCTION simple1c__to_guid(bytea) RETURNS varchar(36) LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
+                @"CREATE FUNCTION simple1c.to_guid(bytea) RETURNS varchar(36) LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
 DECLARE
 	guid_text varchar(50);
 BEGIN
@@ -67,7 +70,7 @@ BEGIN
 END
 $$;
 
-CREATE OR REPLACE FUNCTION simple1c__date_from_guid(varchar(36)) RETURNS timestamp LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
+CREATE FUNCTION simple1c.date_from_guid(varchar(36)) RETURNS timestamp LANGUAGE plpgsql IMMUTABLE LEAKPROOF STRICT AS $$
 DECLARE
 	guid_text varchar(50);
 	ticks bigint;

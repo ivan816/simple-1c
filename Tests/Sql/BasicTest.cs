@@ -126,7 +126,7 @@ from (select
     __nested_table0.c1
 from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.c3 = __nested_table0.c2
-left join simple1c__enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
+left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.c4) as contractors
 where contractors.c1 = 'test-inn1'
 
 union all
@@ -138,7 +138,7 @@ from (select
     __nested_table3.c1
 from t1 as __nested_table3
 left join t2 as __nested_table4 on __nested_table4.c3 = __nested_table3.c2
-left join simple1c__enumMappings as __nested_table5 on __nested_table5.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table5.orderIndex = __nested_table4.c4) as contractors
+left join simple1c.enumMappings as __nested_table5 on __nested_table5.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table5.orderIndex = __nested_table4.c4) as contractors
 where contractors.c1 = 'test-inn2'
 
 union
@@ -150,7 +150,7 @@ from (select
     __nested_table6.c1
 from t1 as __nested_table6
 left join t2 as __nested_table7 on __nested_table7.c3 = __nested_table6.c2
-left join simple1c__enumMappings as __nested_table8 on __nested_table8.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table8.orderIndex = __nested_table7.c4) as contractors
+left join simple1c.enumMappings as __nested_table8 on __nested_table8.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table8.orderIndex = __nested_table7.c4) as contractors
 where contractors.c1 = 'test-inn3'";
             CheckTranslate(mappings, sourceSql, expectedResult);
         }

@@ -347,7 +347,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static QueryFunctionExpression ToQueryFunctionExpression(ParseTreeNode node)
         {
-            var functionName = node.ChildNodes[0].FindTokenAndGetText().ToLower();
+            var functionName = ((Identifier) node.ChildNodes[0].AstNode).Value;
             var queryFunction = ToQueryFunctionName(functionName);
             return new QueryFunctionExpression
             {
@@ -659,7 +659,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
         private static KnownQueryFunction? ToQueryFunctionName(string name)
         {
-            switch (name)
+            switch (name.ToLower())
             {
                 case "presentation":
                 case "представление":
