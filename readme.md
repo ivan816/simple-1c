@@ -1,6 +1,36 @@
-#Simple1C
+﻿#Simple1C
 
 *This project is licensed under the terms of the MIT license.*
+
+Упрощаем интеграцию с 1С за счет двух основных функций:
+
+* умеем исполнять обычные запросы языка 1С (`выбрать * из Справочник.Контрагенты`)
+без участия самой 1С - напрямую через СУБД. Это может быть удобно при использовании
+[механизма разделения данных](http://v8.1c.ru/overview/Term_000000788.htm) чтобы
+выполнить запрос сразу на всех [областях](http://v8.1c.ru/overview/Term_000000790.htm)
+информационной базы или даже одновременно на нескольких sql-ных базах, если
+использется несколько серверов СУБД. Это становится особенно актуально при
+большом числе различных организаций, работающих с одной типовой конфигурацией,
+например через технологию [1C-фреш](http://v8.1c.ru/fresh/whatis.htm).
+
+* если есть потребность заинтегрировать с 1С внешнее приложение, и это
+приложение написано на .NET, то одним из вариантов может быть использование 1С COM апи.
+Это апи основано на интерфейсе [IDispatch](https://msdn.microsoft.com/ru-ru/library/windows/desktop/ms221608(v=vs.85).aspx)
+и позднем связывании, поэтому любая опечатка в имени метода или свойства приводит к ошибке во время выполнения.
+Мы решаем эту проблему путем генерации оберточных классов для всех объектов конфигурации. Эти
+классы можно использовать как для сохранения новых данных, так и для выполнения запросов в
+стиле [LINQ](https://www.google.ru/url?sa=t&rct=j&q=&esrc=s&source=web&cd=2&cad=rja&uact=8&ved=0ahUKEwili-f_2tfPAhVICiwKHaHPB7QQFggnMAE&url=https%3A%2F%2Fen.wikipedia.org%2Fwiki%2FLanguage_Integrated_Query&usg=AFQjCNEjvId7H8I66uhYbueZxwszChwoyg&bvm=bv.135475266,d.bGg).
+
+##NuGet
+
+Для установки [Simple1C пакета](https://www.nuget.org/packages/Simple1C),
+выполните следующую команду в [NuGet-консоли](http://docs.nuget.org/docs/start-here/using-the-package-manager-console)
+
+    PM> Install-Package Simple1C
+
+##Simple1C.SQL
+
+##Simple1C.COM
 
 Несмотря на то, что еще в 2013-м году 1С опубликовал REST апи
 поверх протокола OData ([раз](https://wonderland.v8.1c.ru/blog/avtomaticheskiy-rest-interfeys-prikladnykh-resheniy),
@@ -12,15 +42,8 @@
 Используем C# как основной язык для автогенерации.
 Механику провайдера упрощаем за счет [вот этой](https://relinq.codeplex.com) классной штуки.
 Аналогичные проекты: http://www.linq-demo.1csoftware.com, http://www.vanessa-sharp.ru/reference-linq.html.
+Основные возможности:
 
-##NuGet
-
-Для установки [Simple1C пакета](https://www.nuget.org/packages/Simple1C),
-выполните следующую команду в [NuGet-консоли](http://docs.nuget.org/docs/start-here/using-the-package-manager-console)
-
-    PM> Install-Package Simple1C
-
-##Основные возможности
 * Автоматическая генерация классов объектной модели по 1С-конфигурации :
 ```
 Generator.exe
