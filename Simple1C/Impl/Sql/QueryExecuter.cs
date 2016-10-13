@@ -33,6 +33,8 @@ namespace Simple1C.Impl.Sql
             var runTimestamp = DateTime.Now;
             var s = Stopwatch.StartNew();
             var sourceThreads = new Thread[sources.Length];
+            string errorConnectionString = null;
+            Exception error = null;
             using (var writer = new BatchWriter(target, targetTableName, 1000, historyMode))
             {
                 var w = writer;
@@ -72,7 +74,8 @@ namespace Simple1C.Impl.Sql
                         catch (Exception e)
                         {
                             errorOccured = true;
-                            Console.Out.WriteLine("error for [{0}]\r\n{1}", source.db.ConnectionString, e);
+                            errorConnectionString = source.db.ConnectionString;
+                            error = e;
                         }
                     });
                     sourceThreads[i].Start();
@@ -82,6 +85,8 @@ namespace Simple1C.Impl.Sql
             }
             s.Stop();
             Console.Out.WriteLine("\r\ndone, [{0}] millis", s.ElapsedMilliseconds);
+            if (errorOccured)
+                Console.Out.WriteLine("error for [{0}]\r\n{1}", errorConnectionString, error);
             return !errorOccured;
         }
     }
