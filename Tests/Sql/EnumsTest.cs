@@ -51,7 +51,7 @@ from (select
     __nested_table0.f2
 from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f2
-left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors";
+left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName = 'юридическоефизическоелицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -62,7 +62,7 @@ left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName =
             const string sourceSql =
                 @"select contractors.НаименованиеПолное as ContractorFullname
 from справочник.Контрагенты as contractors
-where contractors.ЮридическоеФизическоеЛицо = Значение(Перечисление.ЮридическоеФизическоеЛицо.СПокупателем)";
+where contractors.ЮридическоеФизическоеЛицо = Значение(пЕречисление.юРидическоеФизическоеЛицо.спокупателем)";
 
             const string mappings = @"Справочник.Контрагенты t1 Main
     наименованиеполное Single f1
@@ -77,8 +77,8 @@ from t1 as contractors
 where contractors.f2 = (select
     __nested_table0.f3
 from t2 as __nested_table0
-left join simple1c.enumMappings as __nested_table1 on __nested_table1.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table1.orderIndex = __nested_table0.f4
-where __nested_table1.enumValueName = 'СПокупателем')";
+left join simple1c.enumMappings as __nested_table1 on __nested_table1.enumName = 'юридическоефизическоелицо' and __nested_table1.orderIndex = __nested_table0.f4
+where __nested_table1.enumValueName = 'спокупателем')";
 
             CheckTranslate(mappings, sourceSql, expectedResult);
         }
@@ -105,7 +105,7 @@ from (select
     __nested_table2.enumValueName as __nested_field0
 from t1 as __nested_table0
 left join t2 as __nested_table1 on __nested_table1.f3 = __nested_table0.f2
-left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName = 'ЮридическоеФизическоеЛицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors
+left join simple1c.enumMappings as __nested_table2 on __nested_table2.enumName = 'юридическоефизическоелицо' and __nested_table2.orderIndex = __nested_table1.f4) as contractors
 group by contractors.__nested_field0";
 
             CheckTranslate(mappings, sourceSql, expectedResult);

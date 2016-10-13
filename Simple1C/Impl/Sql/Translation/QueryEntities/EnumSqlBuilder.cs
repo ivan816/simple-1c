@@ -38,7 +38,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                         },
                         Right = new LiteralExpression
                         {
-                            Value = enumEntity.mapping.ObjectName.Value.Name
+                            Value = enumEntity.mapping.ObjectName.Value.Name.ToLower()
                         }
                     },
                     Right = new EqualityExpression
@@ -81,7 +81,7 @@ namespace Simple1C.Impl.Sql.Translation.QueryEntities
                 },
                 Right = new LiteralExpression
                 {
-                    Value = enumValueName
+                    Value = enumValueName.ToLower()
                 }
             };
             return new SubqueryClause

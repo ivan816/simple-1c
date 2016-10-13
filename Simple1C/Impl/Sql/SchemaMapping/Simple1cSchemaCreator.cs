@@ -124,8 +124,8 @@ $$;";
                         var order = Convert.ToInt32(ComHelpers.Invoke(enumManager, "Индекс", enumValue));
                         result.Add(new EnumMapping
                         {
-                            enumName = enumName,
-                            enumValueName = enumValueName,
+                            enumName = enumName.ToLower(),
+                            enumValueName = enumValueName.ToLower(),
                             orderIndex = order
                         });
                     }

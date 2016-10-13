@@ -120,21 +120,25 @@ namespace Simple1C.Impl
 
         private static ConfigurationScope? ParseScopeNameOrNull(string s)
         {
-            if (s == "Справочник")
-                return ConfigurationScope.Справочники;
-            if (s == "Документ")
-                return ConfigurationScope.Документы;
-            if (s == "РегистрСведений")
-                return ConfigurationScope.РегистрыСведений;
-            if (s == "Перечисление")
-                return ConfigurationScope.Перечисления;
-            if (s == "ПланСчетов")
-                return ConfigurationScope.ПланыСчетов;
-            if (s == "Константа")
-                return ConfigurationScope.Константы;
-            if (s == "ПланВидовХарактеристик")
-                return ConfigurationScope.ПланыВидовХарактеристик;
-            return null;
+            switch (s.ToLower())
+            {
+                case "справочник":
+                    return ConfigurationScope.Справочники;
+                case "документ":
+                    return ConfigurationScope.Документы;
+                case "регистрсведений":
+                    return ConfigurationScope.РегистрыСведений;
+                case "перечисление":
+                    return ConfigurationScope.Перечисления;
+                case "плансчетов":
+                    return ConfigurationScope.ПланыСчетов;
+                case "константа":
+                    return ConfigurationScope.Константы;
+                case "планвидовхарактеристик":
+                    return ConfigurationScope.ПланыВидовХарактеристик;
+                default:
+                    return null;
+            }
         }
 
         public bool Equals(ConfigurationName other)
