@@ -30,6 +30,11 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             : base(false)
         {
             LanguageFlags = LanguageFlags.CreateAst;
+            var comment = new CommentTerminal("comment", "/*", "*/");
+            var lineComment = new CommentTerminal("line_comment", "--", "\n", "\r\n");
+            NonGrammarTerminals.Add(comment);
+            NonGrammarTerminals.Add(lineComment);
+
             not = Transient("not", ToTerm("NOT") | "НЕ");
             by = NonTerminal("by", ToTerm("by") | "ПО", TermFlags.NoAstNode);
             distinctOpt = NonTerminal("distinctOpt", null);
@@ -137,6 +142,12 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return id;
         }
 
+        private static readonly string[] aggregateFunctions =
+        {
+            "Count", "Min", "Max", "Sum", "Avg",
+            "КОЛИЧЕСТВО", "МИНИМУМ", "МАКСИМУМ", "СУММА", "СРЕДНЕЕ"
+        };
+
         private NonTerminal Expression(NonTerminal identifier, NonTerminal selectStatement)
         {
             var datePartLiteral = NonTerminal("datePartLiteral", null,
@@ -188,7 +199,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var queryFunctionExpr = NonTerminal("queryFunctionExpr", null, ToQueryFunctionExpression);
 
             var isNullExpression = NonTerminal("isNullExpression", null, ToIsNullExpression);
-            var isReferenceExpression = NonTerminal("isReference", 
+            var isReferenceExpression = NonTerminal("isReference",
                 columnRef + "ССЫЛКА" + identifier,
                 ToIsReferenceExpression);
             var isNull = NonTerminal("isNull", null, TermFlags.NoAstNode);
@@ -232,8 +243,10 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             queryFunctionExpr.Rule = identifier + functionArgs;
 
-            aggregateFunctionName.Rule = ToTerm("Count") | "Min" | "Max" | "Sum" | "Avg" |
-                                         "КОЛИЧЕСТВО" | "МИНИМУМ" | "МАКСИМУМ" | "СУММА" | "СРЕДНЕЕ";
+            aggregateFunctionName.Rule = ToTerm(aggregateFunctions[0]);
+            for (var i = 1; i < aggregateFunctions.Length; i++)
+                aggregateFunctionName.Rule |= aggregateFunctions[i];
+
             aggregateArg.Rule = ToTerm("*") | distinctOpt + expression;
             aggregate.Rule = aggregateFunctionName + "(" + aggregateArg + ")";
             inExpr.Rule = columnRef + Transient("in", ToTerm("IN") | "В") + functionArgs;
@@ -596,7 +609,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return new IsReferenceExpression
             {
                 Argument = (ColumnReferenceExpression) arg.ChildNodes[0].AstNode,
-                ObjectName = ((Identifier)arg.ChildNodes[2].AstNode).Value
+                ObjectName = ((Identifier) arg.ChildNodes[2].AstNode).Value
             };
         }
 
@@ -780,6 +793,28 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 var precedence = EnumAttributesCache<OperatorPrecedenceAttribute>.GetAttribute(value).Precedence;
                 var opSymbols = EnumAttributesCache<OperatorSynonymsAttribute>.GetAttribute(value).Synonyms;
                 RegisterOperators(precedence, opSymbols);
+            }
+        }
+
+        public override void CreateTokenFilters(LanguageData language, TokenFilterList filters)
+        {
+            base.CreateTokenFilters(language, filters);
+            filters.Add(new AggregateFunctionTokenFilter());
+        }
+
+        private class AggregateFunctionTokenFilter : TokenFilter
+        {
+            private static readonly HashSet<string> aggregateFunctionsSet =
+                aggregateFunctions.ToSet(StringComparer.OrdinalIgnoreCase);
+
+            public override IEnumerable<Token> BeginFiltering(ParsingContext context, IEnumerable<Token> tokens)
+            {
+                foreach (var token in tokens)
+                {
+                    if (aggregateFunctionsSet.Contains(token.Text) && context.Parser.Context.Source.PreviewChar != '(')
+                        token.KeyTerm = null;
+                    yield return token;
+                }
             }
         }
     }

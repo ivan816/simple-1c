@@ -296,7 +296,7 @@ left join t2 as __nested_table1 on __nested_table1.d2 = __nested_table0.d1 and _
             var exception = Assert.Throws<InvalidOperationException>(() =>
                 CheckTranslate(mappings, sourceSql, ""));
             Assert.That(exception.Message,
-                Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники]"));
+                Is.EqualTo("[ПРЕДСТАВЛЕНИЕ] is only supported for [Перечисления,Справочники] but is applied to [Документ.ПоступлениеТоваровУслуг]"));
         }
 
         [Test]

@@ -146,8 +146,13 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     };
                     if (!validScopes.Contains(scope))
                     {
-                        const string messageFormat = "[ПРЕДСТАВЛЕНИЕ] is only supported for [{0}]";
-                        throw new InvalidOperationException(string.Format(messageFormat, validScopes.JoinStrings(",")));
+                        const string messageFormat = "[ПРЕДСТАВЛЕНИЕ] is only supported for [{0}] " +
+                                                     "but is applied to [{1}]";
+                        throw new InvalidOperationException(string.Format(messageFormat,
+                            validScopes.JoinStrings(","),
+                            nestedEntity.mapping.ObjectName.HasValue
+                                ? nestedEntity.mapping.ObjectName.Value.Fullname
+                                : nestedEntity.mapping.QueryTableName));
                     }
                     var propertyName = scope == ConfigurationScope.Справочники ? "Наименование" : "Порядок";
                     var presentationProperty = queryEntityTree.GetOrCreatePropertyIfExists(nestedEntity, propertyName);

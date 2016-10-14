@@ -27,6 +27,35 @@ namespace Simple1C.Tests.Sql
         }
         
         [Test]
+        public void CanSelectFieldWithAggregateFunctionName()
+        {
+            var selectWithColumn = ParseSelect("select Сумма from testTable");
+            var columnReferenceExpression = selectWithColumn.Fields[0].Expression as ColumnReferenceExpression;
+            Assert.IsNotNull(columnReferenceExpression);
+            Assert.That(columnReferenceExpression.Name, Is.EqualTo("Сумма"));
+
+            var selectWithAggregate = ParseSelect("select Сумма(a) from testTable");
+            var aggregateFunctionExpression = selectWithAggregate.Fields[0].Expression as AggregateFunctionExpression;
+            Assert.IsNotNull(aggregateFunctionExpression);
+            Assert.That(aggregateFunctionExpression.Function, Is.EqualTo(AggregationFunction.Sum));
+
+            columnReferenceExpression = aggregateFunctionExpression.Argument as ColumnReferenceExpression;
+            Assert.IsNotNull(columnReferenceExpression);
+            Assert.That(columnReferenceExpression.Name, Is.EqualTo("a"));
+        }
+        
+        [Test]
+        public void IgnoreComments()
+        {
+            var selectClause = ParseSelect("select a/*,b*/ from testTable --where b > 10");
+            Assert.That(selectClause.WhereExpression, Is.Null);
+            Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
+            var columnReference = selectClause.Fields[0].Expression as ColumnReferenceExpression;
+            Assert.IsNotNull(columnReference);
+            Assert.That(columnReference.Name, Is.EqualTo("a"));
+        }
+        
+        [Test]
         public void Bool()
         {
             var selectClause = ParseSelect("select a,b from testTable where c = false");
