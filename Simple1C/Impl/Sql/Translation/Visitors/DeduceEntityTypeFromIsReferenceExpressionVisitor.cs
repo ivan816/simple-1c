@@ -1,4 +1,5 @@
-﻿using Simple1C.Impl.Sql.SqlAccess.Syntax;
+﻿using Simple1C.Impl.Helpers;
+using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
 
 namespace Simple1C.Impl.Sql.Translation.Visitors
@@ -43,7 +44,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
             var propertyNames = columnReference.Name.Split('.');
             var referencedProperties = queryEntityTree.GetProperties(queryRoot, propertyNames);
             foreach (var property in referencedProperties)
-                property.nestedEntities.RemoveAll(entity => entity.mapping.QueryTableName != name);
+                property.nestedEntities.RemoveAll(entity => !entity.mapping.QueryTableName.EqualsIgnoringCase(name));
         }
     }
 }

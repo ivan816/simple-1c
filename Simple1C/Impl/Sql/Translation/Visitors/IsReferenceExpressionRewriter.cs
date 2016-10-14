@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess.Syntax;
 using Simple1C.Impl.Sql.Translation.QueryEntities;
 
@@ -33,7 +34,7 @@ namespace Simple1C.Impl.Sql.Translation.Visitors
                     expression.Argument.Name));
             }
             var property = referencedProperties[0];
-            var entity = property.nestedEntities.SingleOrDefault(x => x.mapping.QueryTableName == expression.ObjectName);
+            var entity = property.nestedEntities.SingleOrDefault(x => x.mapping.QueryTableName.EqualsIgnoringCase(expression.ObjectName));
             if (entity == null)
             {
                 const string messageFormat = "can't find entity [{0}] for property [{1}]";
