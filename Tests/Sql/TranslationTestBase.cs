@@ -29,7 +29,8 @@ namespace Simple1C.Tests.Sql
             var translated = sqlTranslator.Translate(sql);
             var translatedLines = SpacesToTabs(translated.Trim())
                 .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
-            var expectedLines = SpacesToTabs(expected.Trim())
+            expected = QueryToSqlTranslator.queryHints + "\r\n" + expected.Trim();
+            var expectedLines = SpacesToTabs(expected)
                 .Split(new[] {Environment.NewLine}, StringSplitOptions.None);
 
             Console.WriteLine("Input:\r\n{0}\r\n", sql);

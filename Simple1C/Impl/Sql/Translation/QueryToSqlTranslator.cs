@@ -16,6 +16,7 @@ namespace Simple1C.Impl.Sql.Translation
         private readonly IMappingSource mappingSource;
         private readonly List<ISqlElement> areas;
         private const int postgreSqlMaxAliasLength = 31;
+        public const string queryHints = "SET enable_nestloop = off;";
 
         public QueryToSqlTranslator(IMappingSource mappingSource, int[] areas)
         {
@@ -38,7 +39,7 @@ namespace Simple1C.Impl.Sql.Translation
                 SetDefaultAliases(unionClause.SelectClause);
             var translationContext = new TranslationContext(mappingSource, areas, sqlQuery);
             translationContext.Execute();
-            return SqlFormatter.Format(sqlQuery);
+            return queryHints + "\r\n" + SqlFormatter.Format(sqlQuery);
         }
 
         private static void SetDefaultAliases(SelectClause selectClause)
