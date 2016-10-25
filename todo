@@ -27,3 +27,5 @@ todo sql
 	?order by по колонке с енумом -> нужен join
 	
 	Константы
+	
+	в DeduceEntityTypeFromIsReferenceExpressionVisitor учитывать условия в join-ах
