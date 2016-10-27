@@ -22,19 +22,27 @@ namespace Generator
     {
         public static int Main(string[] args)
         {
-            var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
-            var cmd = parameters["cmd"];
-            if (cmd == "gen-cs-meta")
-                return GenCsMeta(parameters);
-            if (cmd == "gen-sql-meta")
-                return GenSqlMeta(parameters);
-            if (cmd == "run-sql")
-                return RunSql(parameters);
-            if (cmd == "translate-sql")
-                return TranslateSql(parameters);
-            Console.Out.WriteLine("Invalid arguments");
-            Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-cs-meta|gen-sql-meta|run-sql|translate-sql]");
-            return -1;
+            try
+            {
+                var parameters = NameValueCollectionHelpers.ParseCommandLine(args);
+                var cmd = parameters["cmd"];
+                if (cmd == "gen-cs-meta")
+                    return GenCsMeta(parameters);
+                if (cmd == "gen-sql-meta")
+                    return GenSqlMeta(parameters);
+                if (cmd == "run-sql")
+                    return RunSql(parameters);
+                if (cmd == "translate-sql")
+                    return TranslateSql(parameters);
+                Console.Out.WriteLine("Invalid arguments");
+                Console.Out.WriteLine("Usage: Generator.exe -cmd [gen-cs-meta|gen-sql-meta|run-sql|translate-sql]");
+                return -1;
+            }
+            catch (Exception e)
+            {
+                Console.Out.WriteLine("unhandled exception\r\n{0}", e);
+                return -1;
+            }
         }
 
         private static int GenCsMeta(NameValueCollection parameters)

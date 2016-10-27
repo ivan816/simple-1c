@@ -446,6 +446,18 @@ where c1 >= cast('2016-10-11 12:13:14' as timestamp)";
         }
 
         [Test]
+        public void Null()
+        {
+            const string sourceSql = @"select null x from Справочник.Контрагенты";
+            const string mappings = @"Справочник.Контрагенты t1 Main
+    ИНН Single c1";
+            const string expectedResult = @"select
+    null as x
+from t1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void AddDefaultAliases()
         {
             const string sourceSql = @"select ИНН,Владелец.ИНН,ИмяСвойстваПоДлинеПревышающееОграничениеПосгресаВ31Символ.ИНН

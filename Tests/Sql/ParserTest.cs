@@ -54,6 +54,15 @@ namespace Simple1C.Tests.Sql
             Assert.IsNotNull(columnReference);
             Assert.That(columnReference.Name, Is.EqualTo("a"));
         }
+
+        [Test]
+        public void CanParseNull()
+        {
+            var selectClause = ParseSelect("select null x from testTable");
+            var nullLiteral = selectClause.Fields[0].Expression as LiteralExpression;
+            Assert.NotNull(nullLiteral);
+            Assert.Null(nullLiteral.Value);
+        }
         
         [Test]
         public void Bool()

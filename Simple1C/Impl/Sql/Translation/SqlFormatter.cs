@@ -361,7 +361,7 @@ namespace Simple1C.Impl.Sql.Translation
                 return "E'\\\\x" + bytes.ToHex() + "'";
             if (value is bool)
                 return ((bool?) value).Value ? "true" : "false";
-            return value.ToString();
+            return value == null ? "null" : value.ToString();
         }
 
         private static object ApplySqlType(object value, SqlType sqlType)

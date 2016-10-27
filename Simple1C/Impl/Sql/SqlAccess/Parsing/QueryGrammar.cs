@@ -168,6 +168,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     Value = ((Identifier) node.ChildNodes[1].AstNode).Value
                 });
 
+            var nullLiteral = NonTerminal("nullLiteral",
+                ToTerm("null"), node => new LiteralExpression());
+
             var boolLiteral = NonTerminal("boolLiteral",
                 ToTerm("true") | "false" | "ложь" | "истина",
                 node =>
@@ -225,7 +228,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             exprList.Rule = MakeStarRule(exprList, ToTerm(","), expression);
             parExprList.Rule = "(" + exprList + ")";
             parExpr.Rule = "(" + expression + ")";
-            term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral
+            term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral | nullLiteral
                         | aggregate | queryFunctionExpr
                         | parExpr | subquery;
             subquery.Rule = "(" + selectStatement + ")";
