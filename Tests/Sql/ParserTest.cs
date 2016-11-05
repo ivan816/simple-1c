@@ -47,8 +47,9 @@ namespace Simple1C.Tests.Sql
         [Test]
         public void IgnoreComments()
         {
-            var selectClause = ParseSelect("select a/*,b*/ from testTable --where b > 10");
+            var selectClause = ParseSelect("select a/*,b*/ from testTable --where b > 10\r\n //group by a");
             Assert.That(selectClause.WhereExpression, Is.Null);
+            Assert.That(selectClause.GroupBy, Is.Null);
             Assert.That(selectClause.Fields.Count, Is.EqualTo(1));
             var columnReference = selectClause.Fields[0].Expression as ColumnReferenceExpression;
             Assert.IsNotNull(columnReference);
