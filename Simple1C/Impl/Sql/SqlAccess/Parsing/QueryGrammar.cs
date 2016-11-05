@@ -32,7 +32,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             LanguageFlags = LanguageFlags.CreateAst;
             NonGrammarTerminals.Add(new CommentTerminal("sql_style_comment", "/*", "*/"));
             NonGrammarTerminals.Add(new CommentTerminal("sql_style_line_comment", "--", "\n", "\r\n"));
-            NonGrammarTerminals.Add(new CommentTerminal("1c_commene", "//", "\n", "\r\n"));
+            NonGrammarTerminals.Add(new CommentTerminal("1c_comment", "//", "\n", "\r\n"));
 
             not = Transient("not", ToTerm("NOT") | "НЕ");
             by = NonTerminal("by", ToTerm("by") | "ПО", TermFlags.NoAstNode);
@@ -58,7 +58,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var groupClauseOpt = GroupBy(expression);
             var orderClauseOpt = OrderBy(expression);
-            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression,
+            var havingKeyword = Transient("havingKeyword", ToTerm("HAVING") | "ИМЕЮЩИЕ");
+            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | havingKeyword + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
             var columnItemList = NonTerminal("columnItemList", null);
 
