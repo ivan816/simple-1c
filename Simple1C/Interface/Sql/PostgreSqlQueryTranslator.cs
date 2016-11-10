@@ -10,8 +10,14 @@ namespace Simple1C.Interface.Sql
         private readonly PostgreeSqlSchemaStore mappingSchema;
 
         public PostgreSqlQueryTranslator(string connectionString, int commandTimeout = 100500)
+            : this(new PostgreeSqlSchemaStore(new PostgreeSqlDatabase(connectionString, commandTimeout)))
         {
             mappingSchema = new PostgreeSqlSchemaStore(new PostgreeSqlDatabase(connectionString, commandTimeout));
+        }
+
+        internal PostgreSqlQueryTranslator(PostgreeSqlSchemaStore mappingSchema)
+        {
+            this.mappingSchema = mappingSchema;
         }
 
         public string Transale(string query1CText)

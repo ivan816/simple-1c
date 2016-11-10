@@ -116,6 +116,8 @@
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\SimpleTypeInfo.cs" />
     <Compile Include="Impl\Sql\BatchWriter.cs" />
+    <Compile Include="Interface\Sql\IBatchWriter.cs" />
+    <Compile Include="Impl\Sql\MsSqlBatchWriter.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\EnumMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\Simple1cSchemaCreator.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PostgreeSqlSchemaStore.cs" />
@@ -167,7 +169,6 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SelectFieldExpression.cs" />
     <Compile Include="Impl\Sql\Translation\SqlHelpers.cs" />
     <Compile Include="Impl\Sql\SqlAccess\AbstractSqlDatabase.cs" />
-    <Compile Include="Impl\Sql\QueryExecuter.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\KnownQueryFunction.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionClause.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnionType.cs" />
@@ -244,6 +245,9 @@
     <Compile Include="Interface\ObjectModel\Constant.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
     <Compile Include="Interface\Sql\PostgreSqlQueryTranslator.cs" />
+    <Compile Include="Interface\Sql\QueryExecutionOptions.cs" />
+    <Compile Include="Interface\Sql\QueryExecutor.cs" />
+    <Compile Include="Interface\Sql\QuerySource.cs" />
     <Compile Include="Interface\Функции.cs" />
     <Compile Include="DataContextFactory.cs" />
     <Compile Include="Impl\SyncList.cs" />

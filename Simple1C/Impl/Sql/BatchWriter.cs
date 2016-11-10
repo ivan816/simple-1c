@@ -3,10 +3,10 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Globalization;
-using System.Linq;
 using Npgsql;
 using Simple1C.Impl.Helpers;
 using Simple1C.Impl.Sql.SqlAccess;
+using Simple1C.Interface.Sql;
 
 namespace Simple1C.Impl.Sql
 {
@@ -14,56 +14,30 @@ namespace Simple1C.Impl.Sql
     {
         private readonly object lockObject = new object();
         private readonly List<object[]> rows = new List<object[]>();
-        private DataColumn[] columns;
         private int filledRowsCount;
-
-        private readonly MsSqlDatabase target;
-        private readonly string tableName;
+        private readonly IBatchWriter writer;
         private readonly int batchSize;
-        private readonly bool historyMode;
+        private DataColumn[] columns;
 
-        public BatchWriter(MsSqlDatabase target, string tableName, int batchSize, bool historyMode)
+        public BatchWriter(IBatchWriter writer, int batchSize)
         {
-            this.target = target;
-            this.tableName = tableName;
+            this.writer = writer;
             this.batchSize = batchSize;
-            this.historyMode = historyMode;
         }
 
-        public void EnsureTable(DbDataReader dbReader)
+        public void HandleNewDataSource(DbDataReader dbReader)
         {
-            var reader = (NpgsqlDataReader) dbReader;
+            var reader = (NpgsqlDataReader)dbReader;
             lock (lockObject)
             {
-                var readerColumns = PostgreeSqlDatabase.GetColumns(reader);
-                if (columns != null)
-                {
-                    CheckColumns(columns, "original", readerColumns, "current");
-                    return;
-                }
-                columns = readerColumns;
-                if (historyMode)
-                {
-                    if (!target.TableExists(tableName))
-                        target.CreateTable(tableName, columns);
-                    else
-                    {
-                        var existingColumns = target.GetColumns(tableName);
-                        CheckColumns(existingColumns, "existing", columns, "new");
-                    }
-                }
-                else
-                {
-                    if (target.TableExists(tableName))
-                        target.DropTable("dbo." + tableName);
-                    target.CreateTable(tableName, columns);
-                }
+                columns = PostgreeSqlDatabase.GetColumns(reader);
+                writer.HandleNewDataSource(columns);
             }
         }
 
         public void InsertRow(DbDataReader dbReader)
         {
-            var reader = (NpgsqlDataReader) dbReader;
+            var reader = (NpgsqlDataReader)dbReader;
             lock (lockObject)
             {
                 var currentRowIndex = filledRowsCount;
@@ -82,34 +56,10 @@ namespace Simple1C.Impl.Sql
         public void Dispose()
         {
             if (filledRowsCount > 0)
-                Flush();
-        }
-
-        private static void CheckColumns(DataColumn[] a, string aName, DataColumn[] b, string bName)
-        {
-            var aFormat = FormatColumns(a);
-            var bFormat = FormatColumns(b);
-            if (aFormat == bFormat)
-                return;
-            const string messageFormat = "inconsistent columns {0}(first) and {1}(second):\r\n{2}\r\n{3}\r\n";
-            throw new InvalidOperationException(string.Format(messageFormat,
-                aName, bName, aFormat, bFormat));
-        }
-
-        private static string FormatColumns(DataColumn[] c)
-        {
-            return c.Select(FormatColumn).JoinStrings(",");
-        }
-
-        private static string FormatColumn(DataColumn c)
-        {
-            var lengthSpec = "";
-            if (c.DataType == typeof(string))
             {
-                var maxLength = c.MaxLength == -1 ? 1000 : c.MaxLength;
-                lengthSpec = "[" + maxLength + "]";
+                Flush();
+                writer.Dispose();
             }
-            return string.Format("{0}:{1}{2}", c.ColumnName, c.DataType.FormatName(), lengthSpec);
         }
 
         private void Flush()
@@ -120,8 +70,7 @@ namespace Simple1C.Impl.Sql
                 for (var j = 0; j < columns.Length; j++)
                     r[j] = ConvertType(r[j], columns[j]);
             }
-            var reader = new InMemoryDataReader(rows, filledRowsCount, columns.Length);
-            target.BulkCopy(reader, tableName, columns.Length);
+            writer.RowsCache(rows, filledRowsCount);
             filledRowsCount = 0;
         }
 
@@ -132,19 +81,19 @@ namespace Simple1C.Impl.Sql
             if (!(source is string))
                 return source;
             if (column.DataType == typeof(decimal))
-                return Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal));
+                return Convert.ChangeType(((string)source).Replace('.', ','), typeof(decimal));
             if (column.DataType == typeof(bool))
-                return ((string) source).EqualsIgnoringCase("t");
+                return ((string)source).EqualsIgnoringCase("t");
             if (column.DataType == typeof(DateTime))
             {
                 DateTime dateTime;
-                if (!TryParseDate((string) source, out dateTime))
+                if (!TryParseDate((string)source, out dateTime))
                 {
                     const string messageFormat = "can't parse datetime from [{0}] for column [{1}]";
                     throw new InvalidOperationException(string.Format(messageFormat,
                         source, column.ColumnName));
                 }
-                return dateTime < minSqlDate ? (object) null : dateTime;
+                return dateTime < minSqlDate ? (object)null : dateTime;
             }
             return source;
         }

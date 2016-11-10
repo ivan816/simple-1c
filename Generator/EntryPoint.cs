@@ -1,8 +1,11 @@
 ﻿using System;
 using System.CodeDom.Compiler;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.CSharp;
 using Simple1C.Impl;
 using Simple1C.Impl.Generation;
@@ -12,6 +15,8 @@ using Simple1C.Impl.Sql.SchemaMapping;
 using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.Translation;
 using Simple1C.Interface;
+using Simple1C.Interface.Sql;
+using QuerySource = Simple1C.Interface.Sql.QuerySource;
 
 namespace Generator
 {
@@ -149,22 +154,46 @@ namespace Generator
                 ? StringHelpers.ParseLinesWithTabs(File.ReadAllText(connectionStringsFile),
                     (s, items) => new QuerySource
                     {
-                        db = new PostgreeSqlDatabase(s),
+                        postgreSqlConnectionString = s,
                         areas = items.Select(int.Parse).ToArray()
-                    })
+                    }).ToArray()
                 : connectionStrings.Split(',')
                     .Select(x => new QuerySource
                     {
-                        db = new PostgreeSqlDatabase(x),
+                        postgreSqlConnectionString = x,
                         areas = new int[0]
-                    });
+                    }).ToArray();
             var target = new MsSqlDatabase(resultConnectionString);
             var queryText = File.ReadAllText(queryFile);
             var targetTableName = Path.GetFileNameWithoutExtension(queryFile);
-            var sqlExecuter = new QueryExecuter(querySources.ToArray(), target, queryText,
-                targetTableName, dumpSql == "true", historyMode == "true");
-            var succeeded = sqlExecuter.Execute();
-            return succeeded ? 0 : -1;
+            var writer = new MsSqlBatchWriter(target, targetTableName, historyMode == "true");
+            var stopwatch = Stopwatch.StartNew();
+            if (dumpSql == "true")
+            {
+                foreach (var querySource in querySources)
+                {
+                    var translator =
+                        new PostgreSqlQueryTranslator(
+                            new PostgreeSqlSchemaStore(new PostgreeSqlDatabase(querySource.postgreSqlConnectionString)));
+                    var sql = translator.Transale(queryText);
+                    Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
+                        querySource.postgreSqlConnectionString, queryText, sql);
+                }
+            }
+            var sqlExecuter = new QueryExecutor(querySources);
+            try
+            {
+                sqlExecuter.ExecuteParallel(queryText, targetTableName, writer, CancellationToken.None);
+                stopwatch.Stop();
+                Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
+                return 0;
+            }
+            catch (Exception e)
+            {
+                Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
+                Console.Out.WriteLine("error [{0}]", e);
+                return -1;
+            }
         }
 
         private static int TranslateSql(NameValueCollection parameters)
