@@ -116,10 +116,6 @@
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\SimpleTypeInfo.cs" />
     <Compile Include="Impl\Sql\BatchWriter.cs" />
-    <Compile Include="Impl\Sql\Query1CReader.cs" />
-    <Compile Include="Interface\Sql\IQuery1CReader.cs" />
-    <Compile Include="Interface\Sql\QuerySourceInfo.cs" />
-    <Compile Include="Interface\Sql\Query1CExecutor.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\EnumMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\Simple1cSchemaCreator.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PostgreeSqlSchemaStore.cs" />
@@ -247,6 +243,7 @@
     <Compile Include="Interface\ObjectModel\SynonymAttribute.cs" />
     <Compile Include="Interface\ObjectModel\Constant.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
+    <Compile Include="Interface\Sql\PostgreSqlQueryTranslator.cs" />
     <Compile Include="Interface\Функции.cs" />
     <Compile Include="DataContextFactory.cs" />
     <Compile Include="Impl\SyncList.cs" />
