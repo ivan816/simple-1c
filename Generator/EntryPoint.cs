@@ -183,7 +183,7 @@ namespace Generator
             var sqlExecuter = new QueryExecutor(querySources);
             try
             {
-                sqlExecuter.ExecuteParallel(queryText, targetTableName, writer, CancellationToken.None);
+                sqlExecuter.ExecuteParallel(queryText, writer, CancellationToken.None);
                 stopwatch.Stop();
                 Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
                 return 0;
