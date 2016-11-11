@@ -14,30 +14,6 @@ namespace Simple1C.Impl.Sql.SqlAccess
         {
         }
 
-        public static DataColumn[] GetColumns(NpgsqlDataReader reader)
-        {
-            //reader.GetColumnSchema() на алиасы колонок в запросе забивает почему-то
-            //reader.GetSchemaTable() какую-то хрень в ColumnSize возвращает
-
-            var npgsqlColumns = reader.GetColumnSchema();
-            var result = new DataColumn[npgsqlColumns.Count];
-            for (var i = 0; i < result.Length; i++)
-            {
-                var c = npgsqlColumns[i];
-                var columnName = reader.GetName(i);
-                if (string.IsNullOrEmpty(columnName) || columnName == "?column?")
-                    columnName = "col_" + i;
-                result[i] = new DataColumn
-                {
-                    ColumnName = columnName,
-                    AllowDBNull = true,
-                    DataType = c.DataType,
-                    MaxLength = c.ColumnSize.GetValueOrDefault(-1)
-                };
-            }
-            return result;
-        }
-
         public void RecreateSchema(string schemaName)
         {
             if (SchemaExists(schemaName))

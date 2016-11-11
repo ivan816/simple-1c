@@ -2,7 +2,7 @@ namespace Simple1C.Interface.Sql
 {
     public class QuerySource
     {
-        public string postgreSqlConnectionString;
-        public int[] areas;
+        public string ConnectionString { get; set; }
+        public int[] Areas { get; set; }
     }
 }

@@ -45,6 +45,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Impl\Sql\SqlAccess\DatabaseHelpers.cs" />
     <Compile Include="Impl\ComDataContext.cs" />
     <Compile Include="Impl\EntityHelpers.cs" />
     <Compile Include="Impl\EnumMapItem.cs" />
@@ -116,14 +117,11 @@
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\SimpleTypeInfo.cs" />
     <Compile Include="Impl\Sql\BatchWriter.cs" />
-    <Compile Include="Interface\Sql\IBatchWriter.cs" />
-    <Compile Include="Impl\Sql\MsSqlBatchWriter.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\EnumMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\Simple1cSchemaCreator.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PostgreeSqlSchemaStore.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PropertyMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PropertyLauout.cs" />
-    <Compile Include="Impl\Sql\QuerySource.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\IMappingSource.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\SingleLayout.cs" />
     <Compile Include="Impl\Sql\SqlAccess\MsSqlDatabase.cs" />
@@ -244,16 +242,16 @@
     <Compile Include="Interface\ObjectModel\SynonymAttribute.cs" />
     <Compile Include="Interface\ObjectModel\Constant.cs" />
     <Compile Include="Interface\ObjectPresentation.cs" />
-    <Compile Include="Interface\Sql\PostgreSqlQueryTranslator.cs" />
-    <Compile Include="Interface\Sql\QueryExecutionOptions.cs" />
-    <Compile Include="Interface\Sql\QueryExecutor.cs" />
-    <Compile Include="Interface\Sql\QuerySource.cs" />
     <Compile Include="Interface\Функции.cs" />
     <Compile Include="DataContextFactory.cs" />
     <Compile Include="Impl\SyncList.cs" />
     <Compile Include="Impl\ObservedValue.cs" />
     <Compile Include="Interface\Synonym.cs" />
+    <Compile Include="Interface\Sql\IWriter.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Interface\Sql\QuerySource.cs" />
+    <Compile Include="Interface\Sql\RowAccessor.cs" />
+    <Compile Include="Sql.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Impl\Generation\Rendering\ConstantFileTemplate.tt">

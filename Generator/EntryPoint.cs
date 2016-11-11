@@ -7,6 +7,7 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.CSharp;
+using Simple1C;
 using Simple1C.Impl;
 using Simple1C.Impl.Generation;
 using Simple1C.Impl.Helpers;
@@ -16,7 +17,6 @@ using Simple1C.Impl.Sql.SqlAccess;
 using Simple1C.Impl.Sql.Translation;
 using Simple1C.Interface;
 using Simple1C.Interface.Sql;
-using QuerySource = Simple1C.Interface.Sql.QuerySource;
 
 namespace Generator
 {
@@ -154,36 +154,28 @@ namespace Generator
                 ? StringHelpers.ParseLinesWithTabs(File.ReadAllText(connectionStringsFile),
                     (s, items) => new QuerySource
                     {
-                        postgreSqlConnectionString = s,
-                        areas = items.Select(int.Parse).ToArray()
+                        ConnectionString = s,
+                        Areas = items.Select(int.Parse).ToArray()
                     }).ToArray()
                 : connectionStrings.Split(',')
                     .Select(x => new QuerySource
                     {
-                        postgreSqlConnectionString = x,
-                        areas = new int[0]
+                        ConnectionString = x,
+                        Areas = new int[0]
                     }).ToArray();
             var target = new MsSqlDatabase(resultConnectionString);
             var queryText = File.ReadAllText(queryFile);
             var targetTableName = Path.GetFileNameWithoutExtension(queryFile);
-            var writer = new MsSqlBatchWriter(target, targetTableName, historyMode == "true");
             var stopwatch = Stopwatch.StartNew();
-            if (dumpSql == "true")
-            {
-                foreach (var querySource in querySources)
-                {
-                    var translator =
-                        new PostgreSqlQueryTranslator(
-                            new PostgreeSqlSchemaStore(new PostgreeSqlDatabase(querySource.postgreSqlConnectionString)));
-                    var sql = translator.Transale(queryText);
-                    Console.Out.WriteLine("\r\n[{0}]\r\n{1}\r\n====>\r\n{2}",
-                        querySource.postgreSqlConnectionString, queryText, sql);
-                }
-            }
-            var sqlExecuter = new QueryExecutor(querySources);
             try
             {
-                sqlExecuter.ExecuteParallel(queryText, writer, CancellationToken.None);
+                var batchWriter = new BatchWriter(target, targetTableName, historyMode == "true", 1024);
+                var parallelOptions = new ParallelOptions
+                {
+                    CancellationToken = CancellationToken.None,
+                    MaxDegreeOfParallelism = querySources.Length
+                };
+                Sql.Execute(querySources, queryText, batchWriter, parallelOptions, dumpSql == "true");
                 stopwatch.Stop();
                 Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
                 return 0;
@@ -243,7 +235,7 @@ namespace Generator
             return 0;
         }
 
-        public static string GetTemporaryDirectoryFullPath()
+        private static string GetTemporaryDirectoryFullPath()
         {
             var result = Path.Combine(Path.GetTempPath(), Path.GetRandomFileName());
             Directory.CreateDirectory(result);
