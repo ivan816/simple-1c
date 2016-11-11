@@ -9,23 +9,22 @@ namespace Simple1C.Interface.Sql
 {
     public class RowAccessor
     {
-        private readonly NpgsqlDataReader reader;
-        private readonly DataColumn[] columns;
+        internal NpgsqlDataReader Reader { get; set; }
+        internal DataColumn[] Columns { get; private set; }
         private readonly Dictionary<string, int> nameToIndexMap;
         private static readonly DateTime minSqlDate = new DateTime(1753, 1, 1);
 
-        public RowAccessor(NpgsqlDataReader reader, DataColumn[] columns)
+        public RowAccessor(DataColumn[] columns)
         {
-            this.reader = reader;
-            this.columns = columns;
+            Columns = columns;
             nameToIndexMap = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-            for (var i = 0; i < this.columns.Length; i++)
-                nameToIndexMap.Add(this.columns[i].ColumnName, i);
+            for (var i = 0; i < Columns.Length; i++)
+                nameToIndexMap.Add(Columns[i].ColumnName, i);
         }
 
         public object GetValue(int index)
         {
-            return ConvertType(reader.GetValue(index), columns[index]);
+            return ConvertType(Reader.GetValue(index), Columns[index]);
         }
 
         public object GetValue(string name)
@@ -39,9 +38,9 @@ namespace Simple1C.Interface.Sql
 
         public void GetValues(object[] target)
         {
-            reader.GetValues(target);
+            Reader.GetValues(target);
             for (var i = 0; i < target.Length; i++)
-                target[i] = ConvertType(target[i], columns[i]);
+                target[i] = ConvertType(target[i], Columns[i]);
         }
 
         private static object ConvertType(object source, DataColumn column)
@@ -49,19 +48,19 @@ namespace Simple1C.Interface.Sql
             if (!(source is string))
                 return source;
             if (column.DataType == typeof(decimal))
-                return Convert.ChangeType(((string)source).Replace('.', ','), typeof(decimal));
+                return Convert.ChangeType(((string) source).Replace('.', ','), typeof(decimal));
             if (column.DataType == typeof(bool))
-                return ((string)source).EqualsIgnoringCase("t");
+                return ((string) source).EqualsIgnoringCase("t");
             if (column.DataType == typeof(DateTime))
             {
                 DateTime dateTime;
-                if (!TryParseDate((string)source, out dateTime))
+                if (!TryParseDate((string) source, out dateTime))
                 {
                     const string messageFormat = "can't parse datetime from [{0}] for column [{1}]";
                     throw new InvalidOperationException(string.Format(messageFormat,
                         source, column.ColumnName));
                 }
-                return dateTime < minSqlDate ? (object)null : dateTime;
+                return dateTime < minSqlDate ? (object) null : dateTime;
             }
             return source;
         }

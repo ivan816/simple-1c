@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Threading.Tasks;
 using Npgsql;
 using Simple1C.Impl.Sql.SchemaMapping;
@@ -22,11 +21,11 @@ namespace Simple1C
             options = options ?? new ParallelOptions {MaxDegreeOfParallelism = sources.Length};
             Execute(sources, queryText, writer, options, false);
         }
-        
+
         internal static void Execute(QuerySource[] sources, string queryText, IWriter writer,
             ParallelOptions options, bool dumpSql)
         {
-            DataColumn[] lastColumns = null;
+            RowAccessor rowAccessor = null;
             var locker = new object();
             var runTimestamp = DateTime.Now;
             try
@@ -50,27 +49,27 @@ namespace Simple1C
                                 return;
                             using (var reader = (NpgsqlDataReader) c.ExecuteReader())
                             {
-                                var columns = DatabaseHelpers.GetColumns(reader);
-                                var rowAccessor = new RowAccessor(reader, columns);
                                 if (state.ShouldExitCurrentIteration)
                                     return;
+                                var columns = DatabaseHelpers.GetColumns(reader);
                                 lock (locker)
-                                {
-                                    if (lastColumns != null)
-                                        DatabaseHelpers.CheckColumns(lastColumns, "original", columns, "current");
-                                    else
+                                    if (rowAccessor == null)
                                     {
+                                        rowAccessor = new RowAccessor(columns);
                                         writer.BeginWrite(columns);
-                                        lastColumns = columns;
                                     }
+                                    else
+                                        DatabaseHelpers.CheckColumns(rowAccessor.Columns, "original", columns, "current");
+                                if (state.ShouldExitCurrentIteration)
+                                    return;
+                                while (reader.Read())
+                                {
                                     if (state.ShouldExitCurrentIteration)
                                         return;
-                                    while (reader.Read())
+                                    lock (locker)
                                     {
-                                        if (state.ShouldExitCurrentIteration)
-                                            return;
-                                        lock (locker)
-                                            writer.Write(rowAccessor);
+                                        rowAccessor.Reader = reader;
+                                        writer.Write(rowAccessor);
                                     }
                                 }
                             }
