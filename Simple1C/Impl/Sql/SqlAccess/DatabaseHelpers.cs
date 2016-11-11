@@ -32,7 +32,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             return result;
         }
 
-        public static void CheckColumns(DataColumn[] a, string aName, DataColumn[] b, string bName)
+        public static void CheckColumnsAreEqual(DataColumn[] a, string aName, DataColumn[] b, string bName)
         {
             var aFormat = FormatColumns(a);
             var bFormat = FormatColumns(b);

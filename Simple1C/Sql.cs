@@ -61,7 +61,7 @@ namespace Simple1C
                                         writeStarted = true;
                                     }
                                     else
-                                        DatabaseHelpers.CheckColumns(rowAccessor.Columns, "original", columns, "current");
+                                        DatabaseHelpers.CheckColumnsAreEqual(rowAccessor.Columns, "original", columns, "current");
                                 if (state.ShouldExitCurrentIteration)
                                     return;
                                 while (reader.Read())

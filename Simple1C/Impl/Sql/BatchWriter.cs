@@ -33,7 +33,7 @@ namespace Simple1C.Impl.Sql
                 else
                 {
                     var existingColumns = target.GetColumns(tableName);
-                    DatabaseHelpers.CheckColumns(existingColumns, "existing", newColumns, "new");
+                    DatabaseHelpers.CheckColumnsAreEqual(existingColumns, "existing", newColumns, "new");
                 }
             }
             else
