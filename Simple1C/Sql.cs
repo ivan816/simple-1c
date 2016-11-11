@@ -28,6 +28,7 @@ namespace Simple1C
             RowAccessor rowAccessor = null;
             var locker = new object();
             var runTimestamp = DateTime.Now;
+            var writeStarted = false;
             try
             {
                 Parallel.ForEach(sources, options, (source, state) =>
@@ -57,6 +58,7 @@ namespace Simple1C
                                     {
                                         rowAccessor = new RowAccessor(columns);
                                         writer.BeginWrite(columns);
+                                        writeStarted = true;
                                     }
                                     else
                                         DatabaseHelpers.CheckColumns(rowAccessor.Columns, "original", columns, "current");
@@ -85,7 +87,8 @@ namespace Simple1C
             }
             finally
             {
-                writer.EndWrite();
+                if (writeStarted)
+                    writer.EndWrite();
             }
         }
 
