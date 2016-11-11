@@ -116,7 +116,7 @@
     <Compile Include="Impl\IValueSource.cs" />
     <Compile Include="Impl\Helpers\EnumAttributesCache.cs" />
     <Compile Include="Impl\SimpleTypeInfo.cs" />
-    <Compile Include="Impl\Sql\BatchWriter.cs" />
+    <Compile Include="Impl\Sql\MsSqlBulkCopyWriter.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\EnumMapping.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\Simple1cSchemaCreator.cs" />
     <Compile Include="Impl\Sql\SchemaMapping\PostgreeSqlSchemaStore.cs" />

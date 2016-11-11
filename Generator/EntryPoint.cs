@@ -169,13 +169,13 @@ namespace Generator
             var stopwatch = Stopwatch.StartNew();
             try
             {
-                var batchWriter = new BatchWriter(target, targetTableName, historyMode == "true", 1024);
+                var writer = new MsSqlBulkCopyWriter(target, targetTableName, historyMode == "true", 1024);
                 var parallelOptions = new ParallelOptions
                 {
                     CancellationToken = CancellationToken.None,
                     MaxDegreeOfParallelism = querySources.Length
                 };
-                Sql.Execute(querySources, queryText, batchWriter, parallelOptions, dumpSql == "true");
+                Sql.Execute(querySources, queryText, writer, parallelOptions, dumpSql == "true");
                 stopwatch.Stop();
                 Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
                 return 0;

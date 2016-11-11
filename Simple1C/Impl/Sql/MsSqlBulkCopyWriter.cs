@@ -5,7 +5,7 @@ using Simple1C.Interface.Sql;
 
 namespace Simple1C.Impl.Sql
 {
-    internal class BatchWriter : IWriter
+    internal class MsSqlBulkCopyWriter : IWriter
     {
         private readonly List<object[]> rows = new List<object[]>();
         private int filledRowsCount;
@@ -15,7 +15,8 @@ namespace Simple1C.Impl.Sql
         private readonly int batchSize;
         private DataColumn[] columns;
 
-        public BatchWriter(MsSqlDatabase target, string tableName, bool historyMode, int batchSize)
+        public MsSqlBulkCopyWriter(MsSqlDatabase target, string tableName,
+            bool historyMode, int batchSize)
         {
             this.target = target;
             this.tableName = tableName;
