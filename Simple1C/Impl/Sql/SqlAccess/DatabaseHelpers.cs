@@ -25,8 +25,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 {
                     ColumnName = columnName,
                     AllowDBNull = true,
-                    DataType = c.DataType,
-                    MaxLength = c.ColumnSize.GetValueOrDefault(-1)
+                    DataType = c.DataTypeName == "bytea" ? typeof(byte[]) : c.DataType,
+                    MaxLength = c.ColumnSize.GetValueOrDefault(-1),
                 };
             }
             return result;

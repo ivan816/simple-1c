@@ -130,7 +130,7 @@ namespace Simple1C.Impl.Sql.SqlAccess
             var type = column.DataType;
             if (type == typeof(bool))
                 return "bit";
-            if (type == typeof(string) || type == typeof(byte[]))
+            if (type == typeof(string))
                 return "varchar(" + (column.MaxLength > 0 ? column.MaxLength : 1000) + ")";
             if (type == typeof(DateTime))
                 return "datetime";
@@ -142,6 +142,8 @@ namespace Simple1C.Impl.Sql.SqlAccess
                 return "bigint";
             if (type == typeof(Guid))
                 return "uniqueidentifier";
+            if (type == typeof(byte[]))
+                return "image";
             throw new InvalidOperationException(string.Format("unsupported type [{0}]", type.Name));
         }
     }
