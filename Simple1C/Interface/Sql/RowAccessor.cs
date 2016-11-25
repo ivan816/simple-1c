@@ -72,15 +72,7 @@ namespace Simple1C.Interface.Sql
                     const string messageFormat = "can't parse byte array from [{0}] for column [{1}]";
                     throw new InvalidOperationException(string.Format(messageFormat, source, column.ColumnName));
                 }
-                var bytes = new byte[(sourceAsString.Length - 2)/ 2];
-                for (int bx = 0, sx = 0; bx < bytes.Length; ++bx, ++sx)
-                {
-                    var c = sourceAsString[sx + 2];
-                    bytes[bx] = (byte)((c > '9' ? (c > 'Z' ? c - 'a' + 10 : c - 'A' + 10) : c - '0') << 4);
-                    c = sourceAsString[++sx + 2];
-                    bytes[bx] |= (byte)(c > '9' ? (c > 'Z' ? c - 'a' + 10 : c - 'A' + 10) : c - '0');
-                }
-                return bytes;
+                return ByteArrayHelpers.FromHex(sourceAsString, 2);
             }
             return source;
         }
