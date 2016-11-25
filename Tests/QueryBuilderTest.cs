@@ -627,11 +627,27 @@ namespace Simple1C.Tests
         public class LikeFilterTest : QueryBuilderTest
         {
             [Test]
-            public void Test()
+            public void Contains()
             {
                 AssertQuery(Source<Контрагенты>()
                     .Where(x => x.Наименование.Contains("some text")),
                     "ВЫБРАТЬ src.Ссылка ИЗ Справочник.Контрагенты КАК src ГДЕ (src.Наименование ПОДОБНО \"%\" + &p0 + \"%\")",
+                    P("p0", "some text"));
+            }
+
+            [Test]
+            public void EndsWith() {
+                AssertQuery(Source<Контрагенты>()
+                    .Where(x => x.Наименование.EndsWith("some text")),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.Контрагенты КАК src ГДЕ (src.Наименование ПОДОБНО \"%\" + &p0)",
+                    P("p0", "some text"));
+            }
+
+            [Test]
+            public void StartsWith() {
+                AssertQuery(Source<Контрагенты>()
+                    .Where(x => x.Наименование.StartsWith("some text")),
+                    "ВЫБРАТЬ src.Ссылка ИЗ Справочник.Контрагенты КАК src ГДЕ (src.Наименование ПОДОБНО &p0 + \"%\")",
                     P("p0", "some text"));
             }
 

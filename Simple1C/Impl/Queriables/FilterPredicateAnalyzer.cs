@@ -70,8 +70,7 @@ namespace Simple1C.Impl.Queriables
                 if (xMethodCall.Method.DeclaringType == typeof(object) &&
                     xMethodCall.Method.Name == "GetType")
                     return true;
-                if (xMethodCall.Method.DeclaringType == typeof(string) &&
-                    xMethodCall.Method.Name == "Contains")
+                if (IsLikeFunction(xMethodCall))
                     return true;
             }
             return false;
@@ -175,20 +174,25 @@ namespace Simple1C.Impl.Queriables
 
         protected override Expression VisitMethodCall(MethodCallExpression node)
         {
-            if (node.Method.DeclaringType == typeof(object) && node.Method.Name == "GetType")
+            var methodName = node.Method.Name;
+            if (node.Method.DeclaringType == typeof(object) && methodName == "GetType")
             {
                 filterBuilder.Append("ТИПЗНАЧЕНИЯ(");
                 Visit(node.Object);
                 filterBuilder.Append(")");
                 return node;
             }
-            if (node.Method.DeclaringType == typeof(string) && node.Method.Name == "Contains")
+            if (IsLikeFunction(node))
             {
                 filterBuilder.Append("(");
                 Visit(node.Object);
-                filterBuilder.Append(" ПОДОБНО \"%\" + ");
+                filterBuilder.Append(" ПОДОБНО ");
+                if (methodName == "Contains" || methodName == "EndsWith")
+                    filterBuilder.Append("\"%\" + ");
                 Visit(node.Arguments[0]);
-                filterBuilder.Append(" + \"%\")");
+                if (methodName == "Contains" || methodName == "StartsWith")
+                    filterBuilder.Append(" + \"%\"");
+                filterBuilder.Append(")");
                 return node;
             }
             return base.VisitMethodCall(node);
@@ -284,6 +288,14 @@ namespace Simple1C.Impl.Queriables
                 return name.Value.Fullname;
             const string messageFormat = "can't detect 1C type for [{0}]";
             throw new InvalidOperationException(string.Format(messageFormat, type.Name));
+        }
+
+        private static bool IsLikeFunction(MethodCallExpression xMethodCall)
+        {
+            return (xMethodCall.Method.DeclaringType == typeof(string)) &&
+                   ((xMethodCall.Method.Name == "Contains") ||
+                    (xMethodCall.Method.Name == "EndsWith") ||
+                    (xMethodCall.Method.Name == "StartsWith"));
         }
     }
 }
