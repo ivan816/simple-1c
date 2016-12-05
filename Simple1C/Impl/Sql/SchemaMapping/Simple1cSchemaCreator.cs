@@ -233,7 +233,10 @@ $$;";
                     }, StringComparer.OrdinalIgnoreCase)
                 .Select(x =>
                 {
-                    var propertyTypes = propertyDescriptors.GetOrDefault(x.queryName);
+                    var propertyName = x.queryName.ExcludeSuffix("Кт").ExcludeSuffix("Дт");
+                    var propertyTypes = propertyName == "Счет"
+                        ? new[] {"ПланСчетов.Хозрасчетный"}
+                        : propertyDescriptors.GetOrDefault(propertyName);
                     if (propertyTypes == null || propertyTypes.Length == 1)
                     {
                         if (x.columns.Length != 1)
@@ -242,11 +245,17 @@ $$;";
                         var singleLayout = new SingleLayout(x.columns[0], nestedTableName);
                         return new PropertyMapping(x.queryName, singleLayout, null);
                     }
-                    var unionLayout = new UnionLayout(
-                        GetColumnBySuffixOrNull("_type", x.columns),
-                        GetColumnBySuffixOrNull("_rtref", x.columns),
-                        GetColumnBySuffixOrNull("_rrref", x.columns),
-                        propertyTypes);
+                    var unionLayout = x.queryName == "Регистратор"
+                        ? new UnionLayout(
+                            null,
+                            GetColumnBySuffixOrNull("_RecorderTRef", x.columns),
+                            GetColumnBySuffixOrNull("_RecorderRRef", x.columns),
+                            propertyTypes)
+                        : new UnionLayout(
+                            GetColumnBySuffixOrNull("_type", x.columns),
+                            GetColumnBySuffixOrNull("_rtref", x.columns),
+                            GetColumnBySuffixOrNull("_rrref", x.columns),
+                            propertyTypes);
                     return new PropertyMapping(x.queryName, null, unionLayout);
                 })
                 .NotNull()

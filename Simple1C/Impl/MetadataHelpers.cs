@@ -157,6 +157,13 @@ namespace Simple1C.Impl
                     }
                 },
                 {
+                    ConfigurationScope.РегистрыБухгалтерии,
+                    new ConfigurationItemDescriptor
+                    {
+                        AttributePropertyNames = new[] {"Реквизиты", "Измерения", "Ресурсы"}
+                    }
+                },
+                {
                     ConfigurationScope.ПланыСчетов,
                     new ConfigurationItemDescriptor
                     {

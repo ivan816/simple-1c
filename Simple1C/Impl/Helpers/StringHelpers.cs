@@ -15,6 +15,13 @@ namespace Simple1C.Impl.Helpers
             return s1.IndexOf(s2, StringComparison.OrdinalIgnoreCase) >= 0;
         }
 
+        public static string ExcludeSuffix(this string s1, string suffix)
+        {
+            return s1 != null && s1.EndsWith(suffix)
+                ? s1.Substring(0, s1.Length - suffix.Length)
+                : s1;
+        }
+
         public static IEnumerable<T> ParseLinesWithTabs<T>(string source, Func<string, List<string>, T> func)
         {
             var lines = source.Split(new[] {"\r\n"}, StringSplitOptions.RemoveEmptyEntries);

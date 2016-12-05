@@ -104,6 +104,8 @@ namespace Simple1C.Impl
                     return "Документ";
                 case ConfigurationScope.РегистрыСведений:
                     return "РегистрСведений";
+                case ConfigurationScope.РегистрыБухгалтерии:
+                    return "РегистрБухгалтерии";
                 case ConfigurationScope.Перечисления:
                     return "Перечисление";
                 case ConfigurationScope.ПланыСчетов:
@@ -128,6 +130,8 @@ namespace Simple1C.Impl
                     return ConfigurationScope.Документы;
                 case "регистрсведений":
                     return ConfigurationScope.РегистрыСведений;
+                case "регистрбухгалтерии":
+                    return ConfigurationScope.РегистрыБухгалтерии;
                 case "перечисление":
                     return ConfigurationScope.Перечисления;
                 case "плансчетов":
