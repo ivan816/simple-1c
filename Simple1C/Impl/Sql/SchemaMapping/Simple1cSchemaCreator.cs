@@ -61,6 +61,7 @@ DECLARE
 	guid_text varchar(50);
 BEGIN
 	guid_text := replace(cast($1 as varchar(50)), '\\x', '');
+	guid_text := replace(guid_text, '\x', '');
 	guid_text := substring(guid_text from 25 for 8) || '-' ||
 				substring(guid_text from 21 for 4) || '-' ||
 				substring(guid_text from 17 for 4) || '-' ||
