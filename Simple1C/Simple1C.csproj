@@ -276,11 +276,16 @@
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>-->
+
   <Target Name="AfterBuild">
     <CreateItem Include="@(ReferencePath)" Condition="'%(CopyLocal)'=='true'">
       <Output TaskParameter="Include" ItemName="IlmergeAssemblies" />
     </CreateItem>
-    <Exec Command="&quot;..\packages\ilmerge.2.14.1208\tools\ILMerge.exe&quot; /internalize /out:@(MainAssembly) &quot;@(IntermediateAssembly)&quot; @(IlmergeAssemblies->'&quot;%(FullPath)&quot;', ' ')" />
+    <PropertyGroup>
+      <ILRepackCommand>"..\packages\ILRepack.2.0.11\tools\ILRepack.exe" /internalize /out:$(OutputPath)\$(AssemblyName).dll "@(IntermediateAssembly)" @(IlmergeAssemblies->'"%(FullPath)"', ' ')</ILRepackCommand>
+    </PropertyGroup>
+    <Exec Condition = "'$(OS)' = 'Unix'" Command="mono $(ILRepackCommand)"/>
+    <Exec Condition = "'$(OS)' != 'Unix'" Command="$(ILRepackCommand)"/>
     <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
   </Target>
 </Project>

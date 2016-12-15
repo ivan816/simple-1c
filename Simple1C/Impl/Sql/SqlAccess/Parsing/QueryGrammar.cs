@@ -30,10 +30,9 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             : base(false)
         {
             LanguageFlags = LanguageFlags.CreateAst;
-            var comment = new CommentTerminal("comment", "/*", "*/");
-            var lineComment = new CommentTerminal("line_comment", "--", "\n", "\r\n");
-            NonGrammarTerminals.Add(comment);
-            NonGrammarTerminals.Add(lineComment);
+            NonGrammarTerminals.Add(new CommentTerminal("sql_style_comment", "/*", "*/"));
+            NonGrammarTerminals.Add(new CommentTerminal("sql_style_line_comment", "--", "\n", "\r\n"));
+            NonGrammarTerminals.Add(new CommentTerminal("1c_comment", "//", "\n", "\r\n"));
 
             not = Transient("not", ToTerm("NOT") | "НЕ");
             by = NonTerminal("by", ToTerm("by") | "ПО", TermFlags.NoAstNode);
@@ -59,7 +58,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
 
             var groupClauseOpt = GroupBy(expression);
             var orderClauseOpt = OrderBy(expression);
-            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | ToTerm("having") + expression,
+            var havingKeyword = Transient("havingKeyword", ToTerm("HAVING") | "ИМЕЮЩИЕ");
+            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | havingKeyword + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
             var columnItemList = NonTerminal("columnItemList", null);
 
@@ -102,10 +102,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             MarkPunctuation(asOpt);
             AddOperatorReportGroup("operator");
             AddToNoReportGroup("as", "КАК");
-
             Root = root;
         }
-
 
         private static SelectFieldExpression ToSelectFieldExpression(ParseTreeNode n)
         {
