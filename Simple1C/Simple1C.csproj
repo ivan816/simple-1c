@@ -140,6 +140,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ListExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorPrecedenceAttribute.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorSynonymsAttribute.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ParamLiteralExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryTable.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryOperator.cs" />
@@ -276,7 +277,6 @@
        Other similar extension points exist, see Microsoft.Common.targets.
   <Target Name="BeforeBuild">
   </Target>-->
-
   <Target Name="AfterBuild">
     <CreateItem Include="@(ReferencePath)" Condition="'%(CopyLocal)'=='true'">
       <Output TaskParameter="Include" ItemName="IlmergeAssemblies" />
@@ -284,8 +284,8 @@
     <PropertyGroup>
       <ILRepackCommand>"..\packages\ILRepack.2.0.11\tools\ILRepack.exe" /internalize /out:$(OutputPath)\$(AssemblyName).dll "@(IntermediateAssembly)" @(IlmergeAssemblies->'"%(FullPath)"', ' ')</ILRepackCommand>
     </PropertyGroup>
-    <Exec Condition = "'$(OS)' = 'Unix'" Command="mono $(ILRepackCommand)"/>
-    <Exec Condition = "'$(OS)' != 'Unix'" Command="$(ILRepackCommand)"/>
+    <Exec Condition="'$(OS)' == 'Unix'" Command="mono $(ILRepackCommand)" />
+    <Exec Condition="'$(OS)' != 'Unix'" Command="$(ILRepackCommand)" />
     <Delete Files="@(ReferenceCopyLocalPaths->'$(OutDir)%(DestinationSubDirectory)%(Filename)%(Extension)')" />
   </Target>
 </Project>

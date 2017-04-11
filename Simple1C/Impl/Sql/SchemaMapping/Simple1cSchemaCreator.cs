@@ -188,7 +188,7 @@ $$;";
             ConfigurationItemDescriptor descriptor;
             object comObject;
             TableType tableType;
-            if (purpose == "Основная")
+            if (purpose == "Основная" || purpose == "Константа")
             {
                 var configurationName = ConfigurationName.ParseOrNull(queryTableName);
                 if (!configurationName.HasValue)

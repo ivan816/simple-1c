@@ -241,6 +241,12 @@ namespace Simple1C.Impl.Sql.Translation
             return clause;
         }
 
+        public override ISqlElement VisitParamLiteral(ParamLiteralExpression expression)
+        {
+            builder.Append(expression.Value);
+            return expression;
+        }
+
         public override ISqlElement VisitLiteral(LiteralExpression expression)
         {
             var value = expression.SqlType.HasValue

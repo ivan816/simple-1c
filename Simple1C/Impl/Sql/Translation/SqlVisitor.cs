@@ -20,7 +20,12 @@ namespace Simple1C.Impl.Sql.Translation
         {
             return expression;
         }
-        
+
+        public virtual ISqlElement VisitParamLiteral(ParamLiteralExpression expression)
+        {
+            return expression;
+        }
+
         public virtual ISqlElement VisitIsReference(IsReferenceExpression expression)
         {
             expression.Argument = (ColumnReferenceExpression) VisitColumnReference(expression.Argument);
