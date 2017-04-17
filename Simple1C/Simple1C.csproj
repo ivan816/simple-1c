@@ -140,7 +140,7 @@
     <Compile Include="Impl\Sql\SqlAccess\Syntax\ListExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorPrecedenceAttribute.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\OperatorSynonymsAttribute.cs" />
-    <Compile Include="Impl\Sql\SqlAccess\Syntax\ParamLiteralExpression.cs" />
+    <Compile Include="Impl\Sql\SqlAccess\Syntax\ParameterExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\SubqueryTable.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryExpression.cs" />
     <Compile Include="Impl\Sql\SqlAccess\Syntax\UnaryOperator.cs" />

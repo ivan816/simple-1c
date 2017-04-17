@@ -2,13 +2,13 @@
 
 namespace Simple1C.Impl.Sql.SqlAccess.Syntax
 {
-    internal class ParamLiteralExpression : ISqlElement
+    internal class ParameterExpression : ISqlElement
     {
-        public string Value { get; set; }
+        public string Name { get; set; }
 
         public ISqlElement Accept(SqlVisitor visitor)
         {
-            return visitor.VisitParamLiteral(this);
+            return visitor.VisitParameter(this);
         }
     }
 }

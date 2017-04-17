@@ -66,7 +66,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             var groupClauseOpt = GroupBy(expression);
             var orderClauseOpt = OrderBy(expression);
             var havingKeyword = Transient("havingKeyword", ToTerm("HAVING") | "ИМЕЮЩИЕ");
-            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | (havingKeyword + expression),
+            var havingClauseOpt = NonTerminal("havingClauseOpt", Empty | havingKeyword + expression,
                 node => node.ChildNodes.Count == 0 ? null : node.ChildNodes[1].AstNode);
             var columnItemList = NonTerminal("columnItemList", null);
 
@@ -160,15 +160,15 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 StringOptions.AllowsAllEscapes | StringOptions.AllowsDoubledQuote,
                 (context, node) => node.AstNode = new LiteralExpression {Value = node.Token.Value});
 
-            var paramName = new IdentifierTerminal("paramName")
+            var parameterName = new IdentifierTerminal("parameterName")
             {
                 AllFirstChars = validChars,
                 AllChars = validChars + "1234567890"
             };
-            paramName.SetFlag(TermFlags.NoAstNode);
+            parameterName.SetFlag(TermFlags.NoAstNode);
 
-            var paramLiteral = NonTerminal("parameter", "@" + paramName,
-                node => new ParamLiteralExpression {Value = "@" + node.ChildNodes[1].Token.ValueString});
+            var parameterLiteral = NonTerminal("parameter", "&" + parameterName,
+                node => new ParameterExpression {Name = node.ChildNodes[1].Token.ValueString});
 
             var valueLiteral = NonTerminal("valueLiteral",
                 Transient("valueFunction", ToTerm("value") | "ЗНАЧЕНИЕ") + "(" + identifier + ")",
@@ -187,7 +187,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     var text = node.FindTokenAndGetText().ToLower();
                     return new LiteralExpression
                     {
-                        Value = (text == "true") || (text == "истина")
+                        Value = text == "true" || text == "истина"
                     };
                 });
             var columnRef = NonTerminal("columnRef",
@@ -238,7 +238,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             parExprList.Rule = "(" + exprList + ")";
             parExpr.Rule = "(" + expression + ")";
             term.Rule = columnRef | stringLiteral | numberLiteral | valueLiteral | boolLiteral | nullLiteral
-                        | aggregate | queryFunctionExpr | paramLiteral
+                        | aggregate | queryFunctionExpr | parameterLiteral
                         | parExpr | subquery;
             subquery.Rule = "(" + selectStatement + ")";
             unOp.Rule = not | "-";
@@ -259,7 +259,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             for (var i = 1; i < aggregateFunctions.Length; i++)
                 aggregateFunctionName.Rule |= aggregateFunctions[i];
 
-            aggregateArg.Rule = ToTerm("*") | (distinctOpt + expression);
+            aggregateArg.Rule = ToTerm("*") | distinctOpt + expression;
             aggregate.Rule = aggregateFunctionName + "(" + aggregateArg + ")";
             inExpr.Rule = columnRef + Transient("in", ToTerm("IN") | "В") + functionArgs;
 
@@ -305,7 +305,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                     });
             groupColumnList.Rule = MakePlusRule(groupColumnList, ToTerm(","), expression);
             groupClauseOpt.Rule = Empty |
-                                  (NonTerminal("group", ToTerm("GROUP") | "СГРУППИРОВАТЬ") + by + groupColumnList);
+                                  NonTerminal("group", ToTerm("GROUP") | "СГРУППИРОВАТЬ") + by + groupColumnList;
             return groupClauseOpt;
         }
 
@@ -453,7 +453,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             else
                 result.Fields.AddRange(selectColumns);
             var topNode = n.ChildNodes[1].ChildNodes.ElementAtOrDefault(1);
-            result.Top = (topNode != null) && (topNode.Token != null)
+            result.Top = topNode != null && topNode.Token != null
                 ? int.Parse(topNode.Token.ValueString)
                 : (int?) null;
             result.IsDistinct = n.ChildNodes[2].ChildNodes.Any();
@@ -528,7 +528,7 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
                 if (!string.IsNullOrEmpty(distinctText))
                     isDistinct = true;
             }
-            if (!isSelectAll && (argumentNode.AstNode == null))
+            if (!isSelectAll && argumentNode.AstNode == null)
                 throw new InvalidOperationException(string.Format("Invalid aggregation argument {0}", argumentNode));
             return new AggregateFunctionExpression
             {
@@ -613,8 +613,8 @@ namespace Simple1C.Impl.Sql.SqlAccess.Parsing
             return new IsNullExpression
             {
                 Argument = (ISqlElement) arg.ChildNodes[0].AstNode,
-                IsNotNull = (notToken != null) && (notToken.ValueString.EqualsIgnoringCase("not")
-                                                   || notToken.ValueString.EqualsIgnoringCase("не"))
+                IsNotNull = notToken != null && (notToken.ValueString.EqualsIgnoringCase("not")
+                                                 || notToken.ValueString.EqualsIgnoringCase("не"))
             };
         }
 

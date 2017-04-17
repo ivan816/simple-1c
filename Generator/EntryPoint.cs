@@ -1,5 +1,6 @@
 ﻿using System;
 using System.CodeDom.Compiler;
+using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.Diagnostics;
 using System.IO;
@@ -175,7 +176,7 @@ namespace Generator
                     CancellationToken = CancellationToken.None,
                     MaxDegreeOfParallelism = querySources.Length
                 };
-                Sql.Execute(querySources, queryText, writer, parallelOptions, dumpSql == "true");
+                Sql.Execute(querySources, queryText, writer, parallelOptions, dumpSql == "true", new Dictionary<string, object>());
                 stopwatch.Stop();
                 Console.Out.WriteLine("\r\ndone, [{0}] millis", stopwatch.ElapsedMilliseconds);
                 return 0;

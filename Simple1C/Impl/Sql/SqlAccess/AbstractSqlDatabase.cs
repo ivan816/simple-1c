@@ -122,14 +122,23 @@ namespace Simple1C.Impl.Sql.SqlAccess
 
         public void Execute(string commandText, object[] parameters, Action<DbCommand> useCommand)
         {
+            var namedParameters = new Dictionary<string, object>();
+            for (var i = 0; i < parameters.Length; i++)
+                namedParameters.Add("@p" + i, parameters[i]);
+            Execute(commandText, namedParameters, useCommand);
+        }
+
+        public void Execute(string commandText, Dictionary<string, object> parameters, Action<DbCommand> useCommand)
+        {
             using (var connection = CreateConnection())
             {
                 connection.ConnectionString = ConnectionString;
                 connection.Open();
                 using (var command = CreateCommand())
                 {
-                    for (var i = 0; i < parameters.Length; i++)
-                        AddParameter(command, "@p" + i, parameters[i]);
+                    if (parameters != null)
+                        foreach (var parameter in parameters)
+                            AddParameter(command, parameter.Key, parameter.Value);
                     command.CommandText = commandText;
                     command.CommandTimeout = commandTimeout;
                     command.Connection = connection;

@@ -53,6 +53,21 @@ where contracts.c1 <= cast('2016-08-09' as date) and contracts.c2 >= cast('2016-
         }
 
         [Test]
+        public void CanUseCustomParameter()
+        {
+            const string sourceSql = @"select *
+    from Справочник.ДоговорыКонтрагентов as contracts
+    where contracts.ДатаНачала <= &Param1";
+            const string mappings = @"Справочник.ДоговорыКонтрагентов t1 Main
+    ДатаНачала Single c1";
+            const string expectedResult = @"select
+    *
+from t1 as contracts
+where contracts.c1 <= @Param1";
+            CheckTranslate(mappings, sourceSql, expectedResult);
+        }
+
+        [Test]
         public void ReplaceTableWithoutAliasWithSubquery_GenerateAliasForSubquery()
         {
             const string sourceSql = @"select ИНН as CounterpartyInn

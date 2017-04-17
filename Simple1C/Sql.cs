@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Npgsql;
 using Simple1C.Impl.Sql.SchemaMapping;
@@ -18,12 +19,17 @@ namespace Simple1C
         public static void Execute(QuerySource[] sources, string queryText, IWriter writer,
             ParallelOptions options = null)
         {
-            options = options ?? new ParallelOptions {MaxDegreeOfParallelism = sources.Length};
-            Execute(sources, queryText, writer, options, false);
+            Execute(sources, queryText, writer, options, false, null);
+        }
+
+        public static void Execute(QuerySource[] sources, string queryText, IWriter writer,
+            Dictionary<string, object> parameters, ParallelOptions options = null) {
+            options = options ?? new ParallelOptions { MaxDegreeOfParallelism = sources.Length };
+            Execute(sources, queryText, writer, options, false, parameters);
         }
 
         internal static void Execute(QuerySource[] sources, string queryText, IWriter writer,
-            ParallelOptions options, bool dumpSql)
+            ParallelOptions options, bool dumpSql, Dictionary<string, object> parameters)
         {
             RowAccessor rowAccessor = null;
             var locker = new object();
@@ -44,7 +50,7 @@ namespace Simple1C
                         if (state.ShouldExitCurrentIteration)
                             return;
                         var db = new PostgreeSqlDatabase(source.ConnectionString);
-                        db.Execute(sql, new object[0], c =>
+                        db.Execute(sql, parameters, c =>
                         {
                             if (state.ShouldExitCurrentIteration)
                                 return;

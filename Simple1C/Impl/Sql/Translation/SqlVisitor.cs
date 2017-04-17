@@ -21,7 +21,7 @@ namespace Simple1C.Impl.Sql.Translation
             return expression;
         }
 
-        public virtual ISqlElement VisitParamLiteral(ParamLiteralExpression expression)
+        public virtual ISqlElement VisitParameter(ParameterExpression expression)
         {
             return expression;
         }

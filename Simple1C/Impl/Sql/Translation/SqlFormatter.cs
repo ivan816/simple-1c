@@ -241,9 +241,10 @@ namespace Simple1C.Impl.Sql.Translation
             return clause;
         }
 
-        public override ISqlElement VisitParamLiteral(ParamLiteralExpression expression)
+        public override ISqlElement VisitParameter(ParameterExpression expression)
         {
-            builder.Append(expression.Value);
+            builder.Append("@");
+            builder.Append(expression.Name);
             return expression;
         }
 
