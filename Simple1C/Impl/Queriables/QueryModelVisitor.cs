@@ -149,6 +149,7 @@ namespace Simple1C.Impl.Queriables
                         mainFromClause.FromExpression));
                 }
                 queryBuilder.TableSectionName = fromField.PathItems[0];
+                VisitBodyClauses(xSubquery.QueryModel.BodyClauses, xSubquery.QueryModel);
                 VisitSelectClause(xSubquery.QueryModel.SelectClause, xSubquery.QueryModel);
             }
         }
