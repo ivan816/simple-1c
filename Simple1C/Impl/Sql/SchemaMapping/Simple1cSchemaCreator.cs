@@ -156,8 +156,9 @@ $$;";
                 var queryTableName = tableRow.GetString("ИмяТаблицы");
                 if (!string.IsNullOrEmpty(queryTableName))
                 {
-                    var isAccountingRegisterTable = queryTableName == AccountingRegisterTables.balanceName ||
-                                                    queryTableName == AccountingRegisterTables.subkontoName;
+                    if (AccountingRegisterTables.balanceName == queryTableName)
+                        throw new NotSupportedException(AccountingRegisterTables.balanceName);
+                    var isAccountingRegisterTable = queryTableName == AccountingRegisterTables.subkontoName;
                     var tableMapping = isAccountingRegisterTable
                         ? CreateAccountingRegisterTableMapping(tableRow)
                         : CreateDefaultTableMapping(tableRow, tableMappingByQueryName);
@@ -293,8 +294,26 @@ $$;";
 
         private string[] subkontoTypes;
 
-        private UnionLayout CreateSubkontoLayout(int index)
+        private UnionLayout CreateRegistratorLayout()
         {
+            //У РегистрыБухгалтерии.Хозрасчетный.Субконто нельзя получить метаданные
+            //globalContext.FindMetaByName - кидает исключение
+            //Поэтому мы берём метаданные по Регистратору из РегистрыБухгалтерии.Хозрасчетный
+            //Т.к. они скорее всего имеют одинаковые метаданные. В силу того, что Региcтратор
+            //является частью составного ключа, по которым Субконто матчатся с проводками
+            var configurationName = new ConfigurationName(ConfigurationScope.РегистрыБухгалтерии, "Хозрасчетный");
+            var configurationItem = globalContext.FindMetaByName(configurationName);
+            var comObject = configurationItem.ComObject;
+            var descriptor = MetadataHelpers.GetDescriptorOrNull(configurationName.Scope);
+            var propertyDescriptors = comObject == null
+                ? new Dictionary<string, string[]>()
+                : MetadataHelpers.GetAttributes(comObject, descriptor)
+                    .ToDictionary(Call.Имя, GetConfigurationTypes);
+            var propertyTypes = propertyDescriptors.GetOrDefault("Регистратор");
+            return new UnionLayout(null, "_RecorderTRef", "_RecorderRRef", propertyTypes);
+        }
+
+        private UnionLayout CreateSubkontoLayout()        {
             if (subkontoTypes == null)
             {
                 var configurationName = new ConfigurationName(ConfigurationScope.ПланыВидовХарактеристик,
@@ -312,9 +331,9 @@ $$;";
                     })
                     .ToArray();
             }
-            return new UnionLayout("_Value" + index + "_TYPE",
-                "_Value" + index + "_RTRef",
-                "_Value" + index + "_RRRef",
+            return new UnionLayout("_Value_TYPE",
+                "_Value_RTRef",
+                "_Value_RRRef",
                 subkontoTypes);
         }
 
@@ -328,76 +347,20 @@ $$;";
                 return null;
             var fieldsTable = new ValueTable(tableRow["Поля"]);
             var propertyMappings = new List<PropertyMapping>();
-            var subkontoCount = 0;
+            const string registratorPropertyName = "Регистратор";
+            const string valuePropertyName = "Значение";
+            propertyMappings.Add(new PropertyMapping(registratorPropertyName, null, CreateRegistratorLayout()));
+            propertyMappings.Add(new PropertyMapping(valuePropertyName, null, CreateSubkontoLayout()));
             foreach (var fieldRow in fieldsTable)
             {
                 var queryName = fieldRow.GetString("ИмяПоля");
+                if (queryName == registratorPropertyName || queryName == valuePropertyName)
+                    continue;
                 var dbName = fieldRow.GetString("ИмяПоляХранения");
                 if (string.IsNullOrWhiteSpace(dbName))
                     throw new InvalidOperationException("assertion failure");
-                if (dbName.EndsWith("_RTRef") || dbName.EndsWith("_RRRef"))
-                    continue;
-                UnionLayout unionLauout = null;
-                if (string.IsNullOrWhiteSpace(queryName))
-                {
-                    if (dbName == "_AccountRRef")
-                        queryName = "Счет";
-                    else if (dbName == "_Period")
-                        queryName = "Период";
-                    else if (dbName == "_Splitter")
-                        queryName = "Разделитель";
-                    else if (dbName == "_Value1_TYPE")
-                    {
-                        queryName = "Субконто1";
-                        unionLauout = CreateSubkontoLayout(1);
-                        subkontoCount++;
-                    }
-                    else if (dbName == "_Value2_TYPE")
-                    {
-                        queryName = "Субконто2";
-                        unionLauout = CreateSubkontoLayout(2);
-                        subkontoCount++;
-                    }
-                    else if (dbName == "_Value3_TYPE")
-                    {
-                        queryName = "Субконто3";
-                        unionLauout = CreateSubkontoLayout(3);
-                        subkontoCount++;
-                    }
-                    else
-                    {
-                        const string messageFormat = "unexpected empty query name for field, db name [{0}]";
-                        throw new InvalidOperationException(string.Format(messageFormat, dbName));
-                    }
-                }
-                SingleLayout singleLayout = null;
-                if (unionLauout == null)
-                {
-                    string nestedTableName;
-                    if (queryName == "Счет")
-                        nestedTableName = "ПланСчетов.Хозрасчетный";
-                    else if (queryName == "Организация")
-                        nestedTableName = "Справочник.Организации";
-                    else if (queryName == "Валюта")
-                        nestedTableName = "Справочник.Валюты";
-                    else if (queryName == "Подразделение")
-                        nestedTableName = "Справочник.ПодразделенияОрганизаций";
-                    else
-                        nestedTableName = null;
-                    singleLayout = new SingleLayout(dbName, nestedTableName);
-                }
-                if (dbName.ContainsIgnoringCase("Turnover"))
-                {
-                    queryName += "Оборот";
-                    if (dbName.Contains("Dt"))
-                        queryName += "Дт";
-                    else if (dbName.Contains("Ct"))
-                        queryName += "Кт";
-                }
-                propertyMappings.Add(new PropertyMapping(queryName, singleLayout, unionLauout));
+                propertyMappings.Add(new PropertyMapping(queryName, new SingleLayout(dbName, null), null));
             }
-            if (queryTableName == AccountingRegisterTables.subkontoName)
-                queryTableName += subkontoCount;
             return new TableMapping(queryTableName, dbTableName, TableType.Main, propertyMappings.ToArray());
         }
 
